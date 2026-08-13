@@ -1,0 +1,176 @@
+[
+ {
+  "key": "espenak2006",
+  "doi": null,
+  "url": "https://eclipse.gsfc.nasa.gov/SEbeselm/SEbeselm2001/SE2026Aug12Tbeselm.html",
+  "first": "Espenak, F. y Meeus, J. (2006). \\emph{Five Millennium Canon of Solar E"
+ },
+ {
+  "key": "kastenyoung1989",
+  "doi": "10.1364/AO.28.004735",
+  "url": null,
+  "first": "Kasten, F. y Young, A. T. (1989). Revised optical air mass tables and "
+ },
+ {
+  "key": "birdriordan1984",
+  "doi": "10.2172/5986936",
+  "url": null,
+  "first": "Bird, R. E. y Riordan, C. (1984). Simple solar spectral model for dire"
+ },
+ {
+  "key": "birdhulstrom1981",
+  "doi": "10.2172/6510849",
+  "url": null,
+  "first": "Bird, R. E. y Hulstrom, R. L. (1981). A simplified clear sky model for"
+ },
+ {
+  "key": "hestroffer1998",
+  "doi": null,
+  "url": null,
+  "first": "Hestroffer, D. y Magnan, C. (1998). Wavelength dependency of the Solar"
+ },
+ {
+  "key": "icnirp2013",
+  "doi": "10.1097/HP.0b013e318289a611",
+  "url": null,
+  "first": "ICNIRP (2013). Guidelines on limits of exposure to incoherent visible "
+ },
+ {
+  "key": "carslawjaeger",
+  "doi": null,
+  "url": null,
+  "first": "Carslaw, H. S. y Jaeger, J. C. (1959). \\emph{Conduction of Heat in Sol"
+ },
+ {
+  "key": "glassbrenner1964",
+  "doi": "10.1103/PhysRev.134.A1058",
+  "url": null,
+  "first": "Glassbrenner, C. J. y Slack, G. A. (1964). Thermal conductivity of sil"
+ },
+ {
+  "key": "kopplean2011",
+  "doi": "10.1029/2010GL045777",
+  "url": null,
+  "first": "Kopp, G. y Lean, J. L. (2011). A new, lower value of total solar irrad"
+ },
+ {
+  "key": "imo2026",
+  "doi": null,
+  "url": "https://www.imo.net/files/meteor-shower/cal2026.pdf",
+  "first": "Rendtel, J. (ed.) (2026). \\emph{2026 Meteor Shower Calendar}. Internat"
+ },
+ {
+  "key": "de440",
+  "doi": "10.3847/1538-3881/abd414",
+  "url": null,
+  "first": "Park, R. S., Folkner, W. M., Williams, J. G. y Boggs, D. H. (2021). Th"
+ },
+ {
+  "key": "copdem",
+  "doi": "10.5270/ESA-c5d3d65",
+  "url": null,
+  "first": "European Space Agency y Airbus (2022). Copernicus DEM GLO-30, modelo d"
+ },
+ {
+  "key": "cams",
+  "doi": null,
+  "url": "https://air-quality-api.open-meteo.com",
+  "first": "Copernicus Atmosphere Monitoring Service (2026). Pronóstico operativo "
+ },
+ {
+  "key": "pvlib",
+  "doi": "10.21105/joss.05994",
+  "url": null,
+  "first": "Anderson, K. \\emph{et al.} (2023). pvlib python: 2023 project update. "
+ },
+ {
+  "key": "skyfield",
+  "doi": null,
+  "url": null,
+  "first": "Rhodes, B. (2019). Skyfield: high precision research-grade positions f"
+ },
+ {
+  "key": "astmg173",
+  "doi": "10.1520/G0173-03R20",
+  "url": null,
+  "first": "ASTM International (2020). G173-03(2020) Standard tables for reference"
+ },
+ {
+  "key": "schwarz2017",
+  "doi": "10.1117/1.OE.56.3.034108",
+  "url": null,
+  "first": "Schwarz, B., Ritt, G., Koerber, M. y Eberle, B. (2017). Laser-induced "
+ },
+ {
+  "key": "westgate2022",
+  "doi": "10.3390/s22072526",
+  "url": null,
+  "first": "Westgate, C. y James, D. (2022). Visible-band nanosecond pulsed laser "
+ },
+ {
+  "key": "yoon2016",
+  "doi": "10.9766/KIMST.2016.19.6.690",
+  "url": null,
+  "first": "Yoon, S., Jhang, K.-Y. y Shin, W.-S. (2016). Damage analysis of CCD im"
+ },
+ {
+  "key": "kim2015",
+  "doi": "10.3795/KSME-A.2015.39.1.105",
+  "url": null,
+  "first": "Kim, J.-G., Choi, S., Yoon, S., Jhang, K.-Y. y Shin, W.-S. (2015). Hig"
+ },
+ {
+  "key": "hwang2009",
+  "doi": "10.3807/HKH.2009.20.2.118",
+  "url": null,
+  "first": "Hwang, S.-K., Baek, S.-H., Kwon, J.-H. y Park, Y.-S. (2009). Fabricati"
+ },
+ {
+  "key": "kim2013",
+  "doi": "10.6117/KMEPS.2013.20.2.023",
+  "url": null,
+  "first": "Kim, S. H., Hong, S. K., Lee, K. H. y Cho, Y. H. (2013). Shape error a"
+ },
+ {
+  "key": "nemoto2011",
+  "doi": null,
+  "url": "https://patents.google.com/patent/US8053149B2/en",
+  "first": "Nemoto, Y. y Sasaki, N. (2011). \\emph{Method for producing color filte"
+ },
+ {
+  "key": "ov5647",
+  "doi": null,
+  "url": null,
+  "first": "OmniVision Technologies (2009). \\emph{OV5647 color CMOS QSXGA image se"
+ },
+ {
+  "key": "nikonespenak",
+  "doi": null,
+  "url": "https://www.nikonusa.com/learn-and-explore/a/tips-and-techniques/how-to-photograph-a-solar-eclipse.html",
+  "first": "Espenak, F. \\emph{How to Photograph a Solar Eclipse}. Nikon Inc., Lear"
+ },
+ {
+  "key": "nasasafety",
+  "doi": null,
+  "url": "https://science.nasa.gov/eclipses/safety/",
+  "first": "NASA Science. \\emph{Eclipse Viewing Safety}. \\url{https://science.nasa"
+ },
+ {
+  "key": "woudc",
+  "doi": null,
+  "url": "https://api.woudc.org/collections/totalozone/items?station_id=411",
+  "first": "World Ozone and UV Radiation Data Centre (WOUDC), Environment and Clim"
+ },
+ {
+  "key": "aas",
+  "doi": null,
+  "url": "https://eclipse.aas.org/eye-safety",
+  "first": "American Astronomical Society, Solar Eclipse Task Force. \\emph{Eye Saf"
+ },
+ {
+  "key": "iso12312",
+  "doi": null,
+  "url": null,
+  "first": "ISO (2015). ISO 12312-2:2015 Eye and face protection --- Sunglasses an"
+ }
+]

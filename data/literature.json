@@ -1,0 +1,857 @@
+{
+  "_README": "Every number in the paper that is NOT computed by src/*.py must appear here with its source and a verbatim quote. Transcribed by hand from the primary documents; see 'verified_from' for how each block was obtained.",
+  "icnirp2013": {
+    "citation": "ICNIRP (2013). Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation. Health Physics 105(1):74-96.",
+    "doi": "10.1097/HP.0b013e318289a611",
+    "verified_from": "Primary PDF icnirp.org/cms/upload/publications/ICNIRPVisible_Infrared2013.pdf, pages read directly (journal pages 75-87).",
+    "retinal_irradiance_eq2": {
+      "formula": "E_r = pi * L_s * tau * d_p^2 / (4 * f^2)  =  a * L_s * tau * d_p^2, a = 2700 m^-2 (d_p in m)",
+      "eye_focal_length_mm": 17.0,
+      "ocular_transmittance_visible": 0.9,
+      "quote": "Retinal irradiance E_r (W m^-2) is related to source radiance L_s (W m^-2 sr^-1), ('brightness'), the transmittance of the ocular media, tau (rel.), the pupil diameter, d_p (mm), and inversely related to the effective focal length of the eye, according to the Gullstrand eye (Gullstrand 1909) f = 17 mm (eqn 2)",
+      "note_tau_source": "For the visible spectrum, the transmittance in the ocular media for younger people and most animals is as high as 0.9 (Geeraets and Berry 1968)"
+    },
+    "retinal_thermal_limit": {
+      "eq6": "L_R^EL = 2.0e4 * alpha^-1 * t^-0.25  W m^-2 sr^-1   (1 us <= t < 0.25 s, alpha in rad, t in s)",
+      "eq7": "D_R^EL = 2.0e4 * alpha^-1 * t^0.75   J m^-2 sr^-1",
+      "t_ge_0p25s": "L_R^EL = 2.8e4 * alpha^-1  W m^-2 sr^-1   (Table 4, basic exposure limit, t >= 0.25 s)",
+      "alpha_min_rad": 0.0015,
+      "alpha_max_rad_t_ge_0p25s": 0.1,
+      "weighting": "L_R = sum_{380}^{1400} L_lambda * R(lambda) * dlambda  (eqn 4)",
+      "quote": "L_R^EL = 2.0 x 10^4 x alpha^-1 x t^-0.25 W m^-2 sr^-1 (6)",
+      "pupil_assumption": "In the derivation of the limits to protect against retinal thermal injury, two different pupil diameters were assumed, 7 mm for the dark-adapted eye and approximately 3 mm for bright light conditions."
+    },
+    "blue_light_photochemical_limit": {
+      "band_nm": [
+        300,
+        700
+      ],
+      "eq10": "L_B = sum_{380}^{1400} L_lambda * B(lambda) * dlambda  W m^-2 sr^-1",
+      "eq13": "D_B^EL = 1e6 J m^-2 sr^-1   for 0.25 s <= t <= 10000 s",
+      "eq14": "L_B^EL = 100 W m^-2 sr^-1   for t > 10000 s",
+      "eq16": "H_B^EL = 100 J m^-2        for 0.25 <= t < 100 s",
+      "eq17": "E_B^EL = 1 W m^-2          for 100 <= t < 30000 s",
+      "gamma_ph_rad": {
+        "t_lt_100s": 0.011,
+        "t_100_to_10000s": "0.0011*t^0.5",
+        "t_gt_10000s": 0.11
+      },
+      "quote_eq13": "For 0.25 s <= t <= 10,000 s (approx. 2.8 h), the effective radiance dose, D_B, is limited by the blue-light limit, D_B^EL in J m^-2 sr^-1, given in eqn (13): D_B^EL = 1 x 10^6 J m^-2 sr^-1",
+      "quote_100s": "In effect, because of eye movements involved in normal visual tasks, the maximal exposure duration that needs to be considered for small sources is 100 s.",
+      "pupil_assumption": "The exposure limit for photochemically induced retinal injury was derived with the assumption of a pupil diameter of approximately 3 mm."
+    },
+    "table2_weighting_functions": {
+      "columns": [
+        "lambda_nm",
+        "A_aphakic",
+        "B_blue_light",
+        "R_thermal"
+      ],
+      "note": "R is '-' below 380 nm. Above 700 nm R follows the analytic forms listed in R_analytic.",
+      "rows": [
+        [
+          300,
+          6.0,
+          0.01,
+          null
+        ],
+        [
+          305,
+          6.0,
+          0.01,
+          null
+        ],
+        [
+          310,
+          6.0,
+          0.01,
+          null
+        ],
+        [
+          315,
+          6.0,
+          0.01,
+          null
+        ],
+        [
+          320,
+          6.0,
+          0.01,
+          null
+        ],
+        [
+          330,
+          6.0,
+          0.01,
+          null
+        ],
+        [
+          335,
+          6.0,
+          0.01,
+          null
+        ],
+        [
+          340,
+          5.88,
+          0.01,
+          null
+        ],
+        [
+          345,
+          5.71,
+          0.01,
+          null
+        ],
+        [
+          350,
+          5.46,
+          0.01,
+          null
+        ],
+        [
+          355,
+          5.22,
+          0.01,
+          null
+        ],
+        [
+          360,
+          4.62,
+          0.01,
+          null
+        ],
+        [
+          365,
+          4.29,
+          0.01,
+          null
+        ],
+        [
+          370,
+          3.75,
+          0.01,
+          null
+        ],
+        [
+          375,
+          3.56,
+          0.01,
+          null
+        ],
+        [
+          380,
+          3.19,
+          0.01,
+          0.01
+        ],
+        [
+          385,
+          2.31,
+          0.0125,
+          0.0125
+        ],
+        [
+          390,
+          1.88,
+          0.025,
+          0.025
+        ],
+        [
+          395,
+          1.58,
+          0.05,
+          0.05
+        ],
+        [
+          400,
+          1.43,
+          0.1,
+          0.1
+        ],
+        [
+          405,
+          1.3,
+          0.2,
+          0.2
+        ],
+        [
+          410,
+          1.25,
+          0.4,
+          0.4
+        ],
+        [
+          415,
+          1.2,
+          0.8,
+          0.8
+        ],
+        [
+          420,
+          1.15,
+          0.9,
+          0.9
+        ],
+        [
+          425,
+          1.11,
+          0.95,
+          0.95
+        ],
+        [
+          430,
+          1.07,
+          0.98,
+          0.98
+        ],
+        [
+          435,
+          1.03,
+          1.0,
+          1.0
+        ],
+        [
+          440,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          445,
+          0.97,
+          0.97,
+          1.0
+        ],
+        [
+          450,
+          0.94,
+          0.94,
+          1.0
+        ],
+        [
+          455,
+          0.9,
+          0.9,
+          1.0
+        ],
+        [
+          460,
+          0.8,
+          0.8,
+          1.0
+        ],
+        [
+          465,
+          0.7,
+          0.7,
+          1.0
+        ],
+        [
+          470,
+          0.62,
+          0.62,
+          1.0
+        ],
+        [
+          475,
+          0.55,
+          0.55,
+          1.0
+        ],
+        [
+          480,
+          0.45,
+          0.45,
+          1.0
+        ],
+        [
+          485,
+          0.4,
+          0.4,
+          1.0
+        ],
+        [
+          490,
+          0.22,
+          0.22,
+          1.0
+        ],
+        [
+          495,
+          0.16,
+          0.16,
+          1.0
+        ],
+        [
+          500,
+          0.1,
+          0.1,
+          1.0
+        ],
+        [
+          505,
+          0.079,
+          0.079,
+          1.0
+        ],
+        [
+          510,
+          0.063,
+          0.063,
+          1.0
+        ],
+        [
+          515,
+          0.05,
+          0.05,
+          1.0
+        ],
+        [
+          520,
+          0.04,
+          0.04,
+          1.0
+        ],
+        [
+          525,
+          0.032,
+          0.032,
+          1.0
+        ],
+        [
+          530,
+          0.025,
+          0.025,
+          1.0
+        ],
+        [
+          535,
+          0.02,
+          0.02,
+          1.0
+        ],
+        [
+          540,
+          0.016,
+          0.016,
+          1.0
+        ],
+        [
+          545,
+          0.013,
+          0.013,
+          1.0
+        ],
+        [
+          550,
+          0.01,
+          0.01,
+          1.0
+        ],
+        [
+          555,
+          0.008,
+          0.008,
+          1.0
+        ],
+        [
+          560,
+          0.006,
+          0.006,
+          1.0
+        ],
+        [
+          565,
+          0.005,
+          0.005,
+          1.0
+        ],
+        [
+          570,
+          0.004,
+          0.004,
+          1.0
+        ],
+        [
+          575,
+          0.003,
+          0.003,
+          1.0
+        ],
+        [
+          580,
+          0.002,
+          0.002,
+          1.0
+        ],
+        [
+          585,
+          0.002,
+          0.002,
+          1.0
+        ],
+        [
+          590,
+          0.001,
+          0.001,
+          1.0
+        ],
+        [
+          595,
+          0.001,
+          0.001,
+          1.0
+        ],
+        [
+          600,
+          0.001,
+          0.001,
+          1.0
+        ],
+        [
+          700,
+          0.001,
+          0.001,
+          1.0
+        ]
+      ],
+      "R_analytic": {
+        "700_1050": "10^((700-lambda)/500)",
+        "1050_1150": "0.2",
+        "1150_1200": "0.2*10^(0.02*(1150-lambda))",
+        "1200_1400": "0.02"
+      },
+      "B_note": "B(lambda) is defined 300-700 nm; it is 0.001 over 600-700 nm."
+    }
+  },
+  "hestroffer_magnan_1998": {
+    "citation": "Hestroffer, D. & Magnan, C. (1998). Wavelength dependency of the Solar limb darkening. Astronomy & Astrophysics 333, 338-342.",
+    "bibcode": "1998A&A...333..338H",
+    "verified_from": "Scanned article PDF from ADS, read directly (pages 338-341).",
+    "law": "I(mu) = 1 - u*(1 - mu^alpha); the single-parameter power law used here sets u = 1, i.e. I(mu)/I(1) = mu^alpha, mu = cos(theta) = (1-r^2)^(1/2)",
+    "eq5_alpha_of_wavelength": {
+      "form": "alpha = -0.023 + 0.292/lambda_um   if 1/lambda <~ 2.4 um^-1 ; alpha = -0.507 + 0.441/lambda_um  if 1/lambda >~ 2.8 um^-1",
+      "accuracy": "accurate to a few +/-0.02",
+      "quote": "Combining all the data of Table 2, we find the average relations, accurate to a few +-0.02, in function of lambda^-1 given in units of um^-1: alpha ~ -0.023 + 0.292 lambda^-1 if lambda^-1 <~ 2.4 um^-1 ; -0.507 + 0.441 lambda^-1 if lambda^-1 >~ 2.8 um^-1"
+    },
+    "table2_spotchecks_NL": [
+      [
+        303.327,
+        0.939
+      ],
+      [
+        329.897,
+        0.817
+      ],
+      [
+        401.97,
+        0.751
+      ],
+      [
+        457.345,
+        0.628
+      ],
+      [
+        492.905,
+        0.57
+      ],
+      [
+        519.93,
+        0.538
+      ],
+      [
+        541.76,
+        0.514
+      ],
+      [
+        559.95,
+        0.496
+      ],
+      [
+        579.88,
+        0.477
+      ],
+      [
+        610.975,
+        0.447
+      ],
+      [
+        640.97,
+        0.428
+      ],
+      [
+        669.4,
+        0.407
+      ],
+      [
+        700.875,
+        0.386
+      ],
+      [
+        748.71,
+        0.361
+      ],
+      [
+        811.76,
+        0.333
+      ],
+      [
+        869.6,
+        0.311
+      ],
+      [
+        948.85,
+        0.292
+      ],
+      [
+        1046.6,
+        0.274
+      ],
+      [
+        1098.95,
+        0.26
+      ]
+    ],
+    "validity": "mean values derived for 303.3 <= lambda <~ 357 nm and 416 <~ lambda <= 1099 nm"
+  },
+  "nasa_besselian_2026aug12": {
+    "citation": "Espenak, F. & Meeus, J. — NASA Eclipse Web Site, Besselian Elements for the Total Solar Eclipse of 2026 Aug 12.",
+    "url": "https://eclipse.gsfc.nasa.gov/SEbeselm/SEbeselm2001/SE2026Aug12Tbeselm.html",
+    "greatest_eclipse_TDT": "17:47:05.2",
+    "greatest_eclipse_JD": 2461265.241032,
+    "greatest_eclipse_UT": "17:45:53.8",
+    "gamma": 0.8978,
+    "eclipse_magnitude": 1.0386,
+    "delta_t_s": 71.4,
+    "saros": "126 (48/72)",
+    "ephemerides": "VSOP87/ELP2000-85",
+    "k1_penumbra": 0.272488,
+    "k2_umbra": 0.272281,
+    "t0_TDT": "2026-08-12 18:00:00.0",
+    "x": [
+      0.475593,
+      0.5189288,
+      -7.73e-05,
+      -8.8e-06
+    ],
+    "y": [
+      0.771161,
+      -0.2301664,
+      -0.0001245,
+      3.7e-06
+    ],
+    "d_deg": [
+      14.79667,
+      -0.012065,
+      -3e-06
+    ],
+    "l1": [
+      0.537954,
+      9.4e-05,
+      -1.21e-05
+    ],
+    "l2": [
+      -0.008142,
+      9.35e-05,
+      -1.21e-05
+    ],
+    "mu_deg": [
+      88.74776,
+      15.003093
+    ],
+    "tan_f1": 0.0046141,
+    "tan_f2": 0.0045911
+  },
+  "linke_turbidity_site": {
+    "source": "pvlib-python clearsky.lookup_linke_turbidity, bundled monthly global climatology (SoDa / Remund, Wald, Lefevre, Ranchin & Page 2003).",
+    "site": [
+      41.212878,
+      0.709488
+    ],
+    "monthly_TL_2026": {
+      "Feb": 3.16,
+      "Mar": 3.445,
+      "Apr": 3.65,
+      "May": 3.847,
+      "Jun": 4.2,
+      "Jul": 4.298,
+      "Aug": 4.202,
+      "Sep": 3.85,
+      "Oct": 3.407,
+      "Nov": 3.05,
+      "Dec": 2.804
+    },
+    "august_TL": 4.202
+  },
+  "tsi": {
+    "citation": "Kopp, G. & Lean, J. L. (2011). A new, lower value of total solar irradiance: Evidence and climate significance. Geophysical Research Letters 38, L01706.",
+    "doi": "10.1029/2010GL045777",
+    "value_W_m2": 1360.8,
+    "uncertainty_W_m2": 0.5
+  },
+  "imo_2026_perseids": {
+    "citation": "Rendtel, J. (ed.), 2026 Meteor Shower Calendar, International Meteor Organization, IMO INFO(3-25).",
+    "url": "https://www.imo.net/files/meteor-shower/cal2026.pdf",
+    "verified_from": "Primary PDF, text extracted directly (page 11 narrative, page 26 Table 6).",
+    "shower": "Perseids (007 PER)",
+    "active": "July 17 - August 24",
+    "maximum": "August 13, 02h to 04h UT",
+    "max_solar_longitude_deg": [
+      140.0,
+      140.1
+    ],
+    "zhr_at_maximum": 100,
+    "population_index_r": 2.2,
+    "v_infinity_km_s": 59,
+    "radiant_at_max_deg": [
+      48,
+      58
+    ],
+    "radiant_drift_table_6": [
+      [
+        5,
+        37,
+        56
+      ],
+      [
+        10,
+        45,
+        57
+      ],
+      [
+        15,
+        51,
+        58
+      ],
+      [
+        20,
+        57,
+        58
+      ],
+      [
+        25,
+        63,
+        58
+      ],
+      [
+        30,
+        null,
+        null
+      ]
+    ],
+    "radiant_drift_note": "IMO Table 6, [day of August, alpha_deg, delta_deg] (J2000). Aug 30 row not listed for PER.",
+    "quote_main": "Active: July 17-August 24; Maximum: August 13, 02h to 04h UT (node at lambda_sun = 140.0 - 140.1), but see text; ZHR = 100; Radiant: alpha = 48 deg, delta = +58 deg; Radiant drift: see Table 6; V_inf = 59 km/s; r = 2.2.",
+    "quote_moon": "New Moon on August 12 provides excellent conditions for all optical observations.",
+    "quote_background": "Maslov's modelling indicates that the background (permanent) activity is expected to be notably lower than the usually quoted ZHR of 100 until 2026.",
+    "quote_trail": "Vaubaillon's calculations show an approach to the 1079 dust trail in 2026. The trail is split into three parts. The Earth is expected to encounter one of these branches on August 12 at 16h53m UT (lambda_sun = 139.859). Since it is a very old trail, no activity estimate is given.",
+    "quote_filament": "An encounter of a weak filament of 109P is listed in Table 5d of Jenniskens (2006). The calculated position is lambda_sun = 139.97 +/- 0.2, corresponding to 2026 August 13, 01h UT (+/-5h). The expected ZHR of <= 43 is similar to the calculated filaments in 2013, 2014 and 2025.",
+    "zhr_scenarios": [
+      10,
+      20,
+      43,
+      100
+    ],
+    "zhr_scenarios_note": "NOT a prediction. A sensitivity sweep. 100 is the IMO nominal ZHR at maximum (which falls ~7.5 h AFTER totality); 43 is the upper bound the IMO quotes for the 109P filament; 10 and 20 bracket the lower background activity Maslov expects for 2026. No published activity-profile slope B was located for the Perseids in a form we could cite, so the paper does NOT interpolate a ZHR to the moment of totality and instead reports the whole sweep.",
+    "camera_limiting_magnitudes": [
+      0.0,
+      2.0,
+      3.0,
+      4.0
+    ],
+    "camera_limiting_magnitudes_note": "ASSUMED, not sourced. A moving meteor deposits its light on many pixels, so a camera's limiting magnitude for a meteor is far brighter than for a star, and no citable conversion was found. Treated purely as a sensitivity parameter and labelled as such wherever it appears."
+  },
+  "aas_eye_safety": {
+    "citation": "American Astronomical Society, Solar Eclipse Task Force — Eye Safety.",
+    "url": "https://eclipse.aas.org/eye-safety",
+    "verified_from": "Page retrieved directly.",
+    "quote_totality": "remove your solar filter only when the Moon completely covers the Sun's bright face and it suddenly gets quite dark",
+    "quote_third_contact": "as soon as the bright Sun begins to reappear, replace your solar viewer to look at the remaining partial phases",
+    "quote_optics": "Do not look at the uneclipsed or partially eclipsed Sun through an unfiltered camera, telescope, binoculars, or other optical device.",
+    "quote_standard": "special-purpose solar filters that conform to the ISO 12312-2 international standard",
+    "note": "The page states no transmittance figures; the paper therefore does not quote any."
+  },
+  "silicon_properties": {
+    "thermal_conductivity_W_mK": 148.0,
+    "thermal_conductivity_source": "Glassbrenner, C. J. & Slack, G. A. (1964), Phys. Rev. 134, A1058. doi:10.1103/PhysRev.134.A1058",
+    "density_kg_m3": 2329.0,
+    "specific_heat_J_kgK": 700.0,
+    "density_and_cp_source": "NOT INDEPENDENTLY VERIFIED against a primary source in this study. Standard handbook values for crystalline silicon at 300 K. They enter only through the thermal diffusivity kappa = k/(rho c_p), which sets the TIME to reach the steady state, not the steady-state temperature itself; every safety conclusion in the paper rests on the steady-state value q a / k, which does not use them.",
+    "melting_point_K": 1687.0,
+    "melting_point_C": 1414.0,
+    "melting_point_source": "NOT INDEPENDENTLY VERIFIED here. Quoted only as an order-of-magnitude ceiling; the binding limits in the paper are the far lower polymer/solder degradation temperatures, which are themselves uncited (see damage_threshold_gap)."
+  },
+  "damage_threshold_gap": {
+    "status": "NOT FOUND",
+    "what_was_sought": "A measured damage or degradation threshold for a consumer CMOS image sensor under continuous concentrated optical flux: CW laser-induced damage thresholds (Schwarz/Ritt/Eberle, Fraunhofer IOSB), colour-filter-array dye bleaching temperature, polymeric microlens reflow temperature, IR-cut filter limits.",
+    "outcome": "Four separate literature-search attempts were terminated by session limits before returning verified values. NO measured threshold is cited anywhere in this paper.",
+    "consequence": "The paper must NOT claim a margin against 'any plausible damage threshold'. It states the computed temperature rise and compares it against generic material degradation temperatures of order 150-250 C, flagged as uncited, and reports the resulting margin as a factor rather than as orders of magnitude."
+  },
+  "cie_photopic": {
+    "quantity": "CIE 1924 photopic luminous efficiency function V(lambda)",
+    "obtained_from": "colour-science 0.4.7, colour.colorimetry.SDS_LEFS_PHOTOPIC['CIE 1924 Photopic Standard Observer']",
+    "underlying_standard": "CIE 1924 photopic observer, as republished in CIE 018:2019 / ISO 23539:2005. The colour-science package is the retrieval route, NOT the primary source; the primary standard document was not consulted here.",
+    "range_nm": [
+      360.0,
+      830.0
+    ],
+    "n_points": 471,
+    "peak_nm": 555.0,
+    "spot_checks_passed": true,
+    "spot_checks": {
+      "450": [
+        0.038,
+        0.038
+      ],
+      "500": [
+        0.323,
+        0.323
+      ],
+      "555": [
+        1.0,
+        1.0
+      ],
+      "600": [
+        0.631,
+        0.631
+      ],
+      "650": [
+        0.107,
+        0.107
+      ],
+      "700": [
+        0.0041,
+        0.0041
+      ],
+      "400": [
+        0.0004,
+        0.0004
+      ]
+    },
+    "use_in_paper": "Only for the photopic illuminance curve (lux). No safety conclusion depends on it; the ICNIRP hazard weightings B(lambda) and R(lambda) are transcribed separately from the ICNIRP 2013 primary PDF.",
+    "note_on_checks": "An earlier check used 0.208 at 507 nm as the expected photopic value and failed. That number is SCOTOPIC: 507 nm is the peak of V'(lambda), not a point on V(lambda). The package was right and the check was wrong; recorded here because a silent 'fix' to match a mistaken expectation is exactly how a wrong luminous efficiency function would enter the illuminance calculation."
+  },
+  "software_versions": {
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.18.0",
+    "pandas": "3.0.5",
+    "skyfield": "1.55",
+    "pvlib": "0.15.2",
+    "rasterio": "1.5.1",
+    "colour-science": "0.4.7",
+    "ephemeris": "JPL DE440s (de440s.bsp), NAIF generic kernels",
+    "latex": "Tectonic 0.16.9",
+    "note": "Recorded so the whole chain is reproducible; pvlib supplies the validated implementations of Kasten & Young (1989) air mass, Bird & Riordan (1984) SPECTRL2, Bird & Hulstrom (1981) and Ineichen & Perez, each cited to its own primary reference."
+  },
+  "cmos_damage_threshold": {
+    "citation": "Schwarz, B., Ritt, G., Koerber, M. & Eberle, B. (2017). Laser-induced damage threshold of camera sensors and micro-optoelectromechanical systems. Optical Engineering 56(3), 034108.",
+    "doi": "10.1117/1.OE.56.3.034108",
+    "open_access": "CC BY 4.0",
+    "verified_from": "Publisher PDF, full text; cross-checked against OpenAlex and Fraunhofer-Publica.",
+    "regime": "continuous wave, 532 nm, exposure 0.25/1/5/10 s, 1-on-1 test mode",
+    "quote_source": "CW-laser system: Diode-pumped solid-state laser (DPSS, Laser Quantum Ventus 532) with a wavelength of 532 nm and a beam size of 1.5 mm (1/e2). The available laser power exceeded 500 mW.",
+    "quote_spot": "we were able to determine the diameter (1/e2) of the laser spot in the focal plane and got a value of 2w1 = 25.7 um for the CW-laser source",
+    "quote_aeff": "the effective spot size in the focal plane is Aeff = 3.12 x 10-6 cm2 for the pulsed laser and Aeff = 2.59 x 10-6 cm2 for the CW-laser",
+    "quote_damage_def": "Finally, we defined damage as a 10% deviation from intensity of the normalized and scaled reference image.",
+    "quote_cmos_mono": "First damage occurred in case of the monochrome CMOS cameras for exposure times of 0.25, 1, 5, and 10 s at a power density of 85, 85, 57, and 49 kW/cm2, respectively. The shape of the damage was mostly circular and slightly blurred, because the damaged pixel became less sensitive but did not fail completely. [...] We also observed line damage starting from a power density of 196 kW/cm2.",
+    "quote_cmos_color": "In the case of the color CMOS cameras, damage started at a power density of 46 kW/cm2 for an exposure time of 0.25 s.",
+    "quote_bayer": "The fact that the damage threshold of the color CMOS camera was lower than the damage threshold of the monochromatic device is an indication that the first damage in color cameras emerges in the Bayer filter.",
+    "table4_cw_kW_cm2": {
+      "cmos_mono_exp": {
+        "0.25": 85,
+        "1": 85,
+        "5": 57,
+        "10": 49
+      },
+      "cmos_color_exp": {
+        "0.25": 46
+      },
+      "ccd_mono_exp": {
+        "0.25": 163,
+        "1": 139,
+        "5": 139,
+        "10": 139
+      },
+      "ccd_color_exp": {
+        "0.25": 16,
+        "1": 16,
+        "5": 9,
+        "10": 9
+      },
+      "cmos_mono_fit": {
+        "0.25": "75+-7",
+        "1": "73+-15",
+        "5": "56+-4",
+        "10": "48+-3"
+      }
+    },
+    "adopted": {
+      "q_lab_W_m2": 490000000.0,
+      "q_lab_kW_cm2": 49,
+      "spot_1e2_diameter_um": 25.7,
+      "spot_1e2_radius_um": 12.85,
+      "effective_radius_um": 9.08,
+      "effective_radius_derivation": "deff = sqrt(2)*w with w = 12.85 um, so effective radius = deff/2 = 9.08 um. This step is ARITHMETIC PERFORMED HERE, not quoted from the paper.",
+      "damage_class": "permanent >=10% loss of pixel responsivity; NOT dead pixels, NOT reversible saturation, NOT catastrophic destruction. Line damage on the same device requires 196 kW/cm2.",
+      "sensor_tested": "Aptina MT9V024, 6 um pixels, 2010-era machine-vision CMOS -- not a modern consumer sensor."
+    },
+    "cross_check": "NOT AVAILABLE. Yoon et al. (2016), J. Korea Inst. Mil. Sci. Tech. 19(6) 690, is CW on a silicon imager but states verbatim that 'the laser intensity is presented as a relative value for reasons of security'. Kim et al. (2015), Trans. KSME A 39(1) 105, is CW on CMOS but paywalled. Westgate & James (2022), Sensors 22, 2526, doi 10.3390/s22072526, is 9 ns PULSED and cannot be rescaled by a steady-state conduction argument. So NO spread can be quoted from a second absolute measurement.",
+    "qualitative_agreement": "Yoon et al. (2016) and Kim et al. (2015) both report, for CW irradiation of silicon imagers, that the colour filter fails FIRST and electrical breakdown second, and Kim et al. add that the damage is governed more by irradiance than by irradiation time."
+  },
+  "stack_thermal_limits": {
+    "microlens_reflow_C": [
+      125,
+      150
+    ],
+    "microlens_sources": [
+      "Hwang, S.-K. et al. (2009), Korean J. Optics and Photonics 20(2) 118, doi 10.3807/HKH.2009.20.2.118 -- verbatim: thermal reflow at 150 C for about 5 minutes",
+      "Kim, S. H. et al. (2013), J. Microelectronics and Packaging Society 20(2) 23, doi 10.6117/KMEPS.2013.20.2.023 -- verbatim: when the reflow process was carried out on a hot plate at 125 C for 4 minutes, the hemispherical shape appeared"
+    ],
+    "microlens_note": "A photoresist microlens is FORMED by melting it, so its reflow temperature is by construction the temperature at which it loses its shape. This is the lowest temperature of any element in the stack. Both sources are photoresist microlens arrays, not image-sensor microlenses specifically; same class of novolac photoresist.",
+    "cfa_postbake_C": [
+      150,
+      250
+    ],
+    "cfa_source": "Nemoto & Sasaki, US patent 8,053,149 B2 (Fujifilm) -- verbatim: heating the coating film which has been irradiated with ultraviolet radiation at 100 C to 300 C [...] preferably, from 150 to 250 C",
+    "cfa_note": "CRITICAL READING: these are MANUFACTURING POST-BAKE temperatures, i.e. temperatures the colour filter demonstrably SURVIVES. They are a lower bound on survival, NOT a degradation threshold. An earlier version of this paper quoted 150-250 C as a CFA *degradation* range, which points the wrong way. A quantitative CFA bleaching temperature: NOT FOUND.",
+    "sensor_datasheet_C": {
+      "part": "OmniVision OV5647",
+      "operating_max_C": 70,
+      "storage_absolute_max_C": 125,
+      "stable_image_max_C": 50,
+      "quote": "ambient storage temperature -40C to +125C ; operating temperature range -30C to +70C ; stable image temperature range 0C to +50C",
+      "note": "Absolute maximum rating is a do-not-exceed reliability limit, not a damage temperature. Sony IMX and ON Semi AR datasheets are not public."
+    }
+  },
+  "shutter_curtain_claim": {
+    "status": "NOT SUPPORTED BY ANY CITABLE SOURCE",
+    "searched": "Crossref and OpenAlex literature searches, NASA eclipse safety, AAS eclipse task force, Nikon/Espenak solar photography guidance, Espenak mreclipse.com.",
+    "finding": "No peer-reviewed study of solar-concentration damage to a camera shutter curtain, focal-plane shutter, reflex mirror or focusing screen was located. Every authoritative source that addresses camera damage names the SENSOR or the EYE.",
+    "quote_nikon": "You also need to use a 'solar filter' to keep from harming your camera's imaging sensor. [Espenak, F., 'How to Photograph a Solar Eclipse', Nikon Inc. Learn & Explore]",
+    "quote_nasa": "Viewing any part of the bright Sun through a camera lens, binoculars, or a telescope without a special-purpose solar filter secured over the front of the optics will instantly cause severe eye injury. [NASA Science, Eclipse Viewing Safety]",
+    "consequence": "The paper must not assert the shutter/focusing-screen failure mode as established. It rests on this paper's own thin-plate calculation alone, and the guidance that does exist points at the sensor and the eye."
+  },
+  "ozone_woudc": {
+    "station": "Zaragoza (WOUDC 411, GAW ZAR), Brewer MKIV, AEMET",
+    "lat": 41.628,
+    "lon": -0.912,
+    "distance_to_site_km": 136,
+    "n_august_days": 630,
+    "years": [
+      "2001",
+      "2024"
+    ],
+    "august_mean_DU": 309.29730158730155,
+    "august_median_DU": 308.0,
+    "august_sd_DU": 12.439237717655407,
+    "august_min_DU": 280.2,
+    "august_max_DU": 364.2,
+    "aug8_16_mean_DU": 310.94497354497355,
+    "aug8_16_sd_DU": 13.840740764840197,
+    "aug8_16_n": 189,
+    "source": "WOUDC OGC API, collection totalozone, station_id=411",
+    "url": "https://api.woudc.org/collections/totalozone/items?station_id=411",
+    "note": "Measured, not assumed. Replaces the 0.30 atm-cm placeholder the earlier version of this paper declared as NOT RETRIEVED."
+  }
+}

@@ -1,0 +1,8 @@
+{
+ "hot_iso12800": 0,
+ "hot_iso100": 1,
+ "n_pixels": 24216480,
+ "fraction_iso12800": 0.0,
+ "fraction_iso100": 4.1294193045397185e-08,
+ "note": "Persistent >50 sigma in two consecutive frames. NO before-eclipse baseline exists, so this is an absolute count, not a change."
+}

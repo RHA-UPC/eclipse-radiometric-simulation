@@ -1,0 +1,42 @@
+[
+ {
+  "key": "espenak2006",
+  "url": "https://eclipse.gsfc.nasa.gov/SEbeselm/SEbeselm2001/SE2026Aug12Tbeselm.html",
+  "status": "HTTP 200"
+ },
+ {
+  "key": "imo2026",
+  "url": "https://www.imo.net/files/meteor-shower/cal2026.pdf",
+  "status": "HTTP 200"
+ },
+ {
+  "key": "cams",
+  "url": "https://air-quality-api.open-meteo.com",
+  "status": "HTTP 400"
+ },
+ {
+  "key": "nemoto2011",
+  "url": "https://patents.google.com/patent/US8053149B2/en",
+  "status": "HTTP 200"
+ },
+ {
+  "key": "nikonespenak",
+  "url": "https://www.nikonusa.com/learn-and-explore/a/tips-and-techniques/how-to-photograph-a-solar-eclipse.html",
+  "status": "HTTP 200"
+ },
+ {
+  "key": "nasasafety",
+  "url": "https://science.nasa.gov/eclipses/safety/",
+  "status": "HTTP 200"
+ },
+ {
+  "key": "woudc",
+  "url": "https://api.woudc.org/collections/totalozone/items?station_id=411",
+  "status": "HTTP 200"
+ },
+ {
+  "key": "aas",
+  "url": "https://eclipse.aas.org/eye-safety",
+  "status": "HTTP 200"
+ }
+]

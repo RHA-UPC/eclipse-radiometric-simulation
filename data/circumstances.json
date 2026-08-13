@@ -1,0 +1,131 @@
+{
+  "ephemeris": "JPL DE440s",
+  "lunar_radius_convention": {
+    "k1_penumbral": 0.272488,
+    "k2_umbral": 0.272281,
+    "R_moon_penumbral_km": 1737.9656858608,
+    "R_moon_umbral_km": 1736.6454115846,
+    "applied": "k1 for C1/C4, k2 for C2/C3, as in NASA's Besselian elements",
+    "source": "NASA Besselian elements SE2026Aug12T (see literature.json)"
+  },
+  "site": {
+    "lat_deg": 41.212878,
+    "lon_deg": 0.709488,
+    "elev_m": 616.1
+  },
+  "delta_t_s": 69.0990088714302,
+  "contacts": {
+    "C1": {
+      "utc": "2026-08-12T17:35:27.6Z",
+      "local_cest": "2026-08-12 19:35:27.5 CEST",
+      "tt_jd": 2461265.23375889,
+      "sep_arcsec": 1927.9602464234865,
+      "r_sun_arcsec": 946.6576132225555,
+      "r_moon_arcsec": 981.3026267613454,
+      "sun_alt_geometric_deg": 14.649517244698655,
+      "sun_alt_refracted_deg": 14.70424031722926,
+      "sun_az_deg": 277.012108802015,
+      "magnitude": 0.0,
+      "obscuration": 0.0,
+      "d_sun_km": 151584825.8885322,
+      "d_moon_km": 365312.89938321686
+    },
+    "C2": {
+      "utc": "2026-08-12T18:29:25.6Z",
+      "local_cest": "2026-08-12 20:29:25.6 CEST",
+      "tt_jd": 2461265.2712364728,
+      "sep_arcsec": 30.71869633528365,
+      "r_sun_arcsec": 946.656769374723,
+      "r_moon_arcsec": 977.3754692971363,
+      "sun_alt_geometric_deg": 4.696891213318812,
+      "sun_alt_refracted_deg": 4.846351319193476,
+      "sun_az_deg": 285.5774534024135,
+      "magnitude": 1.0324496701615553,
+      "obscuration": 1.0,
+      "d_sun_km": 151584961.00997514,
+      "d_moon_km": 366502.10801094293
+    },
+    "MAX": {
+      "utc": "2026-08-12T18:29:59.9Z",
+      "local_cest": "2026-08-12 20:29:59.8 CEST",
+      "tt_jd": 2461265.271632658,
+      "sep_arcsec": 22.052320700223625,
+      "r_sun_arcsec": 946.6567608416999,
+      "r_moon_arcsec": 977.3420330488058,
+      "sun_alt_geometric_deg": 4.593469697034025,
+      "sun_alt_refracted_deg": 4.745430950859683,
+      "sun_az_deg": 285.66899605707596,
+      "magnitude": 1.0324143591176835,
+      "obscuration": 1.0,
+      "d_sun_km": 151584962.37632978,
+      "d_moon_km": 366514.6464707329
+    },
+    "C3": {
+      "utc": "2026-08-12T18:30:35.9Z",
+      "local_cest": "2026-08-12 20:30:35.9 CEST",
+      "tt_jd": 2461265.2720498266,
+      "sep_arcsec": 30.65008918893255,
+      "r_sun_arcsec": 946.6567518810393,
+      "r_moon_arcsec": 977.3068362847089,
+      "sun_alt_geometric_deg": 4.484620564439401,
+      "sun_alt_refracted_deg": 4.639297206882778,
+      "sun_az_deg": 285.76542981282347,
+      "magnitude": 0.9999999974725458,
+      "obscuration": 0.9999999999992358,
+      "d_sun_km": 151584963.81116018,
+      "d_moon_km": 366527.8460438155
+    },
+    "C4": {
+      "utc": "2026-08-12T19:21:19.2Z",
+      "local_cest": "2026-08-12 21:21:19.1 CEST",
+      "tt_jd": 2461265.3072729255,
+      "sep_arcsec": 1921.7905423167913,
+      "r_sun_arcsec": 946.6561386244224,
+      "r_moon_arcsec": 975.1344071912905,
+      "sun_alt_geometric_deg": -4.484820933943137,
+      "sun_alt_refracted_deg": -4.484820933943137,
+      "sun_az_deg": 294.13236677294447,
+      "magnitude": 1.8480426740853533e-09,
+      "obscuration": 4.710777056388486e-13,
+      "d_sun_km": 151585062.0092551,
+      "d_moon_km": 367623.67132558
+    }
+  },
+  "totality_duration_s": 70.27376890182495,
+  "totality_duration_s_k_physical_1737.4km": 72.2692921757698,
+  "totality_duration_s_k_legacy_0.2725076": 74.07185733318329,
+  "totality_duration_s_k1_penumbral": 73.74721616506577,
+  "partial_duration_s": 6351.612661778927,
+  "twilight_events": [
+    {
+      "utc": "2026-08-12T19:00:21Z",
+      "local_cest": "21:00:20",
+      "to_state": "Civil twilight"
+    },
+    {
+      "utc": "2026-08-12T19:30:12Z",
+      "local_cest": "21:30:11",
+      "to_state": "Nautical twilight"
+    },
+    {
+      "utc": "2026-08-12T20:06:37Z",
+      "local_cest": "22:06:36",
+      "to_state": "Astronomical twilight"
+    },
+    {
+      "utc": "2026-08-12T20:46:00Z",
+      "local_cest": "22:46:00",
+      "to_state": "Night"
+    },
+    {
+      "utc": "2026-08-13T03:18:43Z",
+      "local_cest": "05:18:43",
+      "to_state": "Astronomical twilight"
+    },
+    {
+      "utc": "2026-08-13T03:58:08Z",
+      "local_cest": "05:58:07",
+      "to_state": "Nautical twilight"
+    }
+  ]
+}

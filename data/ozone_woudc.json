@@ -1,0 +1,21 @@
+{
+  "station": "Zaragoza (WOUDC 411, GAW ZAR), Brewer MKIV, AEMET",
+  "lat": 41.628,
+  "lon": -0.912,
+  "distance_to_site_km": 136,
+  "n_august_days": 630,
+  "years": [
+    "2001",
+    "2024"
+  ],
+  "august_mean_DU": 309.29730158730155,
+  "august_median_DU": 308.0,
+  "august_sd_DU": 12.439237717655407,
+  "august_min_DU": 280.2,
+  "august_max_DU": 364.2,
+  "aug8_16_mean_DU": 310.94497354497355,
+  "aug8_16_sd_DU": 13.840740764840197,
+  "aug8_16_n": 189,
+  "source": "WOUDC OGC API, collection totalozone, station_id=411",
+  "url": "https://api.woudc.org/collections/totalozone/items?station_id=411"
+}

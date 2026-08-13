@@ -1,0 +1,46 @@
+{
+ "camera": "Canon EOS 200D",
+ "lens": "TAMRON 16-300mm F/3.5-6.3 Di II VC PZD B016",
+ "n_files": 23,
+ "n_jpeg": 12,
+ "n_cr2": 11,
+ "window_camera_clock": [
+  "20:06:03",
+  "20:39:56"
+ ],
+ "partial_phase_settings": "300 mm, f/40 (minimum aperture of the lens at that focal length), 1/4000 s, ISO 100",
+ "wide_frames": "16 mm, f/22, 1/4000 s, ISO 100 (two frames at 20:22)",
+ "corona_sequence_camera": [
+  "20:32:45",
+  "20:33:26"
+ ],
+ "corona_sequence_span_s": 41,
+ "clock_offset_bracket_s": [
+  171,
+  200
+ ],
+ "clock_offset_midpoint_s": 185.5,
+ "clock_offset_method": "Ordering constraint only. The corona sequence must lie inside totality, so the offset is bounded by [t_last - C3, t_first - C2]. No photometric model is involved, which is why it is robust; the area photometry was defeated by saturation blooming.",
+ "luminance_jump": "Scene luminance normalised by ISO, exposure time and f-number rises by a factor 1600 between the last corona frame and the first post-eclipse frame at identical settings, and by 32x between two frames at IDENTICAL exposure (f/20, 1/250 s, ISO 800). That jump is third contact.",
+ "plate_scale_check": {
+  "predicted_solar_radius_px": 86.4,
+  "measured_best_frame_px": 86.5,
+  "note": "Independent confirmation of the optical chain: sensor pitch 3.717 um from the Canon spec, focal length 300 mm from EXIF, solar angular radius 946.66 arcsec from DE440s."
+ },
+ "hot_pixels": {
+  "iso12800_persistent": 0,
+  "iso100_persistent": 1,
+  "n_pixels": 24216480,
+  "caveat": "No pre-eclipse baseline exists, so this is an absolute count and not a change. More important: the CW damage mode Schwarz et al. report is a LOSS OF RESPONSIVITY visible in flat fields, not a hot pixel in a dark frame. These images cannot test for it."
+ },
+ "what_this_validates": [
+  "the hardware modelled is the hardware used",
+  "the plate scale, to 0.1 %",
+  "totality lasted at least 41 s, consistent with the predicted 70.3 s",
+  "the observer shot the partial phases at f/40, far below the worst case modelled at f/6.3"
+ ],
+ "what_this_does_not_validate": [
+  "absolute contact times, because the camera clock was unsynchronised by about three minutes",
+  "the absence of responsivity loss, which needs a flat field"
+ ]
+}

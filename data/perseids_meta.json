@@ -1,0 +1,14 @@
+{
+  "radiant_ra_deg": 47.4,
+  "radiant_dec_deg": 57.4,
+  "radiant_alt_deg_at_max": 9.183588499364628,
+  "radiant_az_deg_at_max": 6.2393714651276255,
+  "solar_longitude_deg_at_max": 139.69391792610267,
+  "imo_max_solar_longitude": [
+    140.0,
+    140.1
+  ],
+  "totality_duration_s": 70.27376890182495,
+  "sun_az_deg_at_max": 285.66899605707596,
+  "angular_distance_radiant_to_sun_deg": 79.95713146674011
+}

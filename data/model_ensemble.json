@@ -1,0 +1,26 @@
+{
+  "C1": {
+    "alt": 14.49,
+    "airmass": 3.94,
+    "spectrl2": 484.8,
+    "bird_hulstrom": 462.7,
+    "ineichen_perez": 383.9,
+    "spread_ratio": 1.26
+  },
+  "minus30min": {
+    "alt": 10.17,
+    "airmass": 5.5,
+    "spectrl2": 374.9,
+    "bird_hulstrom": 349.1,
+    "ineichen_perez": 252.1,
+    "spread_ratio": 1.49
+  },
+  "max": {
+    "alt": 4.75,
+    "airmass": 10.75,
+    "spectrl2": 185.7,
+    "bird_hulstrom": 154.4,
+    "ineichen_perez": 61.1,
+    "spread_ratio": 3.04
+  }
+}

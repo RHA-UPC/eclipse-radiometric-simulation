@@ -1,0 +1,85 @@
+{
+  "_README": "Same-day atmospheric state at the observing site. All values retrieved from operational analyses/forecasts on 2026-08-12, not assumed.",
+  "site": [
+    41.212878,
+    0.709488
+  ],
+  "retrieved_utc": "2026-08-12T04:5x (this session)",
+  "sources": {
+    "aerosol": "Copernicus Atmosphere Monitoring Service (CAMS) global/European forecast, served via the Open-Meteo Air Quality API (https://air-quality-api.open-meteo.com/v1/air-quality). Variable: aerosol_optical_depth (550 nm).",
+    "meteo": "ECMWF IFS / DWD ICON forecast served via the Open-Meteo Forecast API (https://api.open-meteo.com/v1/forecast). Variables: total_column_integrated_water_vapour, surface_pressure, temperature_2m, relative_humidity_2m, cloud_cover*, visibility.",
+    "ozone": "WOUDC (World Ozone and UV Radiation Data Centre) OGC API, collection 'totalozone', station_id 411 Zaragoza, contributor AEMET. Full 7711-record series downloaded and filtered locally. https://api.woudc.org/collections/totalozone/items?station_id=411"
+  },
+  "hourly_utc": {
+    "16:00": {
+      "aod550": 0.16,
+      "dust_ug_m3": 5.0,
+      "pm10_ug_m3": 14.4,
+      "tcwv_kg_m2": 29.3,
+      "p_surface_hPa": 950.3,
+      "T_2m_C": 32.2,
+      "RH_pct": 38,
+      "cloud_total_pct": 0,
+      "cloud_low_pct": 0,
+      "cloud_mid_pct": 0,
+      "cloud_high_pct": 0,
+      "visibility_m": 42980
+    },
+    "17:00": {
+      "aod550": 0.16,
+      "dust_ug_m3": 5.0,
+      "pm10_ug_m3": 14.0,
+      "tcwv_kg_m2": 27.7,
+      "p_surface_hPa": 950.1,
+      "T_2m_C": 30.4,
+      "RH_pct": 45,
+      "cloud_total_pct": 0,
+      "cloud_low_pct": 0,
+      "cloud_mid_pct": 0,
+      "cloud_high_pct": 0,
+      "visibility_m": 41660
+    },
+    "18:00": {
+      "aod550": 0.16,
+      "dust_ug_m3": 5.0,
+      "pm10_ug_m3": 16.1,
+      "tcwv_kg_m2": 27.6,
+      "p_surface_hPa": 949.9,
+      "T_2m_C": 28.3,
+      "RH_pct": 53,
+      "cloud_total_pct": 0,
+      "cloud_low_pct": 0,
+      "cloud_mid_pct": 0,
+      "cloud_high_pct": 0,
+      "visibility_m": 40880
+    },
+    "19:00": {
+      "aod550": 0.16,
+      "dust_ug_m3": 5.0,
+      "pm10_ug_m3": 15.2,
+      "tcwv_kg_m2": 26.1,
+      "p_surface_hPa": 949.7,
+      "T_2m_C": 26.4,
+      "RH_pct": 55,
+      "cloud_total_pct": 0,
+      "cloud_low_pct": 0,
+      "cloud_mid_pct": 0,
+      "cloud_high_pct": 0,
+      "visibility_m": 40880
+    }
+  },
+  "adopted_for_eclipse_window": {
+    "aod550": 0.16,
+    "aod500": 0.1784,
+    "aod500_note": "Converted from the CAMS 550 nm value with the Angstrom law AOD(500) = AOD(550) * (550/500)^alpha_A using alpha_A = 1.14, the default Angstrom exponent of the Bird & Riordan (1984) SPECTRL2 model. Sensitivity to alpha_A in [0.8, 1.6] is reported in the paper.",
+    "precipitable_water_cm": 2.76,
+    "precipitable_water_note": "TCWV 27.6 kg m^-2 at 18:00 UTC; 1 kg m^-2 of column water = 0.1 cm of precipitable water by definition (rho_water = 1000 kg m^-3).",
+    "p_surface_Pa": 94990.0,
+    "T_air_C": 28.3,
+    "ozone_atm_cm": 0.3109,
+    "ozone_note": "Measured climatology, no longer assumed. WOUDC station 411 (Zaragoza, GAW ZAR), Brewer MKIV spectrophotometer operated by AEMET, 41.628 N 0.912 W, 136 km from the site and at essentially the same latitude. Daily total column over the 8-16 August window across 2001-2024: n = 189 days, mean 310.9 DU, sd 13.8 DU. The whole-August set (n = 630) gives 309.3 +- 12.4 DU, range 280.2-364.2. Adopted value 0.3109 atm-cm. Sensitivity: moving from the previously assumed 0.300 atm-cm to this measured value changes the direct beam by -0.09 % and the blue-weighted corneal irradiance by -0.03 %; spanning the full historical range 280-364 DU changes them by under 0.7 %. Ozone is therefore confirmed to be irrelevant to every conclusion in this study, which is now demonstrated rather than asserted.",
+    "cloud_cover_pct": 0,
+    "ground_albedo": 0.2,
+    "ground_albedo_note": "Dry Mediterranean scrub/vineyard terrain. Affects only the diffuse/ground-reflected component, never the direct beam that a lens focuses or an eye fixates; all safety conclusions in this paper rest on the direct beam."
+  }
+}

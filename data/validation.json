@@ -1,0 +1,87 @@
+{
+  "V1_spectrl2_vs_astm_g173": {
+    "spectrl2_dni_AM1.5": 918.9247007104616,
+    "astm_g173_reference": 900.1,
+    "rel_error_pct": 2.091401034380799,
+    "airmass_used": 1.4979772136552638,
+    "pass": true
+  },
+  "V2_central_line_vs_nasa": {
+    "rows": [
+      {
+        "ut": "18:26",
+        "nasa_published_s": 113.0,
+        "besselian_reimplementation_s": 113.01,
+        "diff_s": 0.01
+      },
+      {
+        "ut": "18:28",
+        "nasa_published_s": 109.3,
+        "besselian_reimplementation_s": 109.32,
+        "diff_s": 0.02
+      },
+      {
+        "ut": "18:30",
+        "nasa_published_s": 104.6,
+        "besselian_reimplementation_s": 104.56,
+        "diff_s": -0.04
+      },
+      {
+        "ut": "18:32",
+        "nasa_published_s": 95.8,
+        "besselian_reimplementation_s": 95.81,
+        "diff_s": 0.01
+      }
+    ],
+    "worst_abs_diff_s": 0.04,
+    "pass": true,
+    "criterion": "reproduce NASA central-line durations to better than 1.5 s"
+  },
+  "V2_besselian_contacts_UT_hours": {
+    "C1": 17.590054996596198,
+    "C4": 19.354837393222937,
+    "C2": 18.489950584170384,
+    "C3": 18.509078031146473,
+    "totality_s": 68.85880911392093
+  },
+  "V3_geometry": {
+    "sun_semidiameter_arcsec": 946.6567608416999,
+    "sun_distance_au": 1.013282887430361,
+    "implied_semidiameter_at_1au": 959.2310960311504,
+    "expected_959.63": 959.63,
+    "pass": true
+  },
+  "V4_airmass_spread": {
+    "alt_4.75_deg": {
+      "kastenyoung1989": 10.745625682219327,
+      "young1994": 10.46779100734019,
+      "pickering2002": 10.779484475124418,
+      "gueymard2003": 10.74900833999519,
+      "kasten1966": 10.766989703655499,
+      "spread_pct": 2.9125385907366743
+    },
+    "alt_10.00_deg": {
+      "kastenyoung1989": 5.5860358798512,
+      "young1994": 5.540701916591328,
+      "pickering2002": 5.5807371486818935,
+      "gueymard2003": 5.589713264902096,
+      "kasten1966": 5.580338946821966,
+      "spread_pct": 0.8790476292071071
+    },
+    "alt_15.26_deg": {
+      "kastenyoung1989": 3.7512356108181475,
+      "young1994": 3.7353713025253232,
+      "pickering2002": 3.7465911896177926,
+      "gueymard2003": 3.753321087367138,
+      "kasten1966": 3.746550671047471,
+      "spread_pct": 0.4790935221680884
+    }
+  },
+  "V2_vs_DE440s_seconds": {
+    "C1": -3.4020122536787767,
+    "C2": -1.7778969866242278,
+    "C3": -3.219087872692228,
+    "C4": -1.7853843974307892
+  },
+  "V2_totality_DE440s_s": 70.27376890182495
+}

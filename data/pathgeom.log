@@ -1,0 +1,61 @@
+{
+  "duration_at_site_s": 70.27376890182495,
+  "limits_km_north_of_site": {
+    "north_limit_km_due_north": 47.845133912904515,
+    "south_limit_km_due_north": -268.9790925802953,
+    "miss_at_site_rad": -4.188950894861671e-05,
+    "grad_per_km": {
+      "north": 8.805732420242749e-07,
+      "east": 4.757274076087206e-07,
+      "norm": 1.000862528481937e-06
+    },
+    "perpendicular_distance_to_limit_km": 41.8534091911232,
+    "limit_bearing_deg": 28.38002005529637
+  },
+  "centre_line_offset_km_north": -115.06333544988176,
+  "centre_line_duration_s": 100.12124329805374,
+  "gradient_s_per_km_north": -0.6164722144603729,
+  "sensitivity": {
+    "duration_with_k2_0.272281_s": 70.27376890182495,
+    "duration_with_physical_R1737.4_s": 72.2692921757698,
+    "duration_if_deltaT_were_NASA_71.4_s": 70.00839114189148,
+    "note": "A Delta-T error of 2.23 s is equivalent to displacing the observer 0.78 km east along the parallel."
+  }
+}
+
+scan (km north -> s):
+  -260.0   34.11
+  -250.0   48.67
+  -240.0   59.02
+  -230.0   67.13
+  -220.0   73.75
+  -210.0   79.27
+  -200.0   83.90
+  -190.0   87.80
+  -180.0   91.05
+  -170.0   93.74
+  -160.0   95.91
+  -150.0   97.60
+  -140.0   98.85
+  -130.0   99.67
+  -120.0  100.07
+  -110.0  100.07
+  -100.0   99.67
+   -90.0   98.88
+   -80.0   97.67
+   -70.0   96.05
+   -60.0   94.00
+   -50.0   91.49
+   -40.0   88.49
+   -30.0   84.95
+   -20.0   80.80
+   -10.0   75.96
+    +0.0   70.27
+   +10.0   63.54
+   +20.0   55.37
+   +30.0   45.00
+   +40.0   30.28
+   +50.0    0.00
+   +60.0    0.00
+   +70.0    0.00
+   +80.0    0.00

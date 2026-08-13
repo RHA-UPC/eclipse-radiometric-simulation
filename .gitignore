@@ -1,0 +1,30 @@
+# --- Datos personales. Nunca se publican. --------------------------------
+# Las fotografías llevan el número de serie del cuerpo en el MakerNote de
+# Canon. El análisis de docs/PHOTOS.md no las necesita: vive en los JSON
+# derivados de data/, que solo contienen modelo, óptica, tiempo, f e ISO.
+fotografias/
+*.CR2
+*.cr2
+*.NEF
+*.ARW
+
+# --- Datos de terceros que se descargan solos ----------------------------
+# Skyfield los vuelve a bajar de NAIF y del IERS en la primera ejecución.
+data/de440s.bsp
+data/finals2000A.all
+
+# --- Entorno y compilación -----------------------------------------------
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/*.bbl
+paper/*.blg

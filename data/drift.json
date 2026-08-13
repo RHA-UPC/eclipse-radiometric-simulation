@@ -1,0 +1,43 @@
+{
+  "drift_arcsec_per_s": 14.3052,
+  "drift_alt_arcsec_per_s": -10.6084,
+  "drift_az_arcsec_per_s": 9.5969,
+  "pixel_pitch_um": 3.717,
+  "per_focal": {
+    "16": {
+      "arcsec_per_pixel": 47.918,
+      "max_exposure_1px_s": 3.35,
+      "max_exposure_3px_s": 10.05
+    },
+    "24": {
+      "arcsec_per_pixel": 31.945,
+      "max_exposure_1px_s": 2.23,
+      "max_exposure_3px_s": 6.7
+    },
+    "35": {
+      "arcsec_per_pixel": 21.905,
+      "max_exposure_1px_s": 1.53,
+      "max_exposure_3px_s": 4.59
+    },
+    "50": {
+      "arcsec_per_pixel": 15.334,
+      "max_exposure_1px_s": 1.07,
+      "max_exposure_3px_s": 3.22
+    },
+    "100": {
+      "arcsec_per_pixel": 7.667,
+      "max_exposure_1px_s": 0.54,
+      "max_exposure_3px_s": 1.61
+    },
+    "200": {
+      "arcsec_per_pixel": 3.833,
+      "max_exposure_1px_s": 0.27,
+      "max_exposure_3px_s": 0.8
+    },
+    "300": {
+      "arcsec_per_pixel": 2.556,
+      "max_exposure_1px_s": 0.18,
+      "max_exposure_3px_s": 0.54
+    }
+  }
+}

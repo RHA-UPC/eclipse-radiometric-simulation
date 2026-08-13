@@ -1,0 +1,98 @@
+[
+ {
+  "key": "kastenyoung1989",
+  "doi": "10.1364/AO.28.004735",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Revised optical air mass tables and approximation formula"
+ },
+ {
+  "key": "birdriordan1984",
+  "doi": "10.2172/5986936",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Simple solar spectral model for direct and diffuse irradiance on horizontal and tilted planes at the earth's surface for cloudless atmospheres"
+ },
+ {
+  "key": "birdhulstrom1981",
+  "doi": "10.2172/6510849",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Simplified clear sky model for direct and diffuse insolation on horizontal surfaces"
+ },
+ {
+  "key": "icnirp2013",
+  "doi": "10.1097/HP.0b013e318289a611",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "ICNIRP Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation"
+ },
+ {
+  "key": "glassbrenner1964",
+  "doi": "10.1103/PhysRev.134.A1058",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Thermal Conductivity of Silicon and Germanium from 3°K to the Melting Point"
+ },
+ {
+  "key": "kopplean2011",
+  "doi": "10.1029/2010GL045777",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "A new, lower value of total solar irradiance: Evidence and climate significance"
+ },
+ {
+  "key": "de440",
+  "doi": "10.3847/1538-3881/abd414",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "The JPL Planetary and Lunar Ephemerides DE440 and DE441"
+ },
+ {
+  "key": "copdem",
+  "doi": "10.5270/ESA-c5d3d65",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Copernicus DEM"
+ },
+ {
+  "key": "pvlib",
+  "doi": "10.21105/joss.05994",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "pvlib python: 2023 project update"
+ },
+ {
+  "key": "astmg173",
+  "doi": "10.1520/G0173-03R20",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Tables for Reference Solar Spectral Irradiances: Direct Normal and Hemispherical on 37 Tilted Surface"
+ },
+ {
+  "key": "schwarz2017",
+  "doi": "10.1117/1.OE.56.3.034108",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Laser-induced damage threshold of camera sensors and micro-optoelectromechanical systems"
+ },
+ {
+  "key": "westgate2022",
+  "doi": "10.3390/s22072526",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Visible-Band Nanosecond Pulsed Laser Damage Thresholds of Silicon 2D Imaging Arrays"
+ },
+ {
+  "key": "yoon2016",
+  "doi": "10.9766/KIMST.2016.19.6.690",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Damage Analysis of CCD Image Sensor Irradiated by Continuous Wave Laser"
+ },
+ {
+  "key": "kim2015",
+  "doi": "10.3795/KSME-A.2015.39.1.105",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "High-Power Continuous-Wave Laser-Induced Damage to Complementary Metal-Oxide Semiconductor Image Sensor"
+ },
+ {
+  "key": "hwang2009",
+  "doi": "10.3807/HKH.2009.20.2.118",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Fabrication of Microlens Array Using Photoresist Thermal Reflow"
+ },
+ {
+  "key": "kim2013",
+  "doi": "10.6117/KMEPS.2013.20.2.023",
+  "status": "RESUELVE (Crossref)",
+  "registered_title": "Shape Error and Its Compensation in the Fabrication of Microlens Array Using Photoresist Thermal Reflow Method"
+ }
+]
