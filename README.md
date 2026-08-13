@@ -102,6 +102,12 @@ CC BY-NC 4.0 para todo lo creado aquí. Los datos de terceros conservan sus
 propios términos: **lee [`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) antes de
 reutilizar nada.**
 
-Aviso: las licencias Creative Commons no están diseñadas para software, y la
-propia Creative Commons desaconseja usarlas con código. La cláusula no comercial
-tampoco cumple la definición de código abierto de la OSI.
+Tres avisos sobre esta elección:
+
+- Creative Commons desaconseja usar sus licencias con código, porque no cubren
+  cuestiones propias del software como la concesión de patentes.
+- La cláusula no comercial no cumple la definición de código abierto de la OSI,
+  así que este repositorio no es software libre en sentido estricto.
+- GitHub muestra el repositorio sin etiqueta de licencia. Su detector solo
+  reconoce el conjunto curado de `choosealicense.com`, donde CC BY-NC no
+  aparece. `LICENSE` contiene el texto canónico íntegro y es lo que rige.
