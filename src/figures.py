@@ -1,3 +1,18 @@
+# eclipse-radiometric-simulation
+# Copyright (C) 2026 Ricardo Heredia Alessandrello
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License, version 3, as published
+# by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details. You should have received a copy of it along with this program; if
+# not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """All figures for the paper. Every panel is drawn from the CSV/JSON products
 of the other modules; nothing is drawn from a hand-typed number.
 """

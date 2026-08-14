@@ -32,10 +32,10 @@ if echo "$tracked" | grep -qE 'de440s\.bsp|finals2000A\.all'; then
 fi
 
 # 5) Correo electrónico en el contenido (el del commit es otra cosa).
-if echo "$tracked" | xargs -r grep -lIE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' 2>/dev/null \
-   | grep -vE '^(LICENSE|THIRD-PARTY-DATA\.md|paper/paper\.tex)$' | grep -q .; then
-  report "hay una dirección de correo en un archivo rastreado"
-fi
+# example.com/net/org están reservados por la RFC 2606 y son marcadores válidos.
+found=$(echo "$tracked" | xargs -r grep -hoIE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' 2>/dev/null \
+        | grep -vE '@example\.(com|net|org)$' | sort -u)
+[ -n "$found" ] && report "hay direcciones de correo reales en el índice: $(echo $found)"
 
 [ $fail -eq 0 ] && echo "OK: nada que comprometa la privacidad en el índice"
 exit $fail

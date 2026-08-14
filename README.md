@@ -96,18 +96,46 @@ Tres cosas quedan abiertas y el manuscrito lo dice:
 - La afirmación de que la cortinilla del obturador corre más peligro que el
   sensor no tiene respaldo revisado por pares. La búsqueda se hizo y falló.
 
+## Hacia dónde va
+
+Hoy calcula un eclipse en un punto. La intención es que calcule cualquier
+eclipse en cualquier punto, y que acabe siendo una plataforma donde alguien
+introduzca sus coordenadas y su equipo y obtenga su propio análisis.
+
+Lo que bloquea ese salto está desglosado en [`ROADMAP.md`](ROADMAP.md):
+`pathgeom.py` tarda entre treinta y sesenta minutos, `terrain.py` lee el DEM por
+HTTP en cada consulta, y el emplazamiento vive escrito en `siteconf.py`.
+
+## Contribuir
+
+Bienvenidas las correcciones, sobre todo si traen el caso que las destapa. Lee
+[`CONTRIBUTING.md`](CONTRIBUTING.md) primero: hay una regla que se aplica sin
+excepción, y es que ninguna cifra entra sin procedencia.
+
+Toda contribución exige firmar [`CLA.md`](CLA.md), que cede al titular los
+derechos necesarios para poder ofrecer el proyecto bajo otras licencias.
+
+## Seguridad
+
+[`SAFETY.md`](SAFETY.md) es de lectura obligada antes de usar cualquier número
+de aquí para decidir qué hacer con tus ojos o con tu cámara. Los tiempos de
+exposición que calcula este proyecto son el resultado de aplicar las ecuaciones
+de ICNIRP bajo hipótesis declaradas, no una recomendación.
+
 ## Licencia
 
-CC BY-NC 4.0 para todo lo creado aquí. Los datos de terceros conservan sus
-propios términos: **lee [`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) antes de
-reutilizar nada.**
+Código bajo **AGPL-3.0-only**, texto y figuras bajo **CC BY-SA 4.0**. El detalle
+de qué cubre qué está en [`LICENSES.md`](LICENSES.md).
 
-Tres avisos sobre esta elección:
+La AGPL se eligió porque el proyecto apunta a ser una plataforma web: su sección
+13 obliga a publicar el código a quien ofrezca una versión modificada por red,
+cosa que la GPL no hace.
 
-- Creative Commons desaconseja usar sus licencias con código, porque no cubren
-  cuestiones propias del software como la concesión de patentes.
-- La cláusula no comercial no cumple la definición de código abierto de la OSI,
-  así que este repositorio no es software libre en sentido estricto.
-- GitHub muestra el repositorio sin etiqueta de licencia. Su detector solo
-  reconoce el conjunto curado de `choosealicense.com`, donde CC BY-NC no
-  aparece. `LICENSE` contiene el texto canónico íntegro y es lo que rige.
+Los datos de terceros conservan sus propios términos y no se relicencian: **lee
+[`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) antes de reutilizar nada.**
+
+## Legal texts in English
+
+`CLA.en.md`, `CONTRIBUTING.en.md`, `LICENSES.en.md` and `SAFETY.en.md` are
+English translations, provided so contributors anywhere can read what they are
+agreeing to. The Spanish versions remain authoritative.

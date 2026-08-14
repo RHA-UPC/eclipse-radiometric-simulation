@@ -49,9 +49,27 @@ reproducibilidad del perfil de horizonte depende de ellas.
 
 ### 3. Licencias
 
-`LICENSE` es el texto canónico de CC BY-NC 4.0 y cubre lo creado aquí.
+`LICENSE` es AGPL-3.0-only y cubre `src/` y `tools/`. `LICENSE-DOCS` es
+CC BY-SA 4.0 y cubre paper, figuras, datos derivados y documentación. El reparto
+está en `LICENSES.md`. Cada módulo de `src/` lleva cabecera SPDX: si creas uno
+nuevo, cópiala.
+
 `THIRD-PARTY-DATA.md` lista los datos de terceros, que conservan sus términos y
 no se relicencian. Si añades una fuente externa, añádela también ahí.
+
+El repositorio nació bajo CC BY-NC 4.0 y cambió el 14 de agosto de 2026, cuando
+el titular seguía siendo la única persona con derechos. **No vuelvas a esa
+licencia:** dejaba el proyecto fuera de la definición de código abierto e
+impedía que GitHub mostrara la licencia.
+
+### 4. Contribuciones externas
+
+Toda aportación exige el CLA de `CLA.md` firmado por línea de commit. Es lo que
+mantiene viva la opción de licencia comercial. El borrador está **pendiente de
+revisión por un abogado**; no lo des por bueno.
+
+Los textos legales existen en español y en inglés (`*.en.md`). Si tocas uno,
+toca los dos. La versión española es la auténtica.
 
 ## Regla que gobierna todo el proyecto
 

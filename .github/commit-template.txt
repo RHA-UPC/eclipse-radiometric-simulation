@@ -1,0 +1,8 @@
+
+
+# Resumen en una línea, imperativo, sin punto final.
+#
+# Cuerpo: qué cambia y por qué. Si tocas una cifra, di de dónde sale.
+#
+# Toda contribución exige la línea siguiente. Ver CLA.md.
+CLA-1.0-signed-by: Nombre Apellidos <correo@example.org>

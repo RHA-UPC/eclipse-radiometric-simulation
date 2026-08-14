@@ -1,8 +1,8 @@
 # Datos de terceros
 
-La licencia CC BY-NC 4.0 del archivo `LICENSE` cubre lo que se ha creado aquí:
-el código de `src/`, el manuscrito de `paper/`, las figuras de `figs/` y la
-documentación de `docs/`.
+Las licencias del proyecto cubren lo que se ha creado aquí: AGPL-3.0-only para
+el código de `src/` y `tools/`, CC BY-SA 4.0 para el manuscrito de `paper/`, las
+figuras de `figs/` y la documentación de `docs/`. Ver `LICENSES.md`.
 
 **No cubre los datos de terceros que el trabajo consume.** Cada proveedor
 conserva sus propios términos, que prevalecen sobre esta licencia. Si reutilizas

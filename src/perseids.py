@@ -1,3 +1,18 @@
+# eclipse-radiometric-simulation
+# Copyright (C) 2026 Ricardo Heredia Alessandrello
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License, version 3, as published
+# by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details. You should have received a copy of it along with this program; if
+# not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Chance of catching a Perseid inside the frame during totality.
 
 The eclipse falls on the night of the Perseid maximum, and 2026-08-12 is New
