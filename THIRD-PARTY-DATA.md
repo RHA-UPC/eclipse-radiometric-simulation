@@ -77,6 +77,24 @@ Linke de SoDa que trae empaquetada.
 es de pago; los espectros tabulados los distribuye NREL.
 <https://www.nrel.gov/grid/solar-resource/spectra-am1.5.html>
 
+## Tratamiento de vídeo
+
+Solo las necesita `tools/stab_solar.py`. La cadena que produce el manuscrito
+funciona sin ellas.
+
+**OpenCV** (Apache-2.0), instalado como `opencv-python-headless`. Decodifica el
+vídeo y aporta la correlación con plantilla, la morfología y la transformación
+afín subpíxel. <https://opencv.org/>
+
+**imageio-ffmpeg** (BSD-2-Clause) solo envuelve un binario de FFmpeg y lo
+descarga. <https://github.com/imageio/imageio-ffmpeg>
+
+**FFmpeg**, el binario que trae ese paquete, viene compilado con `--enable-gpl`,
+`--enable-version3` y `--enable-libx264`, así que se distribuye bajo **GPL-3.0**,
+no bajo la LGPL de la configuración por defecto. Este repositorio no lo
+redistribuye: se instala en el entorno de quien ejecuta la herramienta, que lo
+invoca como proceso aparte. <https://ffmpeg.org/legal.html>
+
 ## Literatura citada
 
 `data/literature.json` contiene transcripciones literales cortas de artículos

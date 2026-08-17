@@ -63,6 +63,29 @@ Skyfield descarga `de440s.bsp` y `finals2000A.all` en la primera ejecución.
 Borrar `data/` salvo los tres archivos fuente y volver a correr la cadena
 reproduce el PDF.
 
+## Estabilizar un vídeo del eclipse
+
+`tools/stab_solar.py` deja el Sol quieto en el centro del plano, para ver a la
+Luna avanzar sobre un disco que no se mueve.
+
+```bash
+uv pip install opencv-python-headless imageio-ffmpeg
+python tools/stab_solar.py entrada.MP4 salida.mp4 [--crop 1080]
+python tools/stab_solar.py --selftest
+```
+
+Ajusta una circunferencia al limbo solar, no al centroide de brillo. El
+centroide de un creciente no es el centro del Sol: se mete dentro de la parte
+iluminada y avanza hacia el limbo descubierto conforme la Luna tapa, así que
+seguirlo desplazaría el Sol casi un radio a lo largo de la fase parcial, al
+compás del eclipse que se pretende inmovilizar. El limbo, en cambio, es un arco
+de radio constante alrededor del centro solar sea cual sea la ocultación.
+
+En totalidad no hay fotosfera que ajustar: si la cámara ya ha abierto lo bastante
+para exponer la corona, la Luna aparece como un disco oscuro cerrado dentro de
+ella y sirve su centroide. Mientras la totalidad siga expuesta para la fotosfera
+el fotograma no tiene señal alguna, y esos fotogramas van interpolados.
+
 ## Estructura
 
 ```
@@ -71,7 +94,7 @@ data/       tres archivos fuente con procedencia, el resto son productos
 docs/       arquitectura, resultados, revisiones adversariales, fuentes, fotos
 paper/      manuscrito LaTeX, tablas y macros generadas
 figs/       11 figuras, paleta validada para daltonismo
-tools/      comprobación de privacidad previa al push
+tools/      comprobación de privacidad previa al push, estabilizador de vídeo
 ```
 
 Empieza por [`CLAUDE.md`](CLAUDE.md) si vas a tocar el código, y por

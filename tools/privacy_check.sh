@@ -21,9 +21,10 @@ home="/ho""me/"
 hits=$(echo "$tracked" | xargs -r grep -lI "$home" 2>/dev/null)
 [ -n "$hits" ] && report "rutas absolutas de /home en: $hits"
 
-# 3) Fotografías o RAW.
-if echo "$tracked" | grep -qiE '\.(cr2|nef|arw|jpe?g)$|^fotografias/'; then
-  report "hay imágenes rastreadas; llevan el serial en el MakerNote"
+# 3) Fotografías, RAW o vídeo del observador. El vídeo cuenta doble: metadatos
+# de cámara igual que las fotos, y además una pista de audio con voces.
+if echo "$tracked" | grep -qiE '\.(cr2|nef|arw|jpe?g|mp4|mov|avi|mkv)$|^fotografias/'; then
+  report "hay imágenes o vídeo rastreados; llevan metadatos del cuerpo de la cámara"
 fi
 
 # 4) Los blobs grandes de terceros.

@@ -87,9 +87,10 @@ Los tres están reconocidos en el manuscrito y en [`docs/FINDINGS.md`](docs/FIND
 
 ## 5. Ingeniería
 
-- [ ] **Pasar las autocomprobaciones a CI.** Hoy son siete `_selftest()` que hay
-      que lanzar a mano, y `limbdark.py` tarda varios minutos, así que necesita
-      su propio trabajo programado.
+- [ ] **Pasar las autocomprobaciones a CI.** Hoy son siete `_selftest()` en
+      `src/`, más el de `tools/stab_solar.py`, que hay que lanzar a mano.
+      `limbdark.py` tarda varios minutos, así que necesita su propio trabajo
+      programado; los demás caben en un solo paso.
 - [ ] Añadir `tools/privacy_check.sh` como hook de pre-push, para que no dependa
       de que alguien se acuerde.
 - [ ] Fijar las versiones de las dependencias. El manuscrito declara las que se

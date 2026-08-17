@@ -35,6 +35,9 @@ good the constant is.
    `limbdark.py` takes several minutes. The rest are fast except those that load
    ephemerides.
 
+   `tools/stab_solar.py --selftest` stands apart and is instant. It is outside
+   the manuscript chain, so you only need it if you touch that tool.
+
 2. **Run `validate.py`.** It checks SPECTRL2 against the ASTM G173 reference
    spectrum and the Besselian re-implementation against NASA's published
    central-line durations. V1 and V2 carry pass criteria.
@@ -45,8 +48,8 @@ good the constant is.
    bash tools/privacy_check.sh
    ```
 
-   It fails if absolute paths, images, third-party kernels or e-mail addresses
-   reach the git index.
+   It fails if absolute paths, images, video, third-party kernels or e-mail
+   addresses reach the git index.
 
 4. **If you touch physics, leave behind a check that fails when you break it.**
    An identity, an asymptotic limit, or a case with an analytic solution. No

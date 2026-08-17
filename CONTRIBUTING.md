@@ -32,6 +32,9 @@ sea la constante.
    `limbdark.py` tarda varios minutos. Los demás son rápidos salvo los que
    cargan efemérides.
 
+   `tools/stab_solar.py --selftest` va aparte y es instantáneo. No entra en la
+   cadena del manuscrito, así que solo hace falta si tocas esa herramienta.
+
 2. **Corre `validate.py`.** Contrasta SPECTRL2 contra el espectro de referencia
    ASTM G173 y la reimplementación besseliana contra las duraciones centrales
    publicadas por la NASA. V1 y V2 tienen criterio de aprobado.
@@ -42,8 +45,8 @@ sea la constante.
    bash tools/privacy_check.sh
    ```
 
-   Falla si en el índice de git aparecen rutas absolutas, imágenes, kernels de
-   terceros o direcciones de correo.
+   Falla si en el índice de git aparecen rutas absolutas, imágenes, vídeo,
+   kernels de terceros o direcciones de correo.
 
 4. **Si tocas física, deja una comprobación que falle si la rompes.** Una
    identidad, un límite asintótico o un caso con solución analítica. No hace

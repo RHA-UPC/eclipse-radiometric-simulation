@@ -9,10 +9,14 @@ Canon EOS 200D con un Tamron 16-300, cuánto tiempo se podía mirar sin filtro, 
 qué probabilidad había de captar una Perseida durante la totalidad.
 
 El eclipse ya ocurrió. El observador fotografió el evento y sus 23 archivos
-están en `fotografias/`, analizados en `docs/PHOTOS.md`. **Esa carpeta no se
-publica**: ver las reglas de publicación más abajo.
+están en `fotografias/`, analizados en `docs/PHOTOS.md`. Ahí vive también el
+vídeo `MVI_2418.MP4`, 223 s de parcial profunda a totalidad, y el estabilizado
+que produce `tools/stab_solar.py`. **Esa carpeta no se publica**: ver las reglas
+de publicación más abajo.
 
-El repositorio es público en GitHub bajo CC BY-NC 4.0.
+El repositorio es público en GitHub bajo AGPL-3.0-only para el código y
+CC BY-SA 4.0 para el manuscrito, las figuras, los datos derivados y la
+documentación. El reparto exacto está en `LICENSES.md`.
 
 ## Reglas de publicación
 
@@ -39,9 +43,14 @@ bash tools/privacy_check.sh
 ```
 
 Falla si en el índice de git aparece el número de serie del cuerpo de la cámara,
-una ruta absoluta del directorio personal, un archivo de imagen, un kernel de terceros o una
-dirección de correo. El serial se retiró de `data/hardware.json` y en su lugar
-queda `_serial_note`; no lo repongas.
+una ruta absoluta del directorio personal, un archivo de imagen o de vídeo, un
+kernel de terceros o una dirección de correo. El serial se retiró de
+`data/hardware.json` y en su lugar queda `_serial_note`; no lo repongas.
+
+El vídeo compromete por partida doble: metadatos de cámara como las fotos, y
+además pista de audio, donde puede haber voces. `tools/stab_solar.py` recodifica
+desde fotogramas en crudo, así que su salida no arrastra ni una cosa ni la otra;
+aun así vive en `fotografias/` y tampoco se publica.
 
 Las coordenadas exactas sí se publican: es una decisión consciente del autor,
 porque el emplazamiento es un observatorio de la Guerra Civil documentado y la
@@ -94,6 +103,7 @@ Corolarios operativos:
 ```bash
 ~/.venvs/eclipse2026/bin/python     # numpy scipy matplotlib skyfield pandas
                                             # pvlib rasterio colour-science rawpy exifread pypdf
+                                            # opencv-python-headless imageio-ffmpeg (solo stab_solar)
 ~/.local/bin/tectonic               # LaTeX
 ```
 
@@ -135,6 +145,11 @@ conservación de energía en la óptica, el límite termodinámico de concentrac
 los límites asintóticos de Carslaw y Jaeger, la continuidad de las dos ramas del
 límite ICNIRP y el área exacta de lente círculo-círculo.
 
+`tools/stab_solar.py --selftest` va aparte, porque no entra en la cadena del
+paper. Ocluye un disco sintético y exige que el ajuste al limbo conserve el
+centro con menos de 1 px de error mientras el centroide de brillo se va 40 px,
+que es justamente la razón de que ese módulo exista.
+
 ## Documentación
 
 | Archivo | Contenido |
@@ -147,6 +162,15 @@ límite ICNIRP y el área exacta de lente círculo-círculo.
 | `docs/SOURCES.md` | procedencia de cada entrada del modelo |
 | `docs/PHOTOS.md` | análisis de las 23 fotografías del observador |
 | `PROGRESS.md` | bitácora cronológica de la sesión original |
+| `LICENSES.md` | qué licencia cubre cada parte, y por qué esas y no otras |
+| `CONTRIBUTING.md` | cómo se aporta, y qué se rechaza sin discusión |
+| `CLA.md` | cesión de derechos del contribuyente. Borrador sin revisar |
+| `SAFETY.md` | qué es y qué no es una cifra de exposición ocular de aquí |
+| `ROADMAP.md` | lo que falta para que esto sea una plataforma, y lo que no se hará |
+
+`LICENSES`, `CONTRIBUTING`, `CLA` y `SAFETY` existen también en inglés
+(`*.en.md`). La versión española manda; si tocas una, toca las dos. `ROADMAP.md`
+no está traducido, y no hace falta que lo esté: no es un texto legal.
 
 ## Si retomas el trabajo
 
