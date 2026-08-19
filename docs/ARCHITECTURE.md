@@ -138,7 +138,7 @@ web/js/app.js             mapa, capas y redacción de los paneles
 web/data/eclipses.json    el catálogo, 60 kB
 web/data/spectral.json    tablas fijas de SPECTRL2, ICNIRP y CIE, 7,6 kB
 web/vendor/LICENSE-*.txt  los avisos BSD de Leaflet y de pvlib, íntegros
-web/data/world.geojson    Natural Earth 110 m, dominio público
+web/data/world.geojson    costas de respaldo, Natural Earth 1:10 m simplificado
 web/vendor/               Leaflet 1.9.4, BSD-2-Clause
 ```
 
@@ -147,10 +147,29 @@ y unos 200 ms de cálculo que la mayoría de las visitas no necesitan, y sin una
 atmósfera declarada el número no significaría nada. `src/webdata.py` es quien
 exporta esas tablas, cada una con su cita.
 
-El mapa es equirectangular (`L.CRS.EPSG4326`), no Mercator. Los mapas de
-eclipses se dibujan así por tradición, y además permite volcar la trama de
-obscuración como una imagen plana: en Mercator habría que reproyectarla fila a
-fila.
+El mapa es equirectangular (`L.CRS.EPSG4326`), no Mercator, y esa decisión
+sostiene tres cosas a la vez. Los mapas de eclipses se dibujan así por
+tradición. La trama de obscuración se vuelca como una imagen plana, mientras que
+en Mercator habría que remuestrearla fila a fila o se desplazaría decenas de
+grados en latitudes altas. Y sobre todo, **llega a los polos**: Web Mercator se
+corta en 85,05° y la trayectoria de 2026 empieza a 87° N.
+
+Eso condiciona el fondo de calles. Las teselas habituales de OpenStreetMap solo
+existen en Mercator, así que el fondo pide los mismos datos a un WMS en
+EPSG:4326. Cuesta latencia frente a una pirámide de teselas y depende de un
+proveedor más pequeño, y a cambio no obliga a cambiar de proyección: una sola
+CRS para todo y sin reproyectar la trama de obscuración.
+
+Ese fondo es el predeterminado y no hay conmutador. Si el servidor no responde
+—cuatro errores sin que cargue ninguna imagen, o nueve segundos en blanco— la
+página lo declara en pantalla y descarga `world.geojson`, que hasta ese momento
+no se ha pedido. Los cálculos no dependen del fondo, así que un respaldo feo
+sigue respondiendo lo mismo.
+
+`tools/make_worldmap.py` genera ese respaldo desde Natural Earth 1:10 m: 13 MB
+de origen simplificados por Douglas-Peucker a 34 000 vértices y 0,66 MB. El
+límite no es el ancho de banda sino el renderizado, porque Leaflet lo dibuja
+como SVG.
 
 ## Convenciones
 

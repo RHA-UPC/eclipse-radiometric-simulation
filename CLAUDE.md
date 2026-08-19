@@ -288,6 +288,33 @@ Lo que sigue abierto:
   de una trayectoria con incidencia rasante la umbra corre a unos 3 km/s, así
   que un minuto deja huecos de 180 km y la línea dibujada deja de estar donde
   está la sombra.
+- **Web Mercator no tiene polos.** Se corta en 85,05° porque la proyección manda
+  el 90 al infinito, y las trayectorias de eclipse llegan más al norte: la de
+  2026 empieza a 87° N. Por eso el mapa va en `L.CRS.EPSG4326` y el fondo de
+  calles es un WMS en esa misma proyección, no la pirámide de teselas de
+  OpenStreetMap. Cambiar la CRS del mapa para poner teselas obliga además a
+  reconstruir el mapa entero (Leaflet la fija al construir) y a remuestrear la
+  trama de obscuración fila a fila, porque un `imageOverlay` se estira
+  linealmente en el espacio proyectado. Se probó y se descartó.
+- El fondo de calles es el **predeterminado** y no hay conmutador: esto se
+  despliega en la web, donde hay conexión, y ofrecer la elección obligaba al
+  visitante a decidir algo que no puede juzgar. Lo que sí hay que mantener
+  escrito es que ese fondo sale a la red y que las peticiones llevan el recuadro
+  mirado en la URL. `THIRD-PARTY-DATA.md` lo dice sin rodeos porque durante un
+  tiempo la web no contactaba con nadie y la documentación lo presumía.
+- El mapa de respaldo se descarga **solo si el servidor de calles falla**, y por
+  eso puede permitirse pesar 0,66 MB. Caer requiere pruebas, no una petición
+  fallida: cuatro errores sin que haya cargado ninguna imagen, o nueve segundos
+  sin ninguna. Ese segundo criterio es el que cubre el caso que se cuelga en vez
+  de fallar, que un manejador de `tileerror` no ve nunca.
+- **No uses el renderizador de lienzo de Leaflet para el mapa de respaldo.** Es
+  la herramienta correcta sobre el papel y mata el proceso de renderizado en
+  Chromium headless al hacer `setView`, incluso con el fichero antiguo de 10 600
+  vértices. Se probó en los dos paneles y con dos tamaños de datos. Queda SVG,
+  y con SVG el coste crece con los vértices: medido, un zoom cuesta lo mismo a
+  22 000 que a 34 000 y claramente más a 54 000. Por eso
+  `tools/make_worldmap.py` simplifica a 34 000 y no a los 190 000 que salen de
+  Natural Earth 1:10 m con una tolerancia fina.
 - En Leaflet, un `imageOverlay` y un renderizador SVG son hermanos dentro del
   mismo panel: `bringToBack()` sobre uno no lo mueve respecto al otro. El orden
   se fija creando paneles con su `zIndex`, no reordenando capas.

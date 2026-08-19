@@ -125,9 +125,23 @@ UTC y la altura y el acimut del Sol en cada uno.
 **Por lugar:** marcas el punto y sale la lista de los eclipses que se verán desde
 ahí, ordenados en el tiempo.
 
-No hay servidor ni petición externa: Leaflet y las fronteras van autoalojados y
-todo el cálculo ocurre en el navegador, así que las coordenadas que marques no
-salen de tu equipo.
+No hay servidor propio: el catálogo, las tablas y Leaflet van autoalojados y
+**todo el cálculo ocurre en tu navegador**, así que las coordenadas que marques
+no se envían a ninguna parte.
+
+El fondo sí viene de fuera. Es OpenStreetMap con detalle hasta nivel de calle,
+y conviene saber lo que eso implica: las peticiones de imágenes llevan en la URL
+el recuadro que estás mirando, de modo que ese servidor ve qué zona te interesa.
+
+Viene de un WMS en EPSG:4326 y no de las teselas habituales de OpenStreetMap,
+por geometría y no por gusto: la pirámide estándar es Web Mercator, que se corta
+en 85,05° porque manda el polo al infinito, y las trayectorias de eclipse llegan
+más al norte — la de 2026 empieza a 87° N.
+
+Si ese servidor no responde, la página lo detecta en un segundo y dibuja las
+costas de Natural Earth 1:10 m, que van con ella. El fichero solo se descarga
+en ese caso. Los cálculos no dependen del fondo: son los mismos con mapa y sin
+él.
 
 ### De dónde salen esos números
 

@@ -14,6 +14,15 @@ header{display:flex;align-items:center;gap:1.5rem;padding:.7rem 1.1rem;
 header h1{font-size:1rem;font-weight:600;margin:0;letter-spacing:.02em}
 .range{color:var(--dim);font-weight:400}
 .modes{display:flex;gap:.3rem;margin-left:auto}
+.offline-note{position:absolute;left:50%;top:14px;transform:translateX(-50%);
+  z-index:900;max-width:min(560px,90%);background:rgba(20,26,34,.94);
+  border:1px solid var(--line);border-radius:8px;padding:.6rem .8rem;
+  color:var(--dim);font-size:.78rem;line-height:1.5}
+.offline-note button{margin-left:.5rem;background:none;border:1px solid var(--line);
+  color:var(--cool);border-radius:5px;padding:.2rem .55rem;cursor:pointer;font-size:.75rem}
+.leaflet-control-attribution{background:rgba(20,26,34,.85)!important;color:var(--dim)!important;
+  font-size:.68rem}
+.leaflet-control-attribution a{color:var(--cool)!important}
 .mode{background:none;border:1px solid var(--line);color:var(--dim);
   padding:.35rem .8rem;border-radius:6px;cursor:pointer;font-size:.85rem}
 .mode.active{background:var(--cool);border-color:var(--cool);color:#0d1117;font-weight:600}

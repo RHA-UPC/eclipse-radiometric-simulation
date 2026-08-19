@@ -117,8 +117,21 @@ invoca como proceso aparte. <https://ffmpeg.org/legal.html>
 
 ## Cartografía y biblioteca del mapa
 
-La web de `web/` no carga nada de la red: todo va autoalojado, así que el
-navegador de quien la visite no habla con ningún tercero.
+**La web de `web/` contacta con un servidor de mapas ajeno.** Conviene decirlo
+sin rodeos, porque durante un tiempo no lo hacía y la documentación lo
+presumía: el fondo del mapa son ahora imágenes de OpenStreetMap, y cada
+petición lleva en la propia URL el recuadro que se está mirando. Ese servidor ve
+qué zona le interesa a quien visita la página.
+
+Todo lo demás sigue autoalojado —Leaflet, el catálogo de eclipses, las tablas
+espectrales y las costas de respaldo—, y **ningún cálculo sale del navegador**:
+las coordenadas que alguien marque no viajan a ninguna parte más que como el
+recuadro del mapa que está viendo.
+
+Si ese servidor no responde, la web lo detecta y dibuja las costas de Natural
+Earth, que van en la propia página. A partir de ahí no hay ninguna petición
+externa. Esa es la única razón por la que el fichero de costas existe: es un
+respaldo, y por eso se descarga solo cuando hace falta.
 
 **Leaflet 1.9.4** — `web/vendor/leaflet-1.9.4.{js,css}` y `web/vendor/images/`.
 Vladimir Agafonkin y colaboradores, licencia **BSD-2-Clause**. La cláusula 1
@@ -128,12 +141,34 @@ el texto completo vive en **`web/vendor/LICENSE-leaflet.txt`** y cubre también
 el CSS y las imágenes, que no llevan aviso propio. El pie de la web enlaza ahí.
 <https://leafletjs.com>
 
-**Natural Earth, admin-0 países a 1:110 m** — `web/data/world.geojson`.
-**Dominio público**, sin atribución exigida; se cita igualmente por cortesía y
-porque la procedencia importa. <https://www.naturalearthdata.com>
+**OpenStreetMap servido en EPSG:4326 por terrestris** — capa «Calles»,
+`https://ows.terrestris.de/osm/service`. Datos de OpenStreetMap bajo **ODbL**,
+representación de terrestris GmbH & Co. KG. Atribución obligatoria y presente en
+el control del mapa: «© terrestris, datos de OpenStreetMap (ODbL)».
 
-Ninguno de los dos se relicencia: conservan sus propios términos aunque el resto
-del repositorio esté bajo AGPL-3.0 y CC BY-SA 4.0.
+Se usa un WMS en lugar de las teselas habituales de OpenStreetMap por una razón
+geométrica, no de gusto: la pirámide de teselas estándar es **Web Mercator**, y
+Web Mercator no tiene polos. Se corta en 85,05°, porque la proyección manda el
+90 al infinito. Las trayectorias de eclipse llegan allí — la de agosto de 2026
+empieza a 87° N — así que un fondo en Mercator le cortaría el principio al
+propio eclipse de este trabajo. El WMS entrega los mismos datos en la
+proyección que el mapa ya usa, que llega a ±90.
+
+**Natural Earth, admin-0 países a 1:10 m** — `web/data/world.geojson`, el mapa
+de respaldo. **Dominio público**, sin atribución exigida; se cita igualmente por
+cortesía y porque la procedencia importa. <https://www.naturalearthdata.com>
+
+No se redistribuye tal cual: el original son 13 MB y `tools/make_worldmap.py` lo
+simplifica por Douglas-Peucker a 34 000 vértices y 0,66 MB, tira los anillos por
+debajo de un área mínima y se queda solo con el nombre de cada país. El fichero
+versionado es ese producto, y el script lo regenera con la tolerancia que se le
+pase. Antes se usaba la escala 1:110 m, que a nivel de país dibujaba las costas
+como rectas y no tenía casi ninguna isla.
+
+Ninguno de los tres se relicencia: conservan sus propios términos aunque el
+resto del repositorio esté bajo AGPL-3.0 y CC BY-SA 4.0. La ODbL en particular
+es vírica sobre bases de datos derivadas; aquí no se deriva nada, solo se
+muestra.
 
 ## Literatura citada
 

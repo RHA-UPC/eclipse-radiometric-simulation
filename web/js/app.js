@@ -13,6 +13,27 @@ const $ = s => document.querySelector(s);
 
 let CAT = null, map, landLayer, borderLayer, pathLayers = [], marker = null, shade = null;
 let current = null, mode = 'eclipse', lastPoint = null;
+let basemap = 'streets', streetLayer = null, worldLoad = null, fellBack = false;
+
+// The street basemap is the default and there is no switch for it. This is
+// meant to be deployed on the web, where there is a connection; offering the
+// choice made the visitor decide something they have no way to judge. The
+// offline outline stays as a FALLBACK and loads only when the map server turns
+// out to be unreachable, which keeps 1.2 MB of coastline off the normal path.
+//
+// Streets without giving up the poles.
+//
+// The obvious way to get streets is the standard OpenStreetMap tile pyramid,
+// but that is Web Mercator, and Web Mercator has no poles: it is truncated at
+// 85.05 deg because the projection sends 90 to infinity. Eclipse paths go
+// there -- the 2026 track starts at 87 N -- so a Mercator basemap would cut
+// the beginning off this project's own eclipse.
+//
+// The same OpenStreetMap data is available rendered in EPSG:4326 through a
+// WMS, which is the projection this map already uses. One projection for
+// everything: poles included, the obscuration raster laid down unchanged, and
+// no rebuilding the map to switch basemap.
+const WMS_URL = 'https://ows.terrestris.de/osm/service';
 
 // --- formatting ---------------------------------------------------------
 
@@ -37,9 +58,10 @@ function hhmmss(s) {
 // it lets the obscuration raster be laid down as a plain image overlay: in
 // Mercator the same image would need reprojecting row by row.
 function initMap() {
-  map = L.map('map', { crs: L.CRS.EPSG4326, minZoom: 1, maxZoom: 8,
-                       worldCopyJump: false, attributionControl: false })
+  map = L.map('map', { crs: L.CRS.EPSG4326, minZoom: 1, maxZoom: 15,
+                       worldCopyJump: false, attributionControl: true })
          .setView([25, 0], 2);
+  map.attributionControl.setPrefix('');
 
   // Stacking order is fixed with panes, not with bringToBack(). An image
   // overlay and an SVG renderer are siblings in the same pane and reordering
@@ -49,15 +71,7 @@ function initMap() {
     map.createPane(name);
     Object.assign(map.getPane(name).style, { zIndex: z, pointerEvents: 'none' });
   }
-  // Land under the raster, coastlines over it. Filled countries drawn on top
-  // hide the shading exactly where a user looks for it, which is over land.
-  fetch('data/world.geojson').then(r => r.json()).then(g => {
-    landLayer = L.geoJSON(g, { pane: 'land', interactive: false,
-      style: { stroke: false, fillColor: '#1b2635', fillOpacity: 1 } }).addTo(map);
-    borderLayer = L.geoJSON(g, { interactive: false,
-      style: { color: '#5a6d88', weight: 0.7, fill: false } }).addTo(map);
-    borderLayer.bringToBack();
-  });
+  addStreets();
   map.on('zoomend', () => { if (shade) shade.setOpacity(shadeOpacity()); });
   map.on('click', e => {
     const lon = ((e.latlng.lng + 180) % 360 + 360) % 360 - 180;
@@ -76,6 +90,66 @@ function initMap() {
   legend.addTo(map);
 }
 
+function addStreets() {
+  streetLayer = L.tileLayer.wms(WMS_URL, {
+    layers: 'OSM-WMS', format: 'image/png', version: '1.1.1', transparent: false,
+    pane: 'land', maxZoom: 15,
+    attribution: '&copy; <a href="https://www.terrestris.de">terrestris</a>, ' +
+      'datos de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL)'
+  }).addTo(map);
+
+  // Falling back needs evidence, not a single failed request. A handful of
+  // errors with nothing loaded means the server is unreachable; one error while
+  // other tiles arrive is just one tile. The timeout covers the case that hangs
+  // instead of failing, which is the one a tileerror handler never sees.
+  let ok = 0, err = 0;
+  streetLayer.on('tileload', () => { ok++; });
+  streetLayer.on('tileerror', () => { if (++err >= 4 && ok === 0) fallback('no responde'); });
+  setTimeout(() => { if (ok === 0) fallback('no responde'); }, 9000);
+  if (navigator.onLine === false) fallback('sin conexión');
+  window.addEventListener('offline', () => fallback('sin conexión'));
+}
+
+// The outline is fetched only here, so a visit that never needs it never pays
+// for it.
+//
+// ONE layer, filled and stroked, not two. Leaflet turns every coordinate into
+// an L.LatLng object, so this file's 190 000 vertices are already 190 000
+// objects; building it twice to get the fill under the raster and the borders
+// over it cost twice that and killed the tab. The coastlines now sit under the
+// raster, which is where the street basemap's own coastlines sit anyway.
+//
+// The canvas renderer is not optional either: as SVG paths, 3 800 rings take
+// seconds to lay out and stutter on every pan.
+function loadWorld() {
+  if (worldLoad) return worldLoad;
+  worldLoad = fetch('data/world.geojson').then(r => r.json()).then(g => {
+    landLayer = L.geoJSON(g, {
+      pane: 'land', interactive: false,
+      style: { color: '#5a6d88', weight: 0.7, fillColor: '#1b2635', fillOpacity: 1 }
+    }).addTo(map);
+    borderLayer = null;
+    if (shade) shade.setOpacity(shadeOpacity());
+  }).catch(() => { worldLoad = null; });
+  return worldLoad;
+}
+
+function fallback(why) {
+  if (fellBack) return;
+  fellBack = true;
+  basemap = 'offline';
+  if (streetLayer) { map.removeLayer(streetLayer); streetLayer = null; }
+  const n = document.createElement('div');
+  n.className = 'offline-note';
+  n.innerHTML = `Mapa de calles no disponible (${why}). Se dibujan las costas
+    de Natural Earth, que van en la propia página. Las circunstancias del
+    eclipse se calculan igual: no dependen del fondo.
+    <button id="retry">Reintentar</button>`;
+  document.getElementById('map').appendChild(n);
+  document.getElementById('retry').onclick = () => location.reload();
+  loadWorld();
+}
+
 const clearPaths = () => { pathLayers.forEach(l => map.removeLayer(l)); pathLayers = []; };
 
 
@@ -83,6 +157,11 @@ const clearPaths = () => { pathLayers.forEach(l => map.removeLayer(l)); pathLaye
 // browser's own image smoothing is the interpolation; no contouring needed.
 function drawShade(B) {
   if (shade) { map.removeLayer(shade); shade = null; }
+  // The grid is equirectangular and so is the map, so it goes down as it is.
+  // That is the whole reason the street basemap is a WMS in EPSG:4326 rather
+  // than the usual Mercator tiles: an image overlay stretches linearly in
+  // projected space, and in Mercator this raster would have to be resampled
+  // row by row or it slides tens of degrees at high latitude.
   const g = Bess.obscurationGrid(B);
   const cv = document.createElement('canvas');
   cv.width = g.nlon; cv.height = g.nlat;
@@ -107,7 +186,11 @@ function drawShade(B) {
 
 // The raster answers "where is it visible at all", which is a world-scale
 // question. Zoomed in on a path it only hides the coastline, so it fades.
-const shadeOpacity = () => (map.getZoom() >= 5 ? 0.22 : 0.62);
+const shadeOpacity = () => {
+  const z = map.getZoom();
+  if (basemap === 'streets') return z >= 8 ? 0.12 : z >= 5 ? 0.28 : 0.55;
+  return z >= 5 ? 0.22 : 0.62;
+};
 
 // Split a track at the antimeridian and at the nulls the geometry inserts
 // where the shadow leaves the globe. Without the second cut a gap the shadow
