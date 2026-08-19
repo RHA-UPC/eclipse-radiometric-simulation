@@ -70,7 +70,7 @@ Luna avanzar sobre un disco que no se mueve.
 
 ```bash
 uv pip install opencv-python-headless imageio-ffmpeg
-python tools/stab_solar.py entrada.MP4 salida.mp4 [--crop 1080]
+python tools/stab_solar.py entrada.MP4 salida.mp4 [--fit] [--end 1209] [--crop 1080]
 python tools/stab_solar.py --selftest
 ```
 
@@ -85,6 +85,19 @@ En totalidad no hay fotosfera que ajustar: si la cámara ya ha abierto lo bastan
 para exponer la corona, la Luna aparece como un disco oscuro cerrado dentro de
 ella y sirve su centroide. Mientras la totalidad siga expuesta para la fotosfera
 el fotograma no tiene señal alguna, y esos fotogramas van interpolados.
+
+Con cielo iluminado, en cambio, no vale ningún umbral: la fotosfera florece muy
+por fuera de su propio limbo y lo que se mide es el halo. Ahí la referencia es
+la Luna, que no florece, y se localiza por Hough circular **con signo**. La
+polaridad es lo que la distingue: hacia fuera, el limbo lunar pasa de oscuro a
+claro y el borde del halo al revés, así que puntuar el gradiente radial con su
+signo se queda con uno y descarta el otro. Un Hough sin signo puntúa ambos igual
+y se va con el más brillante.
+
+`--fit` recorta a la mayor ventana 16:9 que ningún fotograma se sale, porque
+sobre cielo claro las franjas vacías del desplazamiento sí se ven. Cuesta
+exactamente lo que se movió el trípode. `--end` corta donde el plano deja de ser
+el mismo, por ejemplo si se reencuadra a mitad de toma.
 
 ## Estructura
 

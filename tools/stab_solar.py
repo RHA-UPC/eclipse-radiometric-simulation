@@ -57,6 +57,7 @@ import numpy as np
 from scipy.ndimage import median_filter
 
 THR_PHOT = 200      # the photosphere saturates; nothing else in frame gets near
+BRIGHT_SKY = 30     # median frame level above which the sky, not the Sun, is lit
 CORONA_THR = 60     # closes the corona ring once the camera has opened up
 MIN_HOLE = 10000    # px. A crescent encloses nothing; the Moon encloses ~40000
 MIN_PIX = 150       # lit pixels needed before a fit is worth attempting
@@ -100,6 +101,77 @@ def _coarse(mask, r, scale=2):
     return (xs.mean() + rs) * scale, (ys.mean() + rs) * scale
 
 
+def _ring_kernels(r):
+    """Signed cos/sin kernels over a ring: a circular Hough that knows polarity."""
+    n = 2 * r + 3
+    c = n // 2
+    yy, xx = np.mgrid[0:n, 0:n].astype(np.float32)
+    dx, dy = xx - c, yy - c
+    d = np.hypot(dx, dy)
+    on = np.abs(d - r) < 1.0
+    w = float(max(int(on.sum()), 1))
+    kx = np.where(on, dx / np.maximum(d, 1e-6), 0.0).astype(np.float32) / w
+    ky = np.where(on, dy / np.maximum(d, 1e-6), 0.0).astype(np.float32) / w
+    return kx.astype(np.float32), ky.astype(np.float32), c
+
+
+def _parabolic(sc, x, y):
+    """Sub-grid peak position by fitting a parabola through the three samples."""
+    out = []
+    for i, (lo, hi) in enumerate(((x - 1, x + 1), (y - 1, y + 1))):
+        if lo < 0 or hi >= sc.shape[1 - i]:
+            out.append(0.0)
+            continue
+        a, b, c = (sc[y, x - 1], sc[y, x], sc[y, x + 1]) if i == 0 else \
+                  (sc[y - 1, x], sc[y, x], sc[y + 1, x])
+        den = a - 2.0 * b + c
+        # den can be zero on a flat peak, or NaN if a neighbour was masked out.
+        if not np.isfinite(den) or den == 0.0:
+            out.append(0.0)
+            continue
+        out.append(float(np.clip(0.5 * (a - c) / den, -1.0, 1.0)))
+    return x + out[0], y + out[1]
+
+
+def find_dark_disk(g, r, centre=None, scale=2, span=30):
+    """Centre of the Moon silhouetted against a lit sky. Returns (cx, cy, score).
+
+    Against a bright sky the emerging photosphere is useless as a reference: it
+    blooms far past its own limb, so a threshold traces the flare rather than the
+    Sun. The Moon does not bloom. It is a black disk of fixed radius, and its
+    edge survives intact right next to the glare.
+
+    Polarity is what separates the two. Going outward, the lunar limb steps from
+    dark to bright and the bloom boundary from bright to dark, so scoring the
+    signed radial gradient around a ring keeps one and rejects the other. An
+    unsigned Hough scores both alike and settles on whichever is brighter.
+    """
+    small = cv2.GaussianBlur(
+        cv2.resize(g.astype(np.float32), None, fx=1.0 / scale, fy=1.0 / scale,
+                   interpolation=cv2.INTER_AREA), (0, 0), 1.5)
+    gx = cv2.Scharr(small, cv2.CV_32F, 1, 0)
+    gy = cv2.Scharr(small, cv2.CV_32F, 0, 1)
+    kx, ky, off = _ring_kernels(max(2, int(round(r / scale))))
+    if kx.shape[0] >= small.shape[0] or kx.shape[1] >= small.shape[1]:
+        return None
+    sc = cv2.matchTemplate(gx, kx, cv2.TM_CCORR) + cv2.matchTemplate(gy, ky, cv2.TM_CCORR)
+    if centre is not None and np.isfinite(centre).all():   # track near last frame
+        m = np.zeros(sc.shape, bool)
+        px, py = int(centre[0] / scale) - off, int(centre[1] / scale) - off
+        m[max(0, py - span):py + span, max(0, px - span):px + span] = True
+        if not m.any():
+            return None
+        # A finite sentinel, not -inf: the peak can land against the window edge,
+        # and infinities there turn the parabolic refinement into NaN.
+        sc = np.where(m, sc, float(sc.min()) - 1.0)
+    _, best, _, loc = cv2.minMaxLoc(sc)
+    fx, fy = _parabolic(sc, loc[0], loc[1])
+    cx, cy = (fx + off) * scale, (fy + off) * scale
+    if not (np.isfinite(cx) and np.isfinite(cy) and np.isfinite(best)):
+        return None
+    return cx, cy, float(best)
+
+
 def _enclosed(mask):
     """Dark pixels the border cannot reach: during totality, the Moon's disk."""
     ff = mask.copy()
@@ -110,12 +182,20 @@ def _enclosed(mask):
 def locate(g, r=R_GUESS, centre=None):
     """Centre of the Sun in one frame. Returns (cx, cy, r, regime) or None.
 
+    Regimes: 0 photosphere limb, 1 lunar disk inside the corona, 2 lunar disk
+    against a lit sky.
+
     The hole test comes first because totality also saturates plenty of pixels,
     so a photosphere threshold alone cannot tell the two apart: past second
     contact it latches onto the brightest patch of inner corona, whose outer
     edge is neither circular nor fixed, and wanders by a hundred pixels as the
     camera's automatic exposure opens up.
     """
+    if np.median(g) > BRIGHT_SKY:
+        # Daylight or heavy haze: the sky itself carries signal, so every
+        # threshold-based route below is meaningless. Track the Moon instead.
+        res = find_dark_disk(g, r, centre)
+        return None if res is None else (res[0], res[1], r, 2)
     hole = _enclosed((g >= CORONA_THR).astype(np.uint8))
     area = int(hole.sum())
     if area >= MIN_HOLE:
@@ -209,10 +289,31 @@ def clean(track, med_win=9, max_dev=12.0):
     return out[0], out[1]
 
 
-def render(cap, cx, cy, path, size, fps, ffmpeg):
-    """Translate every frame so the Sun lands at the centre of the output."""
+def fit_window(cx, cy, w, h, aspect=16.0 / 9.0):
+    """Largest window of the given aspect that never runs off the source frame.
+
+    Shifting a frame exposes blank edges. Against a dark sky nobody sees them;
+    against a lit one they read as broken, so the output is cropped instead to
+    the region every frame can fill. What that costs is exactly how far the
+    tripod wandered: the window can be the full frame minus the travel.
+
+    Returns ((width, height), (tx, ty)), where the Sun is pinned to (tx, ty) in
+    output coordinates, as near the middle as the crop allows.
+    """
+    span_x, span_y = cx.max() - cx.min(), cy.max() - cy.min()
+    ow = min(w - span_x, (h - span_y) * aspect)
+    ow = max(2.0, int(ow) // 2 * 2.0)
+    oh = max(2.0, int(ow / aspect) // 2 * 2.0)
+    # tx must satisfy 0 <= u - tx + cx_i <= w-1 for every output column u.
+    tx = float(np.clip(ow / 2.0, ow - w + cx.max(), cx.min()))
+    ty = float(np.clip(oh / 2.0, oh - h + cy.max(), cy.min()))
+    return (int(ow), int(oh)), (tx, ty)
+
+
+def render(cap, cx, cy, path, size, fps, ffmpeg, target=None):
+    """Translate every frame so the Sun lands on a fixed point of the output."""
     w, h = size
-    tx, ty = w / 2.0, h / 2.0
+    tx, ty = (w / 2.0, h / 2.0) if target is None else target
     proc = subprocess.Popen(
         [ffmpeg, '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'bgr24',
          '-s', f'{w}x{h}', '-r', f'{fps}', '-i', '-',
@@ -272,6 +373,24 @@ def _selftest():
     cv2.circle(crescent, (200, 190), int(r_true), 255, -1)
     cv2.circle(crescent, (240, 190), int(r_true), 0, -1)
     assert locate(crescent)[3] == 0
+    # Lit sky: the Moon has to win against a bloom edge of the opposite polarity
+    # and comparable strength, which is the case an unsigned Hough gets wrong.
+    sky = np.full((500, 500), 90, np.uint8)
+    cv2.circle(sky, (330, 250), 160, 230, -1)
+    cv2.circle(sky, (200, 250), int(r_true), 20, -1)
+    sky = cv2.GaussianBlur(sky, (0, 0), 3.0)
+    res = locate(sky, r_true)
+    assert res is not None and res[3] == 2, res
+    assert np.hypot(res[0] - 200, res[1] - 250) < 3.0, res
+    # The crop must be the biggest window of the right shape that no frame can
+    # run off. Checking the invariant directly beats checking the arithmetic.
+    cxs, cys = np.array([100.0, 140.0]), np.array([60.0, 80.0])
+    (ow, oh), (tx, ty) = fit_window(cxs, cys, 1920, 1080)
+    assert abs(ow / oh - 16.0 / 9.0) < 0.02, (ow, oh)
+    assert ow <= 1920 - 40 and oh <= 1080 - 20, (ow, oh)
+    for x0, y0 in zip(cxs, cys):
+        assert x0 - tx >= 0 and (ow - 1) - tx + x0 <= 1919, (x0, tx, ow)
+        assert y0 - ty >= 0 and (oh - 1) - ty + y0 <= 1079, (y0, ty, oh)
     # Outlier rejection must survive a wild fit and a run of untracked frames.
     tr = np.full((60, 4), np.nan)
     tr[:, 0] = np.arange(60) * 0.5 + 100.0
@@ -291,6 +410,11 @@ def main():
     p.add_argument('dst', nargs='?', help='output video')
     p.add_argument('--crop', type=int, default=0,
                    help='emit a square CROP x CROP window instead of the full frame')
+    p.add_argument('--fit', action='store_true',
+                   help='crop to the largest 16:9 window no frame runs off, so a '
+                        'lit sky gets no blank edges')
+    p.add_argument('--end', type=int, default=0,
+                   help='stop after frame END, e.g. where the shot is rezoomed')
     p.add_argument('--track', help='CSV of the measured track; reused if it exists')
     p.add_argument('--selftest', action='store_true')
     a = p.parse_args()
@@ -307,6 +431,8 @@ def main():
     fps = cap.get(cv2.CAP_PROP_FPS)
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    if a.end:
+        n = min(n, a.end)
     print(f'{w}x{h}  {fps:g} fps  {n} frames', file=sys.stderr)
 
     track = None
@@ -326,10 +452,18 @@ def main():
           f'({100 * ok.mean():.1f}%), radius {np.nanmedian(track[:, 2]):.1f} px',
           file=sys.stderr)
 
-    cx, cy = clean(track)
+    cx, cy = clean(track[:n])
     cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-    size = (a.crop, a.crop) if a.crop else (w, h)
-    render(cap, cx, cy, a.dst, size, fps, imageio_ffmpeg.get_ffmpeg_exe())
+    target = None
+    if a.crop:
+        size = (a.crop, a.crop)
+    elif a.fit:
+        size, target = fit_window(cx, cy, w, h)
+        print(f'fitted window {size[0]}x{size[1]}, Sun pinned at '
+              f'({target[0]:.0f}, {target[1]:.0f})', file=sys.stderr)
+    else:
+        size = (w, h)
+    render(cap, cx, cy, a.dst, size, fps, imageio_ffmpeg.get_ffmpeg_exe(), target)
     cap.release()
     print(f'wrote {a.dst}', file=sys.stderr)
 
