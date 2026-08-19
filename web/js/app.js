@@ -10,10 +10,40 @@
 
 const TYPE = { total: 'total', annular: 'anular', hybrid: 'híbrido', partial: 'parcial' };
 const $ = s => document.querySelector(s);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+// localStorage throws outright in some privacy modes; a colour preference is
+// not worth taking the page down for.
+const store = {
+  get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* nada */ } }
+};
+
+// Obscuration ramps, one per theme. They live here and not in the stylesheet
+// because the raster is built pixel by pixel on a canvas, which needs the
+// numbers rather than a gradient.
+//
+//   claro     grises: el fondo es claro y la sombra oscurece, que es lo literal
+//   oscuro    la rampa fria-caliente de siempre, legible sobre negro
+//   accesible una aproximacion de cinco paradas a cividis (Nunez, Anderton y
+//             Renslow 2018): no son sus valores tabulados, sino cinco puntos
+//             sobre el mismo eje azul-amarillo y con la misma luminancia
+//             monotona, que es de donde sale la propiedad que interesa --
+//             ningun par rojo/verde y ninguna inversion de claridad. Ademas
+//             va contorneado escalon a escalon, para que la informacion no
+//             dependa en absoluto del canal del color
+const RAMPS = {
+  light: [[228, 232, 228], [186, 193, 188], [138, 147, 141], [92, 100, 95],
+          [48, 54, 50], [18, 21, 19]],
+  dark: [[27, 58, 107], [63, 95, 174], [139, 95, 191], [209, 73, 91], [255, 107, 74]],
+  a11y: [[0, 34, 78], [45, 88, 133], [124, 123, 120], [190, 165, 74], [254, 232, 56]]
+};
 
 let CAT = null, map, landLayer, borderLayer, pathLayers = [], marker = null, shade = null;
 let current = null, mode = 'eclipse', lastPoint = null;
 let basemap = 'streets', streetLayer = null, worldLoad = null, fellBack = false;
+let theme = document.documentElement.dataset.theme || 'light';
+let legendBox = null, gridCache = null, lastR = null, caps = [];
+const WORLD = L.latLngBounds([-90, -180], [90, 180]);
 
 // The street basemap is the default and there is no switch for it. This is
 // meant to be deployed on the web, where there is a connection; offering the
@@ -58,8 +88,9 @@ function hhmmss(s) {
 // it lets the obscuration raster be laid down as a plain image overlay: in
 // Mercator the same image would need reprojecting row by row.
 function initMap() {
-  map = L.map('map', { crs: L.CRS.EPSG4326, minZoom: 1, maxZoom: 15,
-                       worldCopyJump: false, attributionControl: true })
+  map = L.map('map', { crs: L.CRS.EPSG4326, maxZoom: 15, worldCopyJump: false,
+                       attributionControl: true, maxBounds: WORLD,
+                       maxBoundsViscosity: 1 })
          .setView([25, 0], 2);
   map.attributionControl.setPrefix('');
 
@@ -67,11 +98,27 @@ function initMap() {
   // overlay and an SVG renderer are siblings in the same pane and reordering
   // one does nothing to the other, so the raster kept landing on the wrong
   // side of the coastlines.
-  for (const [name, z] of [['land', 340], ['shade', 350]]) {
+  for (const [name, z] of [['land', 340], ['caps', 345], ['shade', 350]]) {
     map.createPane(name);
     Object.assign(map.getPane(name).style, { zIndex: z, pointerEvents: 'none' });
   }
   addStreets();
+  addCaps();
+
+  // No hay franjas negras: el zoom minimo es aquel en el que el mundo todavia
+  // tapa la ventana, y el desplazamiento esta sujeto al mundo. Depende del
+  // tamano del elemento, asi que se recalcula al cambiar de tamano.
+  //
+  // getBoundsZoom recorta su resultado por el minZoom vigente, asi que sin
+  // bajarlo antes solo podria subir: al encoger la ventana se quedaria
+  // atascado en el minimo de la ventana grande.
+  const clampZoom = () => {
+    map.setMinZoom(0);
+    map.setMinZoom(map.getBoundsZoom(WORLD, true));
+  };
+  clampZoom();
+  map.on('resize', clampZoom);
+
   map.on('zoomend', () => { if (shade) shade.setOpacity(shadeOpacity()); });
   map.on('click', e => {
     const lon = ((e.latlng.lng + 180) % 360 + 360) % 360 - 180;
@@ -80,20 +127,50 @@ function initMap() {
 
   const legend = L.control({ position: 'bottomright' });
   legend.onAdd = () => {
-    const d = L.DomUtil.create('div', 'legend');
-    d.innerHTML = `<i style="background:#ff3b30"></i>línea central<br>
-      <i style="background:#ff3b30;opacity:.55"></i>límites de la umbra<br>
-      <i style="background:#7d8899;border-top:1px dashed #7d8899"></i>borde de la penumbra<br>
-      <span>obscuración máxima</span><span class="ramp"></span>0 → 100 %`;
-    return d;
+    legendBox = L.DomUtil.create('div', 'legend');
+    renderLegend();
+    return legendBox;
   };
   legend.addTo(map);
+}
+
+// The legend carries the palette, so it is rebuilt with it rather than
+// written once in the markup.
+function renderLegend() {
+  if (!legendBox) return;
+  const ramp = RAMPS[theme].map(c => `rgb(${c[0]},${c[1]},${c[2]})`).join(',');
+  legendBox.innerHTML = `<i style="background:${cssv('--central')}"></i>línea central<br>
+    <i style="background:${cssv('--limit')};opacity:.55"></i>límites de la umbra<br>
+    <i style="background:${cssv('--penumbra')};border-top:1px dashed ${cssv('--penumbra')}"></i>borde de la penumbra<br>
+    <span>obscuración máxima</span>
+    <span class="ramp" style="background:linear-gradient(90deg,${ramp})"></span>0 → 100 %
+    ${theme === 'a11y' ? '<br>cada escalón del 10 % va contorneado' : ''}`;
+}
+
+// Switching theme repaints what the map draws, because the map colours are
+// part of the palette. The obscuration grid is cached per eclipse so the
+// switch never pays for the arithmetic twice, and the results panel is left
+// alone: a radiometry run that took seconds should survive changing colour.
+function applyTheme(choice) {
+  store.set('tema', choice);
+  theme = choice === 'auto'
+    ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : choice;
+  document.documentElement.dataset.theme = theme;
+  if (!map) return;
+  renderLegend();
+  if (landLayer) landLayer.setStyle(landStyle());
+  caps.forEach(c => c.setStyle({ fillColor: cssv('--map-bg') }));
+  if (marker) marker.setStyle({ color: cssv('--marker-ring'), fillColor: cssv('--marker-fill') });
+  if (mode === 'eclipse' && current) drawEclipse(current);
+  const cv = document.getElementById('curve');
+  if (cv && lastR) drawCurve(cv, lastR);
 }
 
 function addStreets() {
   streetLayer = L.tileLayer.wms(WMS_URL, {
     layers: 'OSM-WMS', format: 'image/png', version: '1.1.1', transparent: false,
-    pane: 'land', maxZoom: 15,
+    pane: 'land', maxZoom: 15, noWrap: true, bounds: WORLD,
     attribution: '&copy; <a href="https://www.terrestris.de">terrestris</a>, ' +
       'datos de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL)'
   }).addTo(map);
@@ -125,8 +202,7 @@ function loadWorld() {
   if (worldLoad) return worldLoad;
   worldLoad = fetch('data/world.geojson').then(r => r.json()).then(g => {
     landLayer = L.geoJSON(g, {
-      pane: 'land', interactive: false,
-      style: { color: '#5a6d88', weight: 0.7, fillColor: '#1b2635', fillOpacity: 1 }
+      pane: 'land', interactive: false, style: landStyle()
     }).addTo(map);
     borderLayer = null;
     if (shade) shade.setOpacity(shadeOpacity());
@@ -151,35 +227,114 @@ function fallback(why) {
 }
 
 const clearPaths = () => { pathLayers.forEach(l => map.removeLayer(l)); pathLayers = []; };
+const landStyle = () => ({ color: cssv('--land-line'), weight: 0.7 * (+cssv('--stroke') || 1),
+                           fillColor: cssv('--land-fill'), fillOpacity: 1 });
+
+// Los casquetes polares.
+//
+// El WMS no tiene nada por encima del limite de Mercator: su fuente es
+// Mercator, y Mercator se acaba ahi. Lo que devuelve en esa franja es negro,
+// que es exactamente la banda negra que no queremos. Se tapa con el propio
+// fondo del mapa, porque un casquete sin cartografia se lee como lo que es y
+// el negro se leia como un fallo de carga. La trayectoria y el raster se
+// dibujan encima: el mapa sigue llegando a los polos, que es para lo que se
+// eligio EPSG:4326.
+//
+// 84 grados y no 85,0511. El limite exacto no vale: medido en pantalla, el
+// negro que devuelve el servidor baja hasta unos 84,3 grados en el nivel de
+// zoom mas alejado, porque su rejilla de teselas no cae donde la nuestra. Un
+// grado de margen lo cubre, y lo que se deja fuera es oceano Artico e interior
+// del casquete antartico, donde ese fondo no tiene nada que ensenar.
+const MERCATOR_LIMIT = 84;
+const capStyle = () => ({ pane: 'caps', stroke: false, fillColor: cssv('--map-bg'),
+                          fillOpacity: 1, interactive: false });
+function addCaps() {
+  caps = [L.rectangle([[MERCATOR_LIMIT, -180], [90, 180]], capStyle()),
+          L.rectangle([[-90, -180], [-MERCATOR_LIMIT, 180]], capStyle())];
+  caps.forEach(c => c.addTo(map));
+}
 
 
-// Obscuration raster. The grid is equirectangular and so is the map, so the
-// browser's own image smoothing is the interpolation; no contouring needed.
-function drawShade(B) {
+// Obscuration raster.
+//
+// Two resolutions, and they are not the same thing. The GRID is where the
+// arithmetic happens, 0.56 deg and 121 instants; the CANVAS is three times
+// finer and gets there by bilinear interpolation. That is not cheating: max
+// obscuration is a smooth field, with no coastline and no terrain in it, so
+// below the grid step there is nothing left to sample -- what a finer grid
+// bought was a smoother contour, and interpolation buys the same for a
+// hundredth of the cost. Computing the canvas resolution directly is nine
+// times the work, several seconds, for a picture the eye cannot tell apart.
+//
+// The step quantisation stays. A continuous ramp saturates: over a continent
+// where everything lies between 90 and 100 %, every pixel is the same colour
+// and the raster stops carrying information. Interpolating BEFORE quantising
+// is what makes the steps read as clean contours instead of staircases.
+const UPSCALE = 3;
+
+function gridOf(e) {
+  if (!gridCache || gridCache.id !== e.id)
+    gridCache = { id: e.id, g: Bess.obscurationGrid(e.elements) };
+  return gridCache.g;
+}
+
+function drawShade(e) {
   if (shade) { map.removeLayer(shade); shade = null; }
   // The grid is equirectangular and so is the map, so it goes down as it is.
   // That is the whole reason the street basemap is a WMS in EPSG:4326 rather
   // than the usual Mercator tiles: an image overlay stretches linearly in
   // projected space, and in Mercator this raster would have to be resampled
   // row by row or it slides tens of degrees at high latitude.
-  const g = Bess.obscurationGrid(B);
+  const g = gridOf(e);
+  const W = g.nlon * UPSCALE, H = g.nlat * UPSCALE;
   const cv = document.createElement('canvas');
-  cv.width = g.nlon; cv.height = g.nlat;
-  const img = cv.getContext('2d').createImageData(g.nlon, g.nlat);
-  const stops = [[27, 58, 107], [63, 95, 174], [139, 95, 191], [209, 73, 91], [255, 107, 74]];
-  for (let k = 0; k < g.grid.length; k++) {
-    // Quantised to ten steps. A continuous ramp saturates: over a continent
-    // where everything lies between 90 and 100 %, every pixel is the same red
-    // and the raster stops carrying information. Steps read as contours.
-    const raw = g.grid[k];
-    if (raw <= 0.001) continue;
-    const v = Math.min(0.999, Math.floor(raw * 10) / 10 + 0.05);
-    const f = v * (stops.length - 1);
-    const i = Math.floor(f), w = f - i;
-    const c = stops[i].map((s, j) => s * (1 - w) + stops[i + 1][j] * w);
-    img.data.set([c[0], c[1], c[2], 55 + 175 * v], k * 4);
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(W, H);
+  const ramp = RAMPS[theme] || RAMPS.dark;
+  const step = new Int8Array(W * H).fill(-1);   // -1 = fuera del eclipse
+
+  for (let y = 0; y < H; y++) {
+    const fy = (y + 0.5) / UPSCALE - 0.5;
+    const j0 = Math.max(0, Math.min(g.nlat - 1, Math.floor(fy)));
+    const j1 = Math.min(g.nlat - 1, j0 + 1);
+    const wy = Math.min(1, Math.max(0, fy - j0));
+    for (let x = 0; x < W; x++) {
+      const fx = (x + 0.5) / UPSCALE - 0.5;
+      const i0 = Math.floor(fx), wx = fx - i0;
+      // Longitude wraps: the antimeridian is a seam in the array and not in
+      // the world, and without this the raster shows a one-pixel scar there.
+      const a = ((i0 % g.nlon) + g.nlon) % g.nlon;
+      const b = ((i0 + 1) % g.nlon + g.nlon) % g.nlon;
+      const raw = (g.grid[j0 * g.nlon + a] * (1 - wx) + g.grid[j0 * g.nlon + b] * wx) * (1 - wy)
+                + (g.grid[j1 * g.nlon + a] * (1 - wx) + g.grid[j1 * g.nlon + b] * wx) * wy;
+      if (raw <= 0.001) continue;
+      const k = y * W + x;
+      const n = Math.min(9, Math.floor(raw * 10));
+      step[k] = n;
+      const v = n / 10 + 0.05;
+      const f = v * (ramp.length - 1), i = Math.floor(f), w = f - i;
+      const c = ramp[i].map((q, m) => q * (1 - w) + ramp[i + 1][m] * w);
+      img.data.set([c[0], c[1], c[2], 55 + 175 * v], k * 4);
+    }
   }
-  cv.getContext('2d').putImageData(img, 0, 0);
+
+  // Accessible mode outlines every 10 % step, including the outer edge of the
+  // eclipse. Two pixels wide, because one pixel is what low vision loses
+  // first, and because it is what makes the map readable with the colour
+  // channel gone entirely.
+  if (theme === 'a11y') {
+    const d = img.data, ink = [17, 17, 17, 240];
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const k = y * W + x, n = step[k];
+        if (x + 1 < W && step[k + 1] !== n) { d.set(ink, k * 4); d.set(ink, (k + 1) * 4); }
+        if (y + 1 < H && step[k + W] !== n) { d.set(ink, k * 4); d.set(ink, (k + W) * 4); }
+      }
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
   shade = L.imageOverlay(cv.toDataURL(), [[-90, -180], [90, 180]],
     { pane: 'shade', opacity: shadeOpacity() }).addTo(map);
 }
@@ -210,9 +365,10 @@ function segments(pts) {
 function drawEclipse(e) {
   clearPaths();
   const B = e.elements;
-  drawShade(B);
+  drawShade(e);
+  const thick = +cssv('--stroke') || 1;
   for (const seg of Bess.penumbraOutline(B, e.greatest_h))
-    pathLayers.push(L.polyline(segments(seg), { color: '#7d8899', weight: 1,
+    pathLayers.push(L.polyline(segments(seg), { color: cssv('--penumbra'), weight: thick,
       dashArray: '4 4', interactive: false }).addTo(map));
   // A non-central total or annular eclipse has an umbral band that this code
   // cannot anchor, because every path curve is built outwards from the axis
@@ -221,10 +377,10 @@ function drawEclipse(e) {
   if (e.type !== 'partial' && e.central) {
     const lim = Bess.limits(B, 'l2');
     for (const side of lim.edges)
-      pathLayers.push(L.polyline(segments(side), { color: '#ff3b30', weight: 1.2,
+      pathLayers.push(L.polyline(segments(side), { color: cssv('--limit'), weight: 1.2 * thick,
         opacity: 0.55, interactive: false }).addTo(map));
-    pathLayers.push(L.polyline(segments(Bess.centralLine(B)), { color: '#ff3b30',
-      weight: 2, interactive: false }).addTo(map));
+    pathLayers.push(L.polyline(segments(Bess.centralLine(B)), { color: cssv('--central'),
+      weight: 2 * thick, interactive: false }).addTo(map));
   }
   $('#summary').innerHTML = `
     <span class="tag ${e.type}">${TYPE[e.type]}</span><br>
@@ -363,8 +519,8 @@ function renderPlace(lat, lon) {
 function setPoint(lat, lon) {
   lastPoint = [lat, lon];
   if (marker) map.removeLayer(marker);
-  marker = L.circleMarker([lat, lon], { radius: 6, color: '#ffffff', weight: 2,
-    fillColor: '#6ea8fe', fillOpacity: 1 }).addTo(map);
+  marker = L.circleMarker([lat, lon], { radius: 6, color: cssv('--marker-ring'), weight: 2,
+    fillColor: cssv('--marker-fill'), fillOpacity: 1 }).addTo(map);
   $('#in-lat').value = lat.toFixed(4);
   $('#in-lon').value = lon.toFixed(4);
   if (mode === 'eclipse' && current) renderPoint(current, lat, lon);
@@ -381,6 +537,12 @@ function setMode(m) {
   if (lastPoint) setPoint(lastPoint[0], lastPoint[1]);
   else $('#result').innerHTML = '';
 }
+
+const themeSel = $('#theme');
+themeSel.value = store.get('tema') || 'auto';
+themeSel.onchange = () => applyTheme(themeSel.value);
+matchMedia('(prefers-color-scheme: dark)')
+  .addEventListener('change', () => { if (themeSel.value === 'auto') applyTheme('auto'); });
 
 fetch('data/eclipses.json').then(r => r.json()).then(cat => {
   CAT = cat;
@@ -506,22 +668,22 @@ function drawCurve(cv, R) {
   const X = t => (t - t0) / (t1 - t0) * (w - 60) + 46;
   const Y = v => h - 34 - (Math.log10(Math.max(v, 10 ** lo)) - lo) / (hi - lo) * (h - 56);
 
-  g.fillStyle = '#0a0f16'; g.fillRect(0, 0, w, h);
+  g.fillStyle = cssv('--chart-bg'); g.fillRect(0, 0, w, h);
   g.font = '18px system-ui'; g.textBaseline = 'middle';
   for (let e = Math.floor(lo); e <= Math.ceil(hi); e++) {
     const y = Y(10 ** e);
     if (y < 10 || y > h - 30) continue;
-    g.strokeStyle = '#1e2734'; g.beginPath(); g.moveTo(46, y); g.lineTo(w - 14, y); g.stroke();
-    g.fillStyle = '#6b7a8d'; g.textAlign = 'right';
+    g.strokeStyle = cssv('--chart-grid'); g.beginPath(); g.moveTo(46, y); g.lineTo(w - 14, y); g.stroke();
+    g.fillStyle = cssv('--chart-axis'); g.textAlign = 'right';
     g.fillText(e >= 0 && e <= 3 ? String(10 ** e) : '1e' + e, 42, y);
   }
   for (const [k, lbl] of [['C1', 'C1'], ['C2', 'C2'], ['C3', 'C3'], ['C4', 'C4']]) {
     if (!R.loc[k]) continue;
     const x = X(R.loc[k].t);
     if (x < 46 || x > w - 14) continue;
-    g.strokeStyle = '#3a4657'; g.setLineDash([4, 5]);
+    g.strokeStyle = cssv('--chart-axis'); g.setLineDash([4, 5]);
     g.beginPath(); g.moveTo(x, 12); g.lineTo(x, h - 30); g.stroke(); g.setLineDash([]);
-    g.fillStyle = '#6b7a8d'; g.textAlign = 'center'; g.fillText(lbl, x, h - 16);
+    g.fillStyle = cssv('--chart-axis'); g.textAlign = 'center'; g.fillText(lbl, x, h - 16);
   }
   const line = (key, colour, width) => {
     g.strokeStyle = colour; g.lineWidth = width; g.beginPath();
@@ -534,13 +696,14 @@ function drawCurve(cv, R) {
     }
     g.stroke();
   };
-  line('dni0', '#4b5c73', 2);
-  line('dni', '#ff6b4a', 3);
-  g.fillStyle = '#8b98a8'; g.textAlign = 'left';
+  line('dni0', cssv('--chart-base'), 2);
+  line('dni', cssv('--chart-line'), 3);
+  g.fillStyle = cssv('--chart-axis'); g.textAlign = 'left';
   g.fillText('W/m² (haz directo) — gris: sin Luna', 50, 16);
 }
 
 function renderRadio(R) {
+  lastR = R;
   // The visitor may have switched mode or moved the marker while this ran.
   const box = document.getElementById('radio-out');
   if (!box) return;

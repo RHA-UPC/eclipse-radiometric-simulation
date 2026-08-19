@@ -12,6 +12,16 @@
 <meta name="description" content="Circunstancias locales de los eclipses solares de 2026 a 2050, calculadas desde efemérides JPL DE440s.">
 <link rel="stylesheet" href="vendor/leaflet-1.9.4.css">
 <link rel="stylesheet" href="css/style.css">
+<script>
+  // El tema se aplica antes de pintar, si no hay un destello del tema claro
+  // en la cara de quien pidio el oscuro. Sin eleccion guardada se sigue al
+  // sistema operativo, que es lo que espera quien lo tiene configurado.
+  try {
+    const c = localStorage.getItem('tema') || 'auto';
+    document.documentElement.dataset.theme = c === 'auto'
+      ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : c;
+  } catch (e) { document.documentElement.dataset.theme = 'light'; }
+</script>
 </head>
 <body>
 
@@ -38,6 +48,12 @@
     <button class="mode active" data-mode="eclipse">Por eclipse</button>
     <button class="mode" data-mode="lugar">Por lugar</button>
   </nav>
+  <select id="theme" aria-label="Tema de color">
+    <option value="auto">Tema: automático</option>
+    <option value="light">Tema: claro</option>
+    <option value="dark">Tema: oscuro</option>
+    <option value="a11y">Tema: accesible</option>
+  </select>
 </header>
 
 <div id="layout">

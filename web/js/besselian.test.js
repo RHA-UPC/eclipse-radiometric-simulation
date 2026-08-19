@@ -225,5 +225,56 @@ ok(nz > 300 && nz < G.grid.length * 0.5, `la zona parcial cubre ${nz} de ${G.gri
      'el término cúbico de x/y no cambia nada a 3 h: el ajuste es sospechoso');
 }
 
+// ---------------------------------------------------------------------------
+// 11. The raster prunes each row to the columns where the Sun can be up and
+//     the penumbra can reach, which is what makes a finer grid affordable.
+//     The pruning is derived, not tuned, so it must return the SAME numbers as
+//     a sweep of every column -- not close ones. Checked over the four
+//     geometries that stress it: an annular eclipse near the south pole, a
+//     total one crossing the north pole, one at low latitude, and a
+//     non-central one whose axis misses the Earth entirely.
+// ---------------------------------------------------------------------------
+{
+  const E2 = 0.0066943799901413165;
+  const sweep = (Bx, nlon, nlat, nt) => {          // sin podar: todas las columnas
+    const grid = new Float32Array(nlon * nlat);
+    const dmu = 1.002738 * Bx.delta_t_s * 15 / 3600 * D2R, rows = [];
+    for (let j = 0; j < nlat; j++) {
+      const lat = (90 - (j + 0.5) * 180 / nlat) * D2R;
+      const N = 1 / Math.sqrt(1 - E2 * Math.sin(lat) ** 2);
+      rows.push({ rc: N * Math.cos(lat), rs: N * (1 - E2) * Math.sin(lat) });
+    }
+    for (let k = 0; k < nt; k++) {
+      const e = Bess.evaluate(Bx, -3.2 + 6.4 * k / (nt - 1));
+      const sd = Math.sin(e.d), cd = Math.cos(e.d);
+      for (let j = 0; j < nlat; j++) {
+        const r = rows[j];
+        for (let i = 0; i < nlon; i++) {
+          const H = e.mu + (-180 + (i + 0.5) * 360 / nlon) * D2R - dmu, cH = Math.cos(H);
+          const zeta = r.rs * sd + r.rc * cH * cd;
+          if (zeta <= 0) continue;
+          const m = Math.hypot(e.x - r.rc * Math.sin(H), e.y - (r.rs * cd - r.rc * cH * sd));
+          const L1 = e.l1 - zeta * Bx.tan_f1, L2 = e.l2 - zeta * Bx.tan_f2;
+          if (m >= L1) continue;
+          const o = Bess.obscuration(m, (L1 + L2) / 2, (L1 - L2) / 2);
+          if (o > grid[j * nlon + i]) grid[j * nlon + i] = o;
+        }
+      }
+    }
+    return grid;
+  };
+  for (const id of ['2026-02-17', '2026-08-12', '2027-08-02', '2043-04-09']) {
+    const Bx = of(id).elements;
+    const a = sweep(Bx, 180, 90, 41), b = Bess.obscurationGrid(Bx, 180, 90, 41).grid;
+    let worst = 0, hit = 0;
+    for (let i = 0; i < a.length; i++) {
+      worst = Math.max(worst, Math.abs(a[i] - b[i]));
+      if (a[i] > 0.001) hit++;
+    }
+    ok(hit > 200, `${id}: la malla de referencia apenas tiene eclipse (${hit} celdas)`);
+    ok(worst === 0, `${id}: podar la malla cambia el resultado (dif ${worst})`);
+  }
+}
+
 console.log(fails ? `${fails} FALLOS` : 'besselian.js OK — concuerda con eclipsecat.py, DE440s y la NASA');
 process.exit(fails ? 1 : 0);

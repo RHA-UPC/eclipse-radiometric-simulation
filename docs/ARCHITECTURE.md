@@ -135,6 +135,7 @@ web/js/radiometry.js      radiometría: port de spectral, limbdark y eye
 web/js/besselian.test.js  el port geométrico contra Python, DE440s y la NASA
 web/js/radiometry.test.js el port radiométrico contra las series del manuscrito
 web/js/app.js             mapa, capas y redacción de los paneles
+web/css/style.css         los tres temas, como variables
 web/data/eclipses.json    el catálogo, 60 kB
 web/data/spectral.json    tablas fijas de SPECTRL2, ICNIRP y CIE, 7,6 kB
 web/vendor/LICENSE-*.txt  los avisos BSD de Leaflet y de pvlib, íntegros
@@ -170,6 +171,70 @@ sigue respondiendo lo mismo.
 de origen simplificados por Douglas-Peucker a 34 000 vértices y 0,66 MB. El
 límite no es el ancho de banda sino el renderizado, porque Leaflet lo dibuja
 como SVG.
+
+Ese fondo tiene un techo que su proyección no confiesa: los datos los sirve en
+EPSG:4326, pero los renderiza desde Mercator, así que por encima de 85,05° no
+tiene nada que dibujar y devuelve negro. Dos rectángulos del color de fondo del
+mapa, en un panel propio entre las teselas y la trama, tapan esa franja en los
+dos polos. Un casquete sin cartografía se lee como lo que es; el negro se leía
+como un fallo de carga. La trayectoria y la trama se siguen dibujando encima:
+el mapa llega a los polos, que es para lo que se eligió esta proyección.
+
+El zoom está sujeto por los dos lados. El mínimo es el nivel en el que el mundo
+todavía tapa la ventana, recalculado al cambiar de tamaño, y el desplazamiento
+está acotado al mundo, así que no hay forma de sacar franjas vacías a los lados
+ni por arriba.
+
+### La trama de obscuración
+
+Dos resoluciones, y no son lo mismo. La **malla** es donde ocurre la aritmética:
+640 × 320 celdas y 121 instantes, unos 350 ms, cacheada por eclipse. El
+**lienzo** es tres veces más fino y llega ahí por interpolación bilineal. No es
+un atajo cosmético: la obscuración máxima es un campo liso —no lleva costas ni
+relieve dentro—, así que por debajo del paso de la malla no queda nada que
+muestrear. Lo que compraba una malla fina era un contorno más suave, y la
+interpolación compra lo mismo por una centésima parte del coste. Interpolar
+antes de cuantizar es lo que convierte los escalones del 10 % en contornos y no
+en escaleras.
+
+Lo que hace asequible esa malla es una poda exacta. Las dos condiciones que
+descartan una celda en un instante —el Sol bajo el horizonte y la penumbra
+fuera de alcance en η— son monótonas en `cos H`, porque tanto ζ como η dependen
+de la hora angular solo a través de su coseno. Su intersección es un intervalo,
+que en H son dos arcos, que en la malla son dos tramos de columnas: el resto de
+la fila se salta sin evaluar nada. Como `L1` se sustituye por su cota `l1`, el
+intervalo es un superconjunto y el resultado no cambia; `besselian.test.js`
+exige que sea **idéntico** al barrido sin podar, no parecido.
+
+### Los tres temas
+
+Claro, oscuro y accesible. Viven enteros en `web/css/style.css` como variables,
+y `app.js` las lee con `cssv()`: las líneas del mapa, el marcador, la gráfica de
+irradiancia y los casquetes polares salen de la misma paleta que el texto, así
+que un tema es una paleta y no una segunda copia de la página. Sin elección
+guardada se sigue a `prefers-color-scheme`, y el tema se aplica en un script
+del `<head>` antes de pintar, para que quien pidió oscuro no reciba un destello
+blanco.
+
+Cada tema lleva su rampa de obscuración, que sí está en JavaScript porque la
+trama se construye píxel a píxel y necesita los números:
+
+| tema | rampa | por qué |
+|---|---|---|
+| claro | grises, de transparente a casi negro | el fondo es claro y la sombra oscurece, que es lo literal |
+| oscuro | azul, violeta, rojo, naranja | la de siempre, que es la que se leía bien sobre negro |
+| accesible | cinco paradas sobre el eje azul-amarillo de cividis | ningún par rojo/verde y luminancia monótona |
+
+El modo accesible además sube el cuerpo de letra, engrosa los trazos, lleva el
+contraste al máximo y **contornea cada escalón del 10 %** de la trama, de modo
+que la información no depende en absoluto del canal del color. Las cinco paradas
+no son la tabla publicada de cividis: son cinco puntos sobre su mismo eje y con
+su misma luminancia monótona, que es de donde sale la propiedad que interesa.
+
+El fondo de calles lo sirve un tercero en un solo estilo, claro. En modo oscuro
+se **atenúa** la tesela, no se invierte: el truco habitual de invertir está
+pensado para estilos de mar claro, y este trae el mar azul oscuro, así que
+invertirlo dejaba el océano en cian luminoso brillando más que el continente.
 
 ## Convenciones
 

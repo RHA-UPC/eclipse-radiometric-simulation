@@ -154,6 +154,13 @@ empieza a 87° N — así que un fondo en Mercator le cortaría el principio al
 propio eclipse de este trabajo. El WMS entrega los mismos datos en la
 proyección que el mapa ya usa, que llega a ±90.
 
+Con un límite que conviene declarar: **el WMS sirve en EPSG:4326 pero renderiza
+desde Mercator**, así que por encima de 85,05° tampoco tiene nada, y lo que
+devuelve ahí es negro. La página lo tapa con el color de fondo del mapa en vez
+de mostrarlo, porque un casquete sin cartografía se lee como lo que es y el
+negro se leía como un fallo de carga. O sea: el mapa llega a los polos y la
+trama y las trayectorias se dibujan ahí, pero el fondo de calles no.
+
 **Natural Earth, admin-0 países a 1:10 m** — `web/data/world.geojson`, el mapa
 de respaldo. **Dominio público**, sin atribución exigida; se cita igualmente por
 cortesía y porque la procedencia importa. <https://www.naturalearthdata.com>
@@ -169,6 +176,13 @@ Ninguno de los tres se relicencia: conservan sus propios términos aunque el
 resto del repositorio esté bajo AGPL-3.0 y CC BY-SA 4.0. La ODbL en particular
 es vírica sobre bases de datos derivadas; aquí no se deriva nada, solo se
 muestra.
+
+**Cividis**, la rampa del modo accesible, se cita como referencia y no se
+redistribuye: Nuñez, Anderton y Renslow (2018), *Optimizing colormaps with
+consideration for color vision deficiency to enable accurate interpretation of
+scientific data*, PLoS ONE 13(7) e0199239, CC BY 4.0. Lo que hay en el código
+son **cinco paradas propias** sobre el mismo eje azul-amarillo y con la misma
+luminancia monótona, no su tabla de valores.
 
 ## Literatura citada
 

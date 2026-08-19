@@ -136,7 +136,16 @@ el recuadro que estás mirando, de modo que ese servidor ve qué zona te interes
 Viene de un WMS en EPSG:4326 y no de las teselas habituales de OpenStreetMap,
 por geometría y no por gusto: la pirámide estándar es Web Mercator, que se corta
 en 85,05° porque manda el polo al infinito, y las trayectorias de eclipse llegan
-más al norte — la de 2026 empieza a 87° N.
+más al norte — la de 2026 empieza a 87° N. Ese servidor arrastra el mismo techo
+por dentro: por encima de 85° no tiene nada que dibujar, así que los casquetes
+polares quedan sin fondo de calles. El mapa sí llega hasta 90°, y la trayectoria
+y las bandas se dibujan ahí igual.
+
+Hay **tres temas**: claro, que es el de la casa; oscuro; y uno pensado para
+daltonismo y baja visión, con el contraste al máximo, más cuerpo de letra,
+trazos más gruesos, una rampa sin ningún par rojo/verde y el contorno de cada
+escalón del 10 % trazado, para que la información no dependa del canal del
+color. Sin elegir nada se sigue la preferencia del sistema operativo.
 
 Si ese servidor no responde, la página lo detecta en un segundo y dibuja las
 costas de Natural Earth 1:10 m, que van con ella. El fichero solo se descarga

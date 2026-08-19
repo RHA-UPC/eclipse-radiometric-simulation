@@ -321,30 +321,62 @@ const Bess = (() => {
   // Greatest obscuration on a lat/lon grid, for shading the visibility zone.
   // The elements are evaluated once per time step and the observer transform
   // once per cell, which is what keeps a global grid inside a few hundred ms.
-  function obscurationGrid(B, nlon = 480, nlat = 240, nt = 121) {
+  // Max obscuration over the whole eclipse, on an equirectangular grid.
+  //
+  // The pruning is what makes a fine grid affordable, and it is exact rather
+  // than a heuristic. Every condition that can rule a cell out at one instant
+  // is monotone in cos H: the Sun is up when zeta = rs*sd + rc*cd*cos H > 0,
+  // and the observer is within reach of the penumbra along eta only when
+  // |eta - y| < L1, with eta = rs*cd - rc*sd*cos H. Intersecting both in
+  // cos H leaves a single interval, which is two arcs in H and therefore at
+  // most two runs of columns; the rest of the row is skipped without
+  // evaluating anything. L1 is replaced by its bound l1 -- zeta is in [0,1]
+  // and tan_f1 > 0, so l1 - zeta*tan_f1 <= l1 -- which makes the interval a
+  // superset. The test inside the loop is the same one as before, so the
+  // pruning cannot change a single cell; besselian.test.js checks that
+  // against an unpruned sweep.
+  function obscurationGrid(B, nlon = 640, nlat = 320, nt = 121) {
     const grid = new Float32Array(nlon * nlat);
     const dmu = dmuOf(B), rows = [];
     for (let j = 0; j < nlat; j++) {
       const lat = (90 - (j + 0.5) * 180 / nlat) * D2R;
       const N = 1 / Math.sqrt(1 - E2 * Math.sin(lat) ** 2);
-      rows.push({ p: lat, rc: N * Math.cos(lat), rs: N * (1 - E2) * Math.sin(lat) });
+      rows.push({ rc: N * Math.cos(lat), rs: N * (1 - E2) * Math.sin(lat) });
     }
+    const clamp = c => c < -1 ? -1 : c > 1 ? 1 : c;
     for (let k = 0; k < nt; k++) {
       const t = -3.2 + 6.4 * k / (nt - 1), e = evaluate(B, t);
       const sd = Math.sin(e.d), cd = Math.cos(e.d);
+      const base = (e.mu - dmu) * R2D;              // lon = H - (mu - dmu)
       for (let j = 0; j < nlat; j++) {
         const r = rows[j];
-        for (let i = 0; i < nlon; i++) {
-          const H = e.mu + (-180 + (i + 0.5) * 360 / nlon) * D2R - dmu;
-          const cH = Math.cos(H);
-          const zeta = r.rs * sd + r.rc * cH * cd;
-          if (zeta <= 0) continue;                 // the Sun is below the horizon
-          const m = Math.hypot(e.x - r.rc * Math.sin(H), e.y - (r.rs * cd - r.rc * cH * sd));
-          const L1 = e.l1 - zeta * B.tan_f1, L2 = e.l2 - zeta * B.tan_f2;
-          if (m >= L1) continue;
-          const o = obscuration(m, (L1 + L2) / 2, (L1 - L2) / 2);
-          const idx = j * nlon + i;
-          if (o > grid[idx]) grid[idx] = o;
+        let cmin = -r.rs * sd / (r.rc * cd), cmax = 1;   // the Sun is up
+        const P = r.rs * cd - e.y, Q = r.rc * sd;        // |eta - y| < l1
+        if (Math.abs(Q) < 1e-12) {
+          if (Math.abs(P) >= e.l1) continue;
+        } else {
+          const a = (P - e.l1) / Q, b = (P + e.l1) / Q;
+          cmin = Math.max(cmin, Math.min(a, b));
+          cmax = Math.min(cmax, Math.max(a, b));
+        }
+        if (cmin > cmax || cmin > 1 || cmax < -1) continue;
+        const h0 = Math.acos(clamp(cmax)), h1 = Math.acos(clamp(cmin));
+        for (const arc of [[h0, h1], [-h1, -h0]]) {
+          const lo = Math.ceil((arc[0] * R2D - base + 180) / 360 * nlon - 0.5);
+          const hi = Math.floor((arc[1] * R2D - base + 180) / 360 * nlon - 0.5);
+          for (let ii = lo; ii <= hi; ii++) {
+            const i = ((ii % nlon) + nlon) % nlon;
+            const H = e.mu + (-180 + (i + 0.5) * 360 / nlon) * D2R - dmu;
+            const cH = Math.cos(H);
+            const zeta = r.rs * sd + r.rc * cH * cd;
+            if (zeta <= 0) continue;               // the Sun is below the horizon
+            const m = Math.hypot(e.x - r.rc * Math.sin(H), e.y - (r.rs * cd - r.rc * cH * sd));
+            const L1 = e.l1 - zeta * B.tan_f1, L2 = e.l2 - zeta * B.tan_f2;
+            if (m >= L1) continue;
+            const o = obscuration(m, (L1 + L2) / 2, (L1 - L2) / 2);
+            const idx = j * nlon + i;
+            if (o > grid[idx]) grid[idx] = o;
+          }
         }
       }
     }

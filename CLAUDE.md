@@ -318,6 +318,42 @@ Lo que sigue abierto:
 - En Leaflet, un `imageOverlay` y un renderizador SVG son hermanos dentro del
   mismo panel: `bringToBack()` sobre uno no lo mueve respecto al otro. El orden
   se fija creando paneles con su `zIndex`, no reordenando capas.
+- **El WMS devuelve negro por encima del límite de Mercator.** Sirve los datos
+  en EPSG:4326, pero su fuente sigue siendo Mercator, así que de 85,05° a 90°
+  no tiene nada que dibujar y rellena de negro. Se tapa con dos rectángulos del
+  color de fondo del mapa, en un panel propio entre las teselas y la trama. El
+  corte va a **84°**, no a 85,0511: medido en pantalla, el negro baja hasta unos
+  84,3° en el nivel de zoom más alejado, porque la rejilla de teselas del
+  servidor no cae donde la nuestra. Lo que se pierde es océano Ártico e interior
+  del casquete antártico.
+- `map.getBoundsZoom(bounds, true)` **recorta su resultado por el `minZoom`
+  vigente**. Si lo usas para calcular ese mismo `minZoom`, solo podrá subir: al
+  encoger la ventana se queda atascado en el mínimo de la ventana grande. Hay
+  que bajarlo a cero antes de preguntar.
+- **No inviertas el fondo de calles para el modo oscuro.** El truco habitual
+  (`invert(1) hue-rotate(180deg)`) está pensado para estilos de mar claro y
+  tierra blanca; este estilo ya trae el mar azul oscuro, así que invertirlo deja
+  el océano en cian luminoso, brillando más que el continente. Se probó y se ve
+  en las capturas. Lo que funciona es atenuar la tesela, y el filtro va sobre la
+  **imagen**, no sobre el panel: en ese panel viven también las costas de
+  respaldo, que ya se dibujan con los colores del tema.
+- La trama de obscuración tiene **dos resoluciones distintas y no son lo mismo**.
+  La malla es donde ocurre la aritmética (640 × 320 celdas, 121 instantes); el
+  lienzo es tres veces más fino y llega ahí por interpolación bilineal. No es
+  trampa: la obscuración máxima es un campo liso, sin costas ni relieve dentro,
+  así que por debajo del paso de la malla no queda nada que muestrear. Calcular
+  a la resolución del lienzo es nueve veces el trabajo, varios segundos, para
+  una imagen que el ojo no distingue. Interpolar **antes** de cuantizar es lo que
+  convierte los escalones del 10 % en contornos limpios en vez de escaleras.
+- La poda de la malla es exacta, no una heurística: las dos condiciones que
+  descartan una celda —Sol bajo el horizonte y penumbra fuera de alcance en η—
+  son monótonas en `cos H`, así que su intersección es un intervalo y basta con
+  recorrer dos arcos de columnas. `besselian.test.js` exige que el resultado sea
+  **idéntico**, no parecido, al barrido sin podar sobre cuatro geometrías.
+- Los tres temas viven enteros en `web/css/style.css` como variables, y `app.js`
+  las lee con `cssv()`. No escribas un color a mano en JavaScript: las líneas
+  del mapa, el marcador, la gráfica y los casquetes salen todos de ahí, y un
+  color literal se queda congelado al cambiar de tema.
 - El oscurecimiento del limbo no va siempre en el mismo sentido. Mientras la
   Luna cubre el limbo, que es tenue, el déficit de flujo va **por detrás** del
   de área; en cuanto alcanza el centro lo **adelanta**. Un port con el peso
