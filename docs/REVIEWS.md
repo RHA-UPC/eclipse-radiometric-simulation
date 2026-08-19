@@ -296,9 +296,149 @@ cinco condiciones de `SAFETY.md` se cumplen en lo que la página renderiza: la
 pantalla de entrada, el bloque rojo bajo cada resultado, las hipótesis pegadas a
 las cifras, el aviso de masa de aire y la verificación previa de la geometría.
 
+## Revisión 4: las bandas vectoriales (20 de agosto de 2026)
+
+Las bandas de obscuración pasaron de trama a polígonos, porque una trama tiene
+una resolución y un mapa tiene tantas como niveles de zoom. Un agente
+independiente recibió el encargo de romper el código nuevo, con la lista de
+afirmaciones que sostenía y la instrucción de refutarlas con código, no con
+lectura. Encontró once cosas. Estas son las que importaban.
+
+### El marco no estaba fuera del mapa
+
+El dominio de los contornos se enmarcaba con una fila y una columna de −1 una
+celda por fuera del mundo, y el comentario decía que el tramo de anillo que
+corre por ese marco cae fuera de lo que la vista alcanza. **Era falso.** Las
+aristas que tocan el marco no se afinaban, así que su corte salía de interpolar
+linealmente contra −1 sobre 1,35°; como el último nodo real estaba a 0,45° del
+borde del mundo, el corte caía **dentro** del mapa siempre que el valor fuera
+menor que (1+3·nivel)/2 — para el nivel 0,9, siempre.
+
+Medido: la banda dibujada era la equivocada hasta **66 km dentro del mapa** por
+el antimeridiano (2039-06-21, 46° N 179,15° E: valor real 0,724, pintada la
+banda del 0,6) y **39 km** por los polos (2039-12-15, 89,65° S: valor real
+0,941, pintadas dos bandas de menos). 3126 puntos mal en la franja del
+antimeridiano y 3114 en las polares, repartidos por los 56 eclipses. En el
+interior del mapa, cero errores de miles de puntos de control.
+
+Corregido metiendo **nodos reales en ±180 y ±90**, calculados y no
+interpolados: con ellos, todo cruce contra el marco cae en el borde del mundo o
+más allá, que es donde se pretendía que cayera. Vuelto a medir con el mismo
+procedimiento del revisor: **cero** puntos con la banda equivocada, en los 56.
+
+### 1434 anillos que se cruzaban consigo mismos
+
+Con `fill-rule: evenodd` cada lazo invierte el relleno, así que un anillo que se
+cruza pinta la banda de al lado en la lengüeta que forma. Había 1447 cruces, 233
+de ellos a más de un grado de cualquier borde, en 23 eclipses. El peor caso
+—2026-02-17, nivel 0,8— era un anillo de 62 vértices que se cruzaba **25 veces**
+consigo mismo, y con todos sus vértices correctos: `maxObscuration` valía
+0,800000 ± 10⁻⁶ en todos ellos. El defecto no era la posición sino la
+poligonalización.
+
+Dos causas. Los picos hasta el marco, que se fueron con la corrección anterior.
+Y la subdivisión adaptativa, que buscaba el contorno **una cuerda entera** a
+cada lado de su punto medio —el comentario decía media— y a esa distancia podía
+engancharse a otra rama del contorno que pasara cerca. Corregido a media cuerda.
+Vuelto a medir: **cero autocruces** en los 56 eclipses.
+
+### El mapa y la ficha usaban dos horizontes distintos
+
+El mapa cortaba con ζ > 0, el horizonte **geocéntrico**; la ficha del panel, con
+la altura **geodésica** sobre el horizonte local. Sobre un elipsoide no es lo
+mismo: los dos criterios discrepan hasta 0,091° de altura solar y, cerca del
+ocaso, esos minutos valen puntos de obscuración. En 2026-08-12 a 75° N 100° E la
+ficha respondía 57,9 % sobre una banda pintada entre el 30 y el 40 %. Un barrido
+de los 56 eclipses encontró 56 puntos con más de 0,01 de discrepancia, el peor
+de 0,19.
+
+Un mapa que contradice a su propia respuesta es peor que un mapa tosco, y
+`SAFETY.md` lo prohíbe explícitamente. Corregido usando el horizonte geodésico
+en todas partes. Vuelto a medir: **1 punto de 13 987**, y ese por otra causa —la
+siguiente.
+
+### La pista temporal cambiaba la función
+
+Para no barrer las seis horas en cada uno de los miles de vértices que hay que
+afinar, `maxObscuration` acepta como pista el instante del máximo de la celda
+más cercana y solo mira ±2 pasos alrededor. El revisor instrumentó las llamadas
+**reales** y encontró que la ventana fija erraba en 59 de 93 290 llamadas, una
+de ellas por **0,54 de obscuración**: el instante del máximo salta de una celda
+a la vecina justo al cruzar el terminador, y ahí ±2 pasos no lo alcanzan.
+Corregido ensanchando la ventana mientras el máximo siga cayendo en su borde.
+Vuelto a medir: **0 de 6157** llamadas difieren del barrido entero.
+
+De paso encontró que el respaldo que debía cubrir ese caso estaba escrito
+`if (bk < 0 && lo > 0)`, o sea desactivado exactamente cuando la pista valía 0,
+1 o 2. No se disparaba hoy —ninguna celda del catálogo tiene su máximo ahí— pero
+habría bastado con cambiar la ventana temporal.
+
+### El barrido de 121 instantes se pierde los eclipses rasantes
+
+Cerca del borde de la penumbra el eclipse dura minutos y el barrido no lo ve.
+Medido contra un barrido de 2001 instantes, la pérdida llega a **0,0165** de
+obscuración, y 32 de 2227 puntos de la orla con eclipse se leen como cero. El
+contorno del 0,1 % perseguía ahí una función que vale cero a trozos.
+
+No se ha corregido: se ha **retirado la afirmación**. La banda más exterior
+empieza ahora en el 5 %, tres veces por encima de esa pérdida. Lo que queda sin
+dibujar son unos 175 km de orla sobre una penumbra de 7000, y el límite de
+verdad ya estaba dibujado desde el principio: es el contorno de la penumbra, la
+línea de trazos. La leyenda dice «5 → 100 %».
+
+### Las pruebas no podían ver tres de los cinco
+
+El apartado de los contornos filtraba los vértices con `|lat| > 89,5` o
+`|lon| > 179,5` con el comentario «el marco» — justo la franja donde vivía el
+peor defecto. Quitando ese filtro y sin tocar nada más, 112 de 358 vértices de
+2026-08-12 salían mal. La medida de la flecha de cuerda descartaba en silencio
+toda cuerda sin cambio de signo en ±30 km, que es exactamente lo que les pasaba
+a las cuerdas malas, a 100 y 285 km de la curva. Y la comprobación de
+anidamiento miraba el valor en cada vértice, nunca la topología del polígono, así
+que los 1434 cruces eran invisibles para ella.
+
+Reescritas: ya no filtran el borde del mundo, buscan la curva a cinco cuerdas de
+distancia, cuentan aparte los vértices del terminador en vez de descartarlos, y
+hay dos apartados nuevos —uno que compara la banda dibujada por paridad contra
+la verdadera recorriendo a propósito el antimeridiano y los dos polos, y otro
+que busca autocruces.
+
+### Sobrevivieron
+
+Tres afirmaciones aguantaron todo lo que se les echó. Que `obsAt` —una copia a
+mano de `evaluate` + `geom` + `obscuration`, escrita para no asignar objetos en
+el bucle caliente— es idéntica a sus originales: **cero de diferencia** en
+291 951 muestras con el Sol sobre el horizonte, sobre 56 eclipses, incluidos los
+polos y el antimeridiano. Que marching squares no produce cadenas abiertas: 632
+cadenas sobre 56 eclipses × 10 niveles, **ninguna abierta**, ninguna arista con
+grado distinto de dos, y ninguna silla de montar mal resuelta —la media de las
+cuatro esquinas es el valor exacto del interpolante bilineal en el centro, así
+que dos celdas vecinas no pueden decidirla distinto. Y que el coste está
+acotado: ningún eclipse pasa de dos segundos ni de 40 000 vértices.
+
+También descartó dos sospechas propias tras medirlas: la ventana de ±3,2 h no
+trunca ningún máximo (diferencia exactamente cero contra ±4 h en 25 307 puntos),
+y en el interior del mapa la banda dibujada coincidía con la verdadera en todos
+los puntos de control.
+
+### Lo que queda dicho y no arreglado
+
+Sobre el terminador el borde de la región no es una curva de nivel sino un
+salto: la función pasa de cero a un valor finito porque el Sol se pone. La
+bisección converge ahí a la propia línea del ocaso, que es lo correcto, pero la
+distancia a «la curva» la fija la rama de al lado. Todas las cuerdas que quedan
+peores de un kilómetro están ahí —comprobado: el Sol a 0,00° en su máximo en
+todas—, y las pruebas las apartan contándolas, con un tope sobre cuántas puede
+haber. Fuera del terminador la flecha de cuerda queda en 64 m de mediana, 0,22
+km en el percentil 90 y menos de 2 km en el peor caso.
+
+Y una advertencia del propio revisor que no es un defecto del código: 600 ms de
+cálculo en esta máquina son varios segundos de interfaz congelada en un teléfono
+modesto.
+
 ## Lección
 
-Las tres revisiones encontraron cosas distintas. La primera atacó la física y
+Las cuatro revisiones encontraron cosas distintas. La primera atacó la física y
 sobrevivió casi entera; lo que cayó fue la retórica del margen. La segunda atacó
 el código y encontró tres errores numéricos reales, dos de ellos en funciones que
 existían precisamente para validar.
@@ -308,6 +448,13 @@ había pruebas y frágil en todo lo demás: el caso que las pruebas ejercitaban 
 un eclipse total del hemisferio norte, y prácticamente todo lo que cayó estaba
 fuera de esa descripción. El hallazgo más grave no lo encontró ella, sino el
 hilo que dejó: los eclipses anulares no eran anulares.
+
+La cuarta atacó un algoritmo nuevo y encontró que lo correcto era casi todo
+—la aritmética, la topología, el coste— y que lo roto estaba en las **fronteras
+del dominio** y en las **optimizaciones**: el marco que se creía fuera del mapa
+y estaba dentro, la pista temporal que convertía la función en otra, la búsqueda
+que se enganchaba a la rama de al lado. Ninguna de las tres se veía leyendo el
+código, y las tres las tapaba una prueba que descartaba justo esa franja.
 
 El patrón común: los fallos se escondían donde no había criterio de aprobado. La
 comprobación V2 no tenía uno. `brentq` no tenía comprobación de que su intervalo

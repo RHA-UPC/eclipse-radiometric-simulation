@@ -86,7 +86,7 @@ const Bess = (() => {
     const eta = o.rs * cd - o.rc * cH * sd;
     const zeta = o.rs * sd + o.rc * cH * cd;
     const m = Math.hypot(e.x - xi, e.y - eta);
-    return { m, L1: e.l1 - zeta * B.tan_f1, L2: e.l2 - zeta * B.tan_f2, d: e.d, H };
+    return { m, zeta, L1: e.l1 - zeta * B.tan_f1, L2: e.l2 - zeta * B.tan_f2, d: e.d, H };
   }
 
   function altaz(o, g) {
@@ -335,22 +335,87 @@ const Bess = (() => {
   // superset. The test inside the loop is the same one as before, so the
   // pruning cannot change a single cell; besselian.test.js checks that
   // against an unpruned sweep.
+  // Golden section on the maximum in time, starting from an instant already
+  // known to be the closest of a coarse scan.
+  //
+  // This is not a refinement anyone can skip. Measured on 2026-08-12, the
+  // coarse scan at 3.2-minute steps undershoots the true maximum by 4e-4 in
+  // the median and by 1.4e-2 in the tail away from the terminator, which at a
+  // typical gradient is tens of kilometres of contour displacement. Worse, it
+  // undershoots by DIFFERENT amounts at different points, so a grid built on
+  // the coarse scan and a refinement built on the exact value are level sets
+  // of two different functions: 13 % of contour vertices came out with no sign
+  // change to bisect. The grid and the refinement have to be the same
+  // function, and this is it.
+  const T_SPAN = 3.2;
+
+  // Obscuration at one instant for one observer, without allocating.
+  //
+  // evaluate() and geom() each build an object, and this is called millions of
+  // times while the contours are refined: the objects alone were most of the
+  // run time. The arithmetic below is the same as those two functions
+  // composed, and besselian.test.js checks that it agrees with them.
+  function obsAt(B, o, t) {
+    const x = poly(B.x, t), y = poly(B.y, t);
+    const d = poly(B.d_deg, t) * D2R, mu = poly(B.mu_deg, t) * D2R;
+    const H = mu + o.lon - o.dmu;
+    const cH = Math.cos(H), sd = Math.sin(d), cd = Math.cos(d);
+    // El Sol tiene que estar sobre el horizonte GEODESICO, que es con el que
+    // local() decide si hay eclipse visible en el panel. zeta > 0 es el
+    // horizonte geocentrico y sobre un elipsoide no es lo mismo: los dos
+    // criterios discrepan hasta 0,091 grados de altura solar y, cerca del
+    // ocaso, esos minutos valian 19 puntos de obscuracion entre la banda que
+    // pintaba el mapa y la cifra que daba la ficha del mismo punto. Un mapa
+    // que contradice a su propia respuesta es peor que un mapa tosco.
+    if (Math.sin(o.p) * sd + Math.cos(o.p) * cd * cH <= 0) return 0;
+    const zeta = o.rs * sd + o.rc * cH * cd;
+    const L1 = poly(B.l1, t) - zeta * B.tan_f1;
+    const m = Math.hypot(x - o.rc * Math.sin(H), y - (o.rs * cd - o.rc * cH * sd));
+    if (m >= L1) return 0;
+    const L2 = poly(B.l2, t) - zeta * B.tan_f2;
+    return obscuration(m, (L1 + L2) / 2, (L1 - L2) / 2);
+  }
+
+  function timeMax(B, o, k, nt, span) {
+    span = span || T_SPAN;
+    const at = t => obsAt(B, o, t);
+    const T = kk => -span + 2 * span * kk / (nt - 1);
+    let a = T(Math.max(0, k - 1)), b = T(Math.min(nt - 1, k + 1));
+    const gr = 0.6180339887498949;
+    let c = b - gr * (b - a), d = a + gr * (b - a), fc = at(c), fd = at(d);
+    // Nueve pasos dejan el intervalo en el 1,3 % de sus 6,4 minutos, o sea
+    // cinco segundos de tiempo. Cerca de un maximo suave eso son 1e-6 de
+    // obscuracion; no compensa seguir. El valor del propio T(k) no se vuelve a
+    // evaluar aqui: quien llama ya lo tiene del barrido grueso.
+    for (let i = 0; i < 9; i++) {
+      if (fc > fd) { b = d; d = c; fd = fc; c = b - gr * (b - a); fc = at(c); }
+      else { a = c; c = d; fc = fd; d = a + gr * (b - a); fd = at(d); }
+    }
+    return Math.max(fc, fd);
+  }
+
   function obscurationGrid(B, nlon = 640, nlat = 320, nt = 121) {
     const grid = new Float32Array(nlon * nlat);
+    // En que instante ocurre el maximo de cada celda. No lo usa el dibujo: lo
+    // usa el afinado de los contornos, que asi puede mirar solo unos pocos
+    // instantes alrededor en vez de barrer las seis horas otra vez. Es la
+    // diferencia entre afinar un vertice en 4 us y en 18.
+    const tmax = new Int16Array(nlon * nlat).fill(-1);
     const dmu = dmuOf(B), rows = [];
     for (let j = 0; j < nlat; j++) {
       const lat = (90 - (j + 0.5) * 180 / nlat) * D2R;
       const N = 1 / Math.sqrt(1 - E2 * Math.sin(lat) ** 2);
-      rows.push({ rc: N * Math.cos(lat), rs: N * (1 - E2) * Math.sin(lat) });
+      rows.push({ p: lat, rc: N * Math.cos(lat), rs: N * (1 - E2) * Math.sin(lat),
+                  tan: Math.tan(lat) });
     }
     const clamp = c => c < -1 ? -1 : c > 1 ? 1 : c;
     for (let k = 0; k < nt; k++) {
-      const t = -3.2 + 6.4 * k / (nt - 1), e = evaluate(B, t);
+      const t = -T_SPAN + 2 * T_SPAN * k / (nt - 1), e = evaluate(B, t);
       const sd = Math.sin(e.d), cd = Math.cos(e.d);
       const base = (e.mu - dmu) * R2D;              // lon = H - (mu - dmu)
       for (let j = 0; j < nlat; j++) {
         const r = rows[j];
-        let cmin = -r.rs * sd / (r.rc * cd), cmax = 1;   // the Sun is up
+        let cmin = -r.tan * sd / cd, cmax = 1;           // el Sol sobre el horizonte
         const P = r.rs * cd - e.y, Q = r.rc * sd;        // |eta - y| < l1
         if (Math.abs(Q) < 1e-12) {
           if (Math.abs(P) >= e.l1) continue;
@@ -368,22 +433,344 @@ const Bess = (() => {
             const i = ((ii % nlon) + nlon) % nlon;
             const H = e.mu + (-180 + (i + 0.5) * 360 / nlon) * D2R - dmu;
             const cH = Math.cos(H);
+            // Horizonte geodesico, el mismo que obsAt y que local().
+            if (Math.sin(r.p) * sd + Math.cos(r.p) * cd * cH <= 0) continue;
             const zeta = r.rs * sd + r.rc * cH * cd;
-            if (zeta <= 0) continue;               // the Sun is below the horizon
             const m = Math.hypot(e.x - r.rc * Math.sin(H), e.y - (r.rs * cd - r.rc * cH * sd));
             const L1 = e.l1 - zeta * B.tan_f1, L2 = e.l2 - zeta * B.tan_f2;
             if (m >= L1) continue;
             const o = obscuration(m, (L1 + L2) / 2, (L1 - L2) / 2);
             const idx = j * nlon + i;
-            if (o > grid[idx]) grid[idx] = o;
+            if (o > grid[idx]) { grid[idx] = o; tmax[idx] = k; }
           }
         }
       }
     }
-    return { grid, nlon, nlat };
+
+    // Segunda pasada: donde el eclipse es parcial, el maximo se afina en el
+    // tiempo. Fuera de ahi no hace falta -- una celda en totalidad ya vale 1 y
+    // una sin eclipse vale 0 -- asi que esto cuesta sobre el 20 % de la malla.
+    for (let j = 0; j < nlat; j++) {
+      const r = rows[j], lat = (90 - (j + 0.5) * 180 / nlat) * D2R;
+      for (let i = 0; i < nlon; i++) {
+        const idx = j * nlon + i, v = grid[idx];
+        if (!(v > 0 && v < 1)) continue;
+        const o = { p: lat, lon: (-180 + (i + 0.5) * 360 / nlon) * D2R,
+                    rc: r.rc, rs: r.rs, dmu };
+        const w = timeMax(B, o, tmax[idx], nt, T_SPAN);
+        if (w > v) grid[idx] = w;
+      }
+    }
+    return { grid, tmax, nlon, nlat, nt };
+  }
+
+
+  // Max obscuration at one point, from the elements alone and to the same
+  // accuracy as the grid, because it runs the same refinement.
+  //
+  // `k` narrows the coarse scan to the neighbourhood of an instant already
+  // known to be close, which is what makes refining thousands of contour
+  // vertices affordable. It is a hint, not a promise: if the window comes up
+  // empty the scan falls back to the whole span rather than reporting that
+  // there is no eclipse here.
+  function maxObscuration(B, lat, lon, opts) {
+    opts = opts || {};
+    const nt = opts.nt || 121, span = opts.span || T_SPAN;
+    const o = opts.o || observer(B, lat, lon, 0);
+    const at = t => obsAt(B, o, t);
+    const T = k => -span + 2 * span * k / (nt - 1);
+    let lo = 0, hi = nt - 1;
+    if (opts.k >= 0) { lo = Math.max(0, opts.k - 2); hi = Math.min(nt - 1, opts.k + 2); }
+    let best = 0, bk = -1;
+    const scan = (a, b) => {
+      for (let k = a; k <= b; k++) { const v = at(T(k)); if (v > best) { best = v; bk = k; } }
+    };
+    scan(lo, hi);
+    // La pista viene de la celda mas cercana, y el instante del maximo salta
+    // de una celda a la vecina justo al cruzar el terminador. Con la ventana
+    // fija en k+-2, medido, 59 de 93 290 llamadas devolvian otra cosa que el
+    // barrido entero, y una de ellas por 0,54 de obscuracion. Asi que la
+    // ventana se ensancha mientras el maximo siga cayendo en su borde: en el
+    // caso normal no cuesta nada, y donde la pista falla acaba barriendolo
+    // todo. Esto sustituye ademas al respaldo anterior, que estaba mal escrito
+    // y no se activaba nunca para k <= 2.
+    while (lo > 0 && (bk < 0 || bk === lo)) { const n = Math.max(0, lo - 3); scan(n, lo - 1); lo = n; }
+    while (hi < nt - 1 && (bk < 0 || bk === hi)) { const n = Math.min(nt - 1, hi + 3); scan(hi + 1, n); hi = n; }
+    if (bk < 0) return 0;
+    if (best >= 1) return 1;
+    return Math.max(best, timeMax(B, o, bk, nt, span));
+  }
+
+  // Filled obscuration bands, as closed rings of [lat, lon].
+  //
+  // The grid decides the TOPOLOGY -- which cells a level runs through and in
+  // what order -- and nothing else. Every vertex sits on a grid edge whose two
+  // ends straddle the level, and the crossing is recovered by BISECTING the
+  // true maximum-obscuration function along that edge, not by interpolating
+  // the two grid values. So the vertex position does not inherit the grid step
+  // either; what is left is the bisection tolerance, which is metres, and the
+  // chord between consecutive vertices. besselian.test.js measures both.
+  //
+  // The domain is framed with a row and a column of -1 one cell outside the
+  // world. Every contour therefore closes inside that frame, with no special
+  // case for the poles and none for the antimeridian, and the stretch of ring
+  // that runs through the frame is off the map: the view is clamped to the
+  // world and cannot pan there. A band that genuinely crosses the antimeridian
+  // comes out cut at both edges, which is what a non-wrapping map has to show.
+  // La banda mas exterior empieza en el 5 %, no en el 0,1 %.
+  //
+  // No es una eleccion estetica. Cerca del borde de la penumbra el eclipse
+  // dura minutos, y el barrido de 121 instantes se lo pierde: medido contra un
+  // barrido de 2001, la perdida llega a 0,0165 de obscuracion y 32 de 2227
+  // puntos de la orla con eclipse se leen como cero. Un contorno del 0,1 %
+  // persigue ahi una funcion que vale cero a trozos, y sale dentado. El 5 % da
+  // tres veces de margen sobre esa perdida. Lo que queda por fuera son unos
+  // 175 km de orla sobre una penumbra de 7000, y el limite de verdad ya esta
+  // dibujado: es el contorno de la penumbra, la linea de trazos.
+  const BAND_LEVELS = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+
+  // Conexiones de marching squares. Bits: tl 8, tr 4, br 2, bl 1.
+  // Codigos de lado: 0 arriba, 1 derecha, 2 abajo, 3 izquierda.
+  const MS_CASE = [
+    [], [[3, 2]], [[2, 1]], [[3, 1]], [[0, 1]], null, [[0, 2]], [[3, 0]],
+    [[3, 0]], [[0, 2]], null, [[0, 1]], [[3, 1]], [[2, 1]], [[3, 2]], []
+  ];
+
+  const KM_PER_DEG = 111.19;
+  function contours(B, opts) {
+    opts = opts || {};
+    const levels = opts.levels || BAND_LEVELS;
+    const tolKm = opts.tolKm === undefined ? 0.5 : opts.tolKm;
+    // Diez pasadas y no siete: medido, la septima seguia insertando puntos en
+    // 113 combinaciones de eclipse y nivel, o sea que el corte llegaba antes
+    // que la convergencia. La subdivision solo trabaja donde hace falta, asi
+    // que subir el tope no cuesta donde ya habia terminado.
+    const maxDepth = opts.maxDepth === undefined ? 10 : opts.maxDepth;
+    const G = opts.grid || obscurationGrid(B, opts.nlon || 400, opts.nlat || 200, opts.nt || 121);
+    const nlon = G.nlon, nlat = G.nlat, nt = G.nt;
+    // La retícula: marco, borde del mundo, centros de celda, borde, marco.
+    //
+    // El borde del mundo lleva valores REALES, calculados, no interpolados.
+    // Sin él, la arista que une el último centro de celda con el marco de -1
+    // se cortaba interpolando contra -1 sobre 1,35 grados, y ese corte caía
+    // DENTRO del mapa: medido, hasta 66 km adentro por el antimeridiano y 39
+    // por los polos, con la banda equivocada pintada ahí, en los 56 eclipses.
+    // Con nodos reales en ±180 y ±90, todo cruce contra el marco cae en el
+    // borde o más allá, que es donde se pretendía que cayera.
+    const nrow = nlat + 4, ncol = nlon + 4;
+    const dlat = 180 / nlat, dlon = 360 / nlon;
+
+    const val = new Float32Array(nrow * ncol).fill(-1);
+    const kAt = new Int16Array(nrow * ncol).fill(-1);
+    const lats = new Float64Array(nrow), lons = new Float64Array(ncol);
+    lats[0] = 90 + dlat; lats[1] = 90;
+    lats[nlat + 2] = -90; lats[nlat + 3] = -90 - dlat;
+    lons[0] = -180 - dlon; lons[1] = -180;
+    lons[nlon + 2] = 180; lons[nlon + 3] = 180 + dlon;
+    for (let j = 0; j < nlat; j++) lats[j + 2] = 90 - (j + 0.5) * dlat;
+    for (let i = 0; i < nlon; i++) lons[i + 2] = -180 + (i + 0.5) * dlon;
+    for (let j = 0; j < nlat; j++) {
+      for (let i = 0; i < nlon; i++) {
+        val[(j + 2) * ncol + i + 2] = G.grid[j * nlon + i];
+        kAt[(j + 2) * ncol + i + 2] = G.tmax[j * nlon + i];
+      }
+    }
+    const edge = (r, c, rIn, cIn) => {
+      const kh = kAt[rIn * ncol + cIn];
+      kAt[r * ncol + c] = kh;
+      val[r * ncol + c] = maxObscuration(B, lats[r], lons[c], { nt, k: kh });
+    };
+    for (let c = 1; c <= nlon + 2; c++) {
+      const cIn = Math.min(nlon + 1, Math.max(2, c));
+      edge(1, c, 2, cIn);
+      edge(nlat + 2, c, nlat + 1, cIn);
+    }
+    for (let r = 2; r <= nlat + 1; r++) {
+      edge(r, 1, r, 2);
+      edge(r, nlon + 2, r, nlon + 1);
+    }
+
+    // Instante del maximo en la celda mas cercana, como pista temporal para
+    // un punto que no esta en la malla.
+    const kNear = (la, lo) => {
+      const j = Math.min(nlat - 1, Math.max(0, Math.floor((90 - la) / dlat)));
+      const i = Math.min(nlon - 1, Math.max(0, Math.floor((lo + 180) / dlon)));
+      return kAt[(j + 2) * ncol + i + 2];
+    };
+
+    // Punto del contorno sobre la normal a una cuerda, buscado a media cuerda
+    // de distancia a cada lado. Devuelve null si ahi no hay cambio de signo,
+    // que es lo que pasa sobre el terminador: alli el borde de la region es un
+    // salto de la funcion y no una curva de nivel, y no hay nada que afinar.
+    const onCurve = (level, a, b) => {
+      const la = (a[0] + b[0]) / 2, lo = (a[1] + b[1]) / 2;
+      if (Math.abs(la) > 90 || Math.abs(lo) > 180) return null;
+      const cs = Math.max(1e-6, Math.cos(la * D2R));
+      const dx = (b[1] - a[1]) * cs, dy = b[0] - a[0];
+      const L = Math.hypot(dx, dy);
+      if (!(L > 0)) return null;
+      const nx = -dy / L, ny = dx / L, kh = kNear(la, lo);
+      // La normal se traza en distancia de arco y se devuelve a longitud
+      // dividiendo por el coseno de la latitud. Cerca del polo ese coseno es
+      // diminuto y un desplazamiento de un grado de arco se convierte en cien
+      // de longitud: medido, salian vertices a 185 grados, fuera del dominio.
+      // De ahi las dos guardas: el radio de busqueda no pasa de medio grado de
+      // arco, y un resultado que se salga del marco se descarta.
+      const at = u => [la + ny * u, lo + nx * u / cs];
+      const inside = q => Math.abs(q[0]) <= 90 && Math.abs(q[1]) <= 180;
+      // Media cuerda a cada lado, que es lo que decia el comentario y lo que
+      // hace falta: con una cuerda entera la biseccion podia engancharse a
+      // OTRA rama del contorno que pasara cerca, y el anillo se cruzaba
+      // consigo mismo. La curva verdadera se aparta de su cuerda mucho menos
+      // que media cuerda, asi que si la raiz no esta ahi, no es esta.
+      const R = Math.min(L / 2, 0.5);
+      const f = u => { const q = at(u); return maxObscuration(B, q[0], q[1], { nt, k: kh }) - level; };
+      let u0 = -R, u1 = R, f0 = f(u0);
+      if ((f0 < 0) === (f(u1) < 0)) return null;
+      for (let it = 0; it < 12; it++) {
+        const u = (u0 + u1) / 2, fu = f(u);
+        if ((f0 < 0) === (fu < 0)) { u0 = u; f0 = fu; } else { u1 = u; }
+      }
+      const q = at((u0 + u1) / 2);
+      return inside(q) ? q : null;
+    };
+
+    // Subdivision adaptativa. La malla decide DONDE EMPIEZAN los vertices; la
+    // tolerancia decide donde acaban. Para una curva muestreada a paso
+    // constante, la distancia h de un vertice a la cuerda que une sus dos
+    // vecinos es cuatro veces la flecha de un solo tramo, asi que h/4 estima
+    // el error sin evaluar nada. Los tramos que se pasan de tolerancia reciben
+    // un punto nuevo, y ese si se calcula contra la funcion real.
+    const segKm = (a, b) => Math.hypot((b[1] - a[1]) * Math.cos((a[0] + b[0]) / 2 * D2R),
+                                       b[0] - a[0]) * KM_PER_DEG;
+    function densify(ring, level) {
+      for (let pass = 0; pass < maxDepth; pass++) {
+        const n = ring.length;
+        const h = new Float64Array(n);
+        for (let i = 0; i < n; i++) {
+          const a = ring[(i - 1 + n) % n], b = ring[i], c = ring[(i + 1) % n];
+          const cs = Math.cos(b[0] * D2R);
+          const ax = (a[1] - b[1]) * cs, ay = a[0] - b[0];
+          const cx = (c[1] - b[1]) * cs, cy = c[0] - b[0];
+          const L = Math.hypot(cx - ax, cy - ay);
+          h[i] = L > 0 ? Math.abs(ax * (cy - ay) - ay * (cx - ax)) / L * KM_PER_DEG : 0;
+        }
+        const out = [];
+        let added = 0;
+        for (let i = 0; i < n; i++) {
+          const a = ring[i], b = ring[(i + 1) % n];
+          out.push(a);
+          // a[2] marca un tramo que ya se probo y no tiene raiz que afinar:
+          // sobre el terminador el borde de la region es un salto, no una
+          // curva de nivel. Sin esta marca se vuelve a sondear en cada pasada,
+          // y la mitad del contorno de un eclipse va por el terminador.
+          if (a[2]) continue;
+          const est = Math.max(h[i], h[(i + 1) % n]) / 4;
+          const len = segKm(a, b);
+          if (est <= tolKm || len < 2 * tolKm || len > 1000) continue;
+          const q = onCurve(level, a, b);
+          if (q) { out.push(q); added++; } else { a[2] = 1; }
+        }
+        if (!added) break;
+        ring = out;
+      }
+      return ring;
+    }
+
+    const NH = nrow * ncol, NE = 2 * NH;
+    const nb1 = new Int32Array(NE), nb2 = new Int32Array(NE);
+    const seen = new Uint8Array(NE);
+    const out = [];
+    let vertices = 0, fallbacks = 0;
+
+    for (const level of levels) {
+      nb1.fill(-1); nb2.fill(-1); seen.fill(0);
+      const link = (a, b) => {
+        if (nb1[a] < 0) nb1[a] = b; else nb2[a] = b;
+        if (nb1[b] < 0) nb1[b] = a; else nb2[b] = a;
+      };
+      for (let r = 0; r < nrow - 1; r++) {
+        for (let c = 0; c < ncol - 1; c++) {
+          const tl = val[r * ncol + c], tr = val[r * ncol + c + 1];
+          const bl = val[(r + 1) * ncol + c], br = val[(r + 1) * ncol + c + 1];
+          const idx = (tl >= level ? 8 : 0) | (tr >= level ? 4 : 0)
+                    | (br >= level ? 2 : 0) | (bl >= level ? 1 : 0);
+          let segs = MS_CASE[idx];
+          if (segs === null) {
+            // Silla de montar. El centro decide si el interior pasa por el
+            // medio (y entonces lo que se separa son las dos esquinas de
+            // fuera) o al reves. Cualquiera de las dos da curvas cerradas;
+            // lo que no puede es decidirse distinto en celdas vecinas.
+            const mid = (tl + tr + br + bl) / 4;
+            segs = (mid >= level) ? [[3, 0], [1, 2]] : [[0, 1], [2, 3]];
+            if (idx === 10) segs = (mid >= level) ? [[0, 1], [2, 3]] : [[3, 0], [1, 2]];
+          }
+          if (!segs.length) continue;
+          const E = [r * ncol + c, NH + r * ncol + c + 1,
+                     (r + 1) * ncol + c, NH + r * ncol + c];
+          for (const sg of segs) link(E[sg[0]], E[sg[1]]);
+        }
+      }
+
+      // Cada arista cortada pertenece a exactamente dos celdas, asi que tiene
+      // grado dos y todo lo que se recorre son anillos cerrados.
+      const rings = [];
+      for (let e = 0; e < NE; e++) {
+        if (nb1[e] < 0 || seen[e]) continue;
+        const chain = [];
+        let cur = e, prev = -1;
+        while (cur >= 0 && !seen[cur]) {
+          seen[cur] = 1; chain.push(cur);
+          const a = nb1[cur], b = nb2[cur];
+          cur = (a !== prev && a >= 0 && !seen[a]) ? a
+              : ((b !== prev && b >= 0 && !seen[b]) ? b : -1);
+          prev = chain[chain.length - 1];
+        }
+        if (chain.length < 3) continue;
+        const ring = [];
+        for (const id of chain) {
+          const h = id < NH;
+          const q = h ? id : id - NH;
+          const r0 = (q / ncol) | 0, c0 = q % ncol;
+          const r1 = h ? r0 : r0 + 1, c1 = h ? c0 + 1 : c0;
+          const v0 = val[r0 * ncol + c0], v1 = val[r1 * ncol + c1];
+          const la0 = lats[r0], lo0 = lons[c0], la1 = lats[r1], lo1 = lons[c1];
+          let t = (v1 === v0) ? 0.5 : (level - v0) / (v1 - v0);
+          // Afinado. Solo entre nodos reales: en el marco no hay funcion que
+          // afinar, y esa parte del anillo cae fuera del mapa de todas formas.
+          const real = r0 >= 1 && r0 <= nlat + 2 && c0 >= 1 && c0 <= nlon + 2
+                    && r1 >= 1 && r1 <= nlat + 2 && c1 >= 1 && c1 <= nlon + 2;
+          if (real) {
+            const kh = v0 >= v1 ? kAt[r0 * ncol + c0] : kAt[r1 * ncol + c1];
+            const f = u => maxObscuration(B, la0 + u * (la1 - la0), lo0 + u * (lo1 - lo0),
+                                          { nt, k: kh }) - level;
+            let a = 0, b = 1, fa = f(0), fb = f(1);
+            if ((fa < 0) === (fb < 0)) { fallbacks++; }
+            else {
+              for (let it = 0; it < 10; it++) {
+                const u = (a + b) / 2, fu = f(u);
+                if ((fa < 0) === (fu < 0)) { a = u; fa = fu; } else { b = u; fb = fu; }
+              }
+              t = (a + b) / 2;
+            }
+          }
+          ring.push([la0 + t * (la1 - la0), lo0 + t * (lo1 - lo0)]);
+        }
+        vertices += ring.length;
+        rings.push(tolKm > 0 ? densify(ring, level) : ring);
+      }
+      // Fuera la marca de tramo no afinable: es andamiaje de densify() y no
+      // tiene por que salir en el resultado, donde Leaflet la leeria como una
+      // altitud.
+      out.push(rings.map(r => r.map(q => [q[0], q[1]])));
+    }
+    let total = 0;
+    for (const rr of out) for (const r of rr) total += r.length;
+    return { levels, rings: out, vertices: total, coarse: vertices, fallbacks, grid: G };
   }
 
   return { evaluate, axisPoint, project, local, observer, geom, altaz, utcOf,
+           maxObscuration, obsAt, contours, BAND_LEVELS,
            obscuration, magnitude, centralLine, limits, penumbraOutline, obscurationGrid };
 })();
 

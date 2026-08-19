@@ -141,6 +141,13 @@ por dentro: por encima de 85° no tiene nada que dibujar, así que los casquetes
 polares quedan sin fondo de calles. El mapa sí llega hasta 90°, y la trayectoria
 y las bandas se dibujan ahí igual.
 
+Las bandas de obscuración son **polígonos vectoriales**, no una imagen, así que
+se ven igual de limpias al zoom 2 que al 15. La malla de cálculo solo decide por
+dónde pasa cada contorno; la posición de cada vértice se busca bisecando la
+función real, y las cuerdas se subdividen hasta quedarse a menos de medio
+kilómetro de la curva. Cuesta medio segundo por eclipse, una vez, y a partir de
+ahí mover el mapa no cuesta nada.
+
 Hay **tres temas**: claro, que es el de la casa; oscuro; y uno pensado para
 daltonismo y baja visión, con el contraste al máximo, más cuerpo de letra,
 trazos más gruesos, una rampa sin ningún par rojo/verde y el contorno de cada

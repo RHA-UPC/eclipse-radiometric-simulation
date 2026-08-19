@@ -38,11 +38,12 @@ const RAMPS = {
   a11y: [[0, 34, 78], [45, 88, 133], [124, 123, 120], [190, 165, 74], [254, 232, 56]]
 };
 
-let CAT = null, map, landLayer, borderLayer, pathLayers = [], marker = null, shade = null;
+let CAT = null, map, landLayer, borderLayer, pathLayers = [], marker = null;
 let current = null, mode = 'eclipse', lastPoint = null;
 let basemap = 'streets', streetLayer = null, worldLoad = null, fellBack = false;
 let theme = document.documentElement.dataset.theme || 'light';
-let legendBox = null, gridCache = null, lastR = null, caps = [];
+let legendBox = null, bandLayers = [], lastR = null, caps = [];
+const bandCache = new Map();
 const WORLD = L.latLngBounds([-90, -180], [90, 180]);
 
 // The street basemap is the default and there is no switch for it. This is
@@ -119,7 +120,10 @@ function initMap() {
   clampZoom();
   map.on('resize', clampZoom);
 
-  map.on('zoomend', () => { if (shade) shade.setOpacity(shadeOpacity()); });
+  map.on('zoomend', () => {
+    const op = shadeOpacity();
+    bandLayers.forEach(l => l.setStyle({ fillOpacity: l._alpha * op }));
+  });
   map.on('click', e => {
     const lon = ((e.latlng.lng + 180) % 360 + 360) % 360 - 180;
     setPoint(e.latlng.lat, lon);
@@ -143,7 +147,7 @@ function renderLegend() {
     <i style="background:${cssv('--limit')};opacity:.55"></i>límites de la umbra<br>
     <i style="background:${cssv('--penumbra')};border-top:1px dashed ${cssv('--penumbra')}"></i>borde de la penumbra<br>
     <span>obscuración máxima</span>
-    <span class="ramp" style="background:linear-gradient(90deg,${ramp})"></span>0 → 100 %
+    <span class="ramp" style="background:linear-gradient(90deg,${ramp})"></span>5 → 100 %
     ${theme === 'a11y' ? '<br>cada escalón del 10 % va contorneado' : ''}`;
 }
 
@@ -205,7 +209,6 @@ function loadWorld() {
       pane: 'land', interactive: false, style: landStyle()
     }).addTo(map);
     borderLayer = null;
-    if (shade) shade.setOpacity(shadeOpacity());
   }).catch(() => { worldLoad = null; });
   return worldLoad;
 }
@@ -255,96 +258,75 @@ function addCaps() {
 }
 
 
-// Obscuration raster.
+// Obscuration bands, as vector polygons.
 //
-// Two resolutions, and they are not the same thing. The GRID is where the
-// arithmetic happens, 0.56 deg and 121 instants; the CANVAS is three times
-// finer and gets there by bilinear interpolation. That is not cheating: max
-// obscuration is a smooth field, with no coastline and no terrain in it, so
-// below the grid step there is nothing left to sample -- what a finer grid
-// bought was a smoother contour, and interpolation buys the same for a
-// hundredth of the cost. Computing the canvas resolution directly is nine
-// times the work, several seconds, for a picture the eye cannot tell apart.
+// This used to be a raster, and a raster has one resolution while a map has
+// as many as it has zoom levels. A canvas of 1920 by 960 covering the whole
+// world is a pixel every 21 km, which at zoom 7 is 34 screen pixels: the
+// bands came out as staircases and the accessible mode's 2-pixel outlines
+// came out as 68-pixel steps. No canvas size fixes that, because the map goes
+// to zoom 15.
 //
-// The step quantisation stays. A continuous ramp saturates: over a continent
-// where everything lies between 90 and 100 %, every pixel is the same colour
-// and the raster stops carrying information. Interpolating BEFORE quantising
-// is what makes the steps read as clean contours instead of staircases.
-const UPSCALE = 3;
-
-function gridOf(e) {
-  if (!gridCache || gridCache.id !== e.id)
-    gridCache = { id: e.id, g: Bess.obscurationGrid(e.elements) };
-  return gridCache.g;
+// So the bands are polygons now and the browser scales them. `Bess.contours`
+// builds them: the grid finds the topology, every vertex is then placed by
+// bisecting the true maximum-obscuration function, and the chords are
+// subdivided until they sit within half a kilometre of the real curve. It
+// costs around a second per eclipse, once, against 350 ms for the raster --
+// and after that, panning and zooming cost nothing at all, where the raster
+// paid for a redraw on every zoom.
+//
+// One polygon per band, each carrying the contour ABOVE it as a hole, so the
+// fills do not stack: two overlapping translucent fills would multiply their
+// alphas and the ten steps would stop being ten steps. Leaflet draws every
+// ring of a polygon into a single path with fill-rule evenodd, so the hole
+// works without any point-in-polygon bookkeeping.
+// Se guardan varios: ir y volver entre dos eclipses del catalogo con un solo
+// hueco de cache repagaba el segundo entero cada vez.
+const BAND_CACHE = 8;
+function bandsOf(e) {
+  let hit = bandCache.get(e.id);
+  if (!hit) {
+    hit = Bess.contours(e.elements);
+    bandCache.set(e.id, hit);
+    if (bandCache.size > BAND_CACHE) bandCache.delete(bandCache.keys().next().value);
+  }
+  return hit;
 }
 
-function drawShade(e) {
-  if (shade) { map.removeLayer(shade); shade = null; }
-  // The grid is equirectangular and so is the map, so it goes down as it is.
-  // That is the whole reason the street basemap is a WMS in EPSG:4326 rather
-  // than the usual Mercator tiles: an image overlay stretches linearly in
-  // projected space, and in Mercator this raster would have to be resampled
-  // row by row or it slides tens of degrees at high latitude.
-  const g = gridOf(e);
-  const W = g.nlon * UPSCALE, H = g.nlat * UPSCALE;
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const ctx = cv.getContext('2d');
-  const img = ctx.createImageData(W, H);
+const clearBands = () => { bandLayers.forEach(l => map.removeLayer(l)); bandLayers = []; };
+
+function drawBands(e) {
+  clearBands();
+  const C = bandsOf(e);
   const ramp = RAMPS[theme] || RAMPS.dark;
-  const step = new Int8Array(W * H).fill(-1);   // -1 = fuera del eclipse
-
-  for (let y = 0; y < H; y++) {
-    const fy = (y + 0.5) / UPSCALE - 0.5;
-    const j0 = Math.max(0, Math.min(g.nlat - 1, Math.floor(fy)));
-    const j1 = Math.min(g.nlat - 1, j0 + 1);
-    const wy = Math.min(1, Math.max(0, fy - j0));
-    for (let x = 0; x < W; x++) {
-      const fx = (x + 0.5) / UPSCALE - 0.5;
-      const i0 = Math.floor(fx), wx = fx - i0;
-      // Longitude wraps: the antimeridian is a seam in the array and not in
-      // the world, and without this the raster shows a one-pixel scar there.
-      const a = ((i0 % g.nlon) + g.nlon) % g.nlon;
-      const b = ((i0 + 1) % g.nlon + g.nlon) % g.nlon;
-      const raw = (g.grid[j0 * g.nlon + a] * (1 - wx) + g.grid[j0 * g.nlon + b] * wx) * (1 - wy)
-                + (g.grid[j1 * g.nlon + a] * (1 - wx) + g.grid[j1 * g.nlon + b] * wx) * wy;
-      if (raw <= 0.001) continue;
-      const k = y * W + x;
-      const n = Math.min(9, Math.floor(raw * 10));
-      step[k] = n;
-      const v = n / 10 + 0.05;
-      const f = v * (ramp.length - 1), i = Math.floor(f), w = f - i;
-      const c = ramp[i].map((q, m) => q * (1 - w) + ramp[i + 1][m] * w);
-      img.data.set([c[0], c[1], c[2], 55 + 175 * v], k * 4);
-    }
+  const op = shadeOpacity();
+  for (let i = 0; i < C.rings.length; i++) {
+    const outer = C.rings[i];
+    if (!outer.length) continue;
+    const holes = C.rings[i + 1] || [];
+    // El color sale del punto medio de la banda, leido de los niveles, no de
+    // suponer que son diez: con once, i/10 + 0,05 se pasaba del final de la
+    // rampa y el dibujo moria con un TypeError.
+    const v = (C.levels[i] + (i + 1 < C.levels.length ? C.levels[i + 1] : 1)) / 2;
+    const f = v * (ramp.length - 1), k = Math.floor(f), w = f - k;
+    const c = ramp[k].map((q, m) => Math.round(q * (1 - w) + ramp[k + 1][m] * w));
+    const alpha = (55 + 175 * v) / 255;
+    const band = L.polygon(outer.concat(holes), {
+      pane: 'shade', interactive: false,
+      stroke: theme === 'a11y', color: '#111111', weight: 1, opacity: 0.85,
+      fillColor: `rgb(${c[0]},${c[1]},${c[2]})`, fillOpacity: alpha * op
+    }).addTo(map);
+    band._alpha = alpha;
+    bandLayers.push(band);
   }
-
-  // Accessible mode outlines every 10 % step, including the outer edge of the
-  // eclipse. Two pixels wide, because one pixel is what low vision loses
-  // first, and because it is what makes the map readable with the colour
-  // channel gone entirely.
-  if (theme === 'a11y') {
-    const d = img.data, ink = [17, 17, 17, 240];
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const k = y * W + x, n = step[k];
-        if (x + 1 < W && step[k + 1] !== n) { d.set(ink, k * 4); d.set(ink, (k + 1) * 4); }
-        if (y + 1 < H && step[k + W] !== n) { d.set(ink, k * 4); d.set(ink, (k + W) * 4); }
-      }
-    }
-  }
-
-  ctx.putImageData(img, 0, 0);
-  shade = L.imageOverlay(cv.toDataURL(), [[-90, -180], [90, 180]],
-    { pane: 'shade', opacity: shadeOpacity() }).addTo(map);
 }
 
 // The raster answers "where is it visible at all", which is a world-scale
 // question. Zoomed in on a path it only hides the coastline, so it fades.
 const shadeOpacity = () => {
   const z = map.getZoom();
-  if (basemap === 'streets') return z >= 8 ? 0.12 : z >= 5 ? 0.28 : 0.55;
-  return z >= 5 ? 0.22 : 0.62;
+  if (basemap === 'streets') return z >= 8 ? 0.18 : z >= 5 ? 0.32 : 0.55;
+  return z >= 5 ? 0.26 : 0.62;
 };
 
 // Split a track at the antimeridian and at the nulls the geometry inserts
@@ -365,7 +347,7 @@ function segments(pts) {
 function drawEclipse(e) {
   clearPaths();
   const B = e.elements;
-  drawShade(e);
+  drawBands(e);
   const thick = +cssv('--stroke') || 1;
   for (const seg of Bess.penumbraOutline(B, e.greatest_h))
     pathLayers.push(L.polyline(segments(seg), { color: cssv('--penumbra'), weight: thick,
@@ -532,7 +514,7 @@ function setMode(m) {
   document.querySelectorAll('.mode').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
   $('#ctl-eclipse').hidden = m !== 'eclipse';
   $('#ctl-lugar').hidden = m === 'eclipse';
-  if (m === 'lugar') { clearPaths(); if (shade) { map.removeLayer(shade); shade = null; } }
+  if (m === 'lugar') { clearPaths(); clearBands(); }
   else if (current) drawEclipse(current);
   if (lastPoint) setPoint(lastPoint[0], lastPoint[1]);
   else $('#result').innerHTML = '';

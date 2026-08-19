@@ -293,9 +293,10 @@ Lo que sigue abierto:
   2026 empieza a 87° N. Por eso el mapa va en `L.CRS.EPSG4326` y el fondo de
   calles es un WMS en esa misma proyección, no la pirámide de teselas de
   OpenStreetMap. Cambiar la CRS del mapa para poner teselas obliga además a
-  reconstruir el mapa entero (Leaflet la fija al construir) y a remuestrear la
-  trama de obscuración fila a fila, porque un `imageOverlay` se estira
-  linealmente en el espacio proyectado. Se probó y se descartó.
+  reconstruir el mapa entero, porque Leaflet la fija al construir. Se probó y se
+  descartó. (Antes había un segundo motivo, que las bandas eran una imagen y en
+  Mercator habría que remuestrearla fila a fila; ya no lo son, y ese motivo se
+  ha caído. El de los polos, no.)
 - El fondo de calles es el **predeterminado** y no hay conmutador: esto se
   despliega en la web, donde hay conexión, y ofrecer la elección obligaba al
   visitante a decidir algo que no puede juzgar. Lo que sí hay que mantener
@@ -337,14 +338,77 @@ Lo que sigue abierto:
   en las capturas. Lo que funciona es atenuar la tesela, y el filtro va sobre la
   **imagen**, no sobre el panel: en ese panel viven también las costas de
   respaldo, que ya se dibujan con los colores del tema.
-- La trama de obscuración tiene **dos resoluciones distintas y no son lo mismo**.
-  La malla es donde ocurre la aritmética (640 × 320 celdas, 121 instantes); el
-  lienzo es tres veces más fino y llega ahí por interpolación bilineal. No es
-  trampa: la obscuración máxima es un campo liso, sin costas ni relieve dentro,
-  así que por debajo del paso de la malla no queda nada que muestrear. Calcular
-  a la resolución del lienzo es nueve veces el trabajo, varios segundos, para
-  una imagen que el ojo no distingue. Interpolar **antes** de cuantizar es lo que
-  convierte los escalones del 10 % en contornos limpios en vez de escaleras.
+- Las bandas de obscuración son **polígonos, no una trama**, y volver a una
+  trama es volver al problema: una imagen tiene una resolución y un mapa tiene
+  tantas como niveles de zoom. Un lienzo de 1920 × 960 sobre el mundo es un
+  píxel cada 21 km, o sea 34 píxeles de pantalla al zoom 7, y los contornos de
+  2 píxeles del modo accesible salían como escalones de 68. Ningún tamaño de
+  lienzo lo arregla, porque el mapa llega al zoom 15.
+- **La malla y el afinado tienen que ser la misma función.** El barrido de 121
+  instantes se queda corto respecto al máximo verdadero, y se queda corto en
+  cantidades distintas en cada punto: medido, 4·10⁻⁴ en la mediana y 1,4·10⁻² en
+  la cola. Con la malla sobre el barrido y el afinado sobre el valor exacto, son
+  conjuntos de nivel de dos funciones distintas y el 13 % de los vértices sale
+  sin cambio de signo que bisecar. Por eso `obscurationGrid` hace una segunda
+  pasada de sección áurea sobre las celdas con `0 < o < 1`, y por eso
+  `maxObscuration` corre exactamente ese mismo afinado. Si tocas uno, toca el
+  otro.
+- **Sobre el terminador no hay curva de nivel, hay un salto.** Lo que se dibuja
+  es la obscuración máxima *con el Sol sobre el horizonte*, así que en la línea
+  del ocaso la función salta de cero a un valor finito. Ahí el borde de la
+  región es una discontinuidad: la bisección converge a la propia línea del
+  ocaso, que es lo correcto, y comprobar `|g − nivel| ≈ 0` no significa nada.
+  Cerca de la mitad de los vértices de un contorno están ahí. Los tests los
+  identifican por la altura del Sol en el instante de su máximo y los cuentan
+  aparte; no los descartes en silencio.
+- El dominio de los contornos se enmarca con una fila y una columna de **−1 una
+  celda por fuera del mundo**. Eso es lo que hace que todo contorno cierre sin
+  ningún caso especial en los polos ni en el antimeridiano. Quitar el marco
+  obliga a escribir el recorrido del borde del dominio, que es donde vive la
+  mitad de los errores de marching squares.
+- **El marco no basta: hacen falta nodos reales en ±180 y ±90.** Sin ellos, la
+  arista que une el último centro de celda con el marco se corta interpolando
+  contra −1 sobre 1,35°, y ese corte cae **dentro** del mapa siempre que el
+  valor sea menor que (1+3·nivel)/2 — para el nivel 0,9, siempre. Medido, la
+  banda dibujada era la equivocada hasta 66 km adentro por el antimeridiano y 39
+  por los polos, en los 56 eclipses. Los nodos del borde del mundo se calculan,
+  no se interpolan.
+- **El horizonte es el geodésico en todas partes.** `local()` decide con la
+  altura sobre el horizonte local y el mapa hacía lo propio con ζ > 0, que es el
+  geocéntrico. Sobre un elipsoide no es lo mismo: discrepan hasta 0,091° de
+  altura solar, y cerca del ocaso el mapa pintaba una banda del 30-40 % en un
+  punto cuya ficha respondía 57,9 %. `SAFETY.md` prohíbe que el mapa contradiga
+  a su propia respuesta.
+- La pista temporal de `maxObscuration` **tiene que poder ensancharse**. El
+  instante del máximo salta de una celda a la vecina al cruzar el terminador,
+  y con la ventana fija en k±2 la función devolvía otra cosa que el barrido
+  entero en 59 de 93 290 llamadas, una por 0,54 de obscuración. La ventana se
+  ensancha mientras el máximo siga cayendo en su borde.
+- La subdivisión adaptativa busca la curva a **media cuerda** de distancia, no a
+  una cuerda. Con una cuerda entera la bisección se engancha a otra rama del
+  contorno que pase cerca, y el anillo se cruza consigo mismo: había 1447
+  autocruces, y con `fill-rule: evenodd` cada lazo invierte el relleno.
+- La banda más exterior empieza en el **5 %** y eso no es estético. Cerca del
+  borde de la penumbra el eclipse dura minutos y el barrido de 121 instantes se
+  lo pierde: hasta 0,0165 de obscuración, y 32 de 2227 puntos de la orla se leen
+  como cero. El límite de verdad lo dibuja el contorno de la penumbra, que es
+  geométrico y no muestrea el tiempo.
+- La normal a una cuerda se traza en distancia de arco y se devuelve a longitud
+  **dividiendo por el coseno de la latitud**. Cerca del polo ese coseno es
+  diminuto y medio grado de arco se convierte en cien de longitud: salían
+  vértices a 185°, fuera del dominio. De ahí las dos guardas de `onCurve`, radio
+  de búsqueda acotado y resultado descartado si se sale del marco.
+- Cada banda lleva como **agujero** el contorno del nivel superior, y no se
+  apilan rellenos. Dos rellenos translúcidos superpuestos multiplican sus alfas
+  y los diez escalones dejan de ser diez. Leaflet dibuja todos los anillos de un
+  polígono en un solo trazado con `fill-rule: evenodd`, así que el agujero sale
+  por paridad sin averiguar qué anillo está dentro de cuál. Y recorta el trazado
+  a la vista, que es por lo que 13 000 vértices salen a 774 en el DOM y mover el
+  mapa cuesta cero.
+- `obsAt` es una **copia a mano** de `evaluate` + `geom` + `obscuration`, escrita
+  así porque esas dos asignan un objeto cada una y el afinado de los contornos
+  las llama millones de veces. Puede separarse de sus originales en cualquier
+  edición; `besselian.test.js` las contrasta y esa comprobación no es opcional.
 - La poda de la malla es exacta, no una heurística: las dos condiciones que
   descartan una celda —Sol bajo el horizonte y penumbra fuera de alcance en η—
   son monótonas en `cos H`, así que su intersección es un intervalo y basta con

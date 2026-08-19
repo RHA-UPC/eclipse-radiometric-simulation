@@ -148,18 +148,19 @@ y unos 200 ms de cálculo que la mayoría de las visitas no necesitan, y sin una
 atmósfera declarada el número no significaría nada. `src/webdata.py` es quien
 exporta esas tablas, cada una con su cita.
 
-El mapa es equirectangular (`L.CRS.EPSG4326`), no Mercator, y esa decisión
-sostiene tres cosas a la vez. Los mapas de eclipses se dibujan así por
-tradición. La trama de obscuración se vuelca como una imagen plana, mientras que
-en Mercator habría que remuestrearla fila a fila o se desplazaría decenas de
-grados en latitudes altas. Y sobre todo, **llega a los polos**: Web Mercator se
-corta en 85,05° y la trayectoria de 2026 empieza a 87° N.
+El mapa es equirectangular (`L.CRS.EPSG4326`), no Mercator. Los mapas de
+eclipses se dibujan así por tradición, pero la razón que decide es otra:
+**llega a los polos**, y Web Mercator se corta en 85,05° mientras la
+trayectoria de 2026 empieza a 87° N. Hubo un tercer motivo mientras las bandas
+fueron una imagen —en Mercator habría que remuestrearla fila a fila o se
+desplazaría decenas de grados en latitudes altas— que ya no aplica: son
+polígonos y el navegador los proyecta solo.
 
 Eso condiciona el fondo de calles. Las teselas habituales de OpenStreetMap solo
 existen en Mercator, así que el fondo pide los mismos datos a un WMS en
 EPSG:4326. Cuesta latencia frente a una pirámide de teselas y depende de un
 proveedor más pequeño, y a cambio no obliga a cambiar de proyección: una sola
-CRS para todo y sin reproyectar la trama de obscuración.
+CRS para todo.
 
 Ese fondo es el predeterminado y no hay conmutador. Si el servidor no responde
 —cuatro errores sin que cargue ninguna imagen, o nueve segundos en blanco— la
@@ -185,26 +186,103 @@ todavía tapa la ventana, recalculado al cambiar de tamaño, y el desplazamiento
 está acotado al mundo, así que no hay forma de sacar franjas vacías a los lados
 ni por arriba.
 
-### La trama de obscuración
+### Las bandas de obscuración
 
-Dos resoluciones, y no son lo mismo. La **malla** es donde ocurre la aritmética:
-640 × 320 celdas y 121 instantes, unos 350 ms, cacheada por eclipse. El
-**lienzo** es tres veces más fino y llega ahí por interpolación bilineal. No es
-un atajo cosmético: la obscuración máxima es un campo liso —no lleva costas ni
-relieve dentro—, así que por debajo del paso de la malla no queda nada que
-muestrear. Lo que compraba una malla fina era un contorno más suave, y la
-interpolación compra lo mismo por una centésima parte del coste. Interpolar
-antes de cuantizar es lo que convierte los escalones del 10 % en contornos y no
-en escaleras.
+Son **polígonos**, no una trama. Fueron una trama y el problema de una trama es
+que tiene una resolución mientras que un mapa tiene tantas como niveles de
+zoom: un lienzo de 1920 × 960 sobre el mundo entero es un píxel cada 21 km, que
+al zoom 7 son 34 píxeles de pantalla. Las bandas salían escalonadas y los
+contornos de 2 píxeles del modo accesible salían como escalones de 68. Ningún
+tamaño de lienzo arregla eso, porque el mapa llega al zoom 15.
 
-Lo que hace asequible esa malla es una poda exacta. Las dos condiciones que
+La cadena es esta:
+
+1. **La malla decide la topología.** 400 × 200 celdas y 121 instantes: por
+   dónde pasa cada nivel y en qué orden. Nada más.
+2. **La bisección coloca cada vértice.** Todo vértice cae sobre una arista de
+   malla cuyos dos extremos dejan el nivel en medio, así que su posición se
+   busca bisecando la función real de obscuración máxima a lo largo de esa
+   arista, no interpolando los dos valores de la malla. Diez pasos sobre una
+   arista de 100 km dejan el vértice a menos de cien metros.
+3. **La subdivisión adaptativa acota la cuerda.** Es lo único que la bisección
+   no acota por construcción. Para una curva muestreada a paso constante, la
+   distancia de un vértice a la cuerda que une a sus vecinos es cuatro veces la
+   flecha de un tramo, de modo que estimar el error no cuesta evaluar nada;
+   donde se pasa de medio kilómetro se inserta un punto, y ese sí se calcula
+   contra la función real, sobre la normal a la cuerda.
+
+Medido sobre 2026-08-12: mediana de 64 m, percentil 90 de 0,22 km, peor caso
+por debajo de 2 km fuera del terminador. La malla ya no fija la exactitud —la
+fija la tolerancia—, y por eso el dibujo aguanta cualquier zoom.
+
+Cuesta unos 610 ms por eclipse en el navegador, contra 350 ms de la trama, y se
+cachean los ocho últimos. A cambio, mover y ampliar el mapa pasa a costar
+**cero**: la trama se redibujaba y el vector lo escala el navegador. Un
+`setView` a zoom 7 se midió en 28 ms, y Leaflet recorta el trazado a la vista,
+así que de 10 600 vértices salen 677 al DOM.
+
+La banda más exterior empieza en el **5 %**, no en el borde de la penumbra.
+Cerca de ese borde el eclipse dura minutos y el barrido de 121 instantes se lo
+pierde: medido contra uno de 2001, la pérdida llega a 0,0165 de obscuración y 32
+de 2227 puntos de la orla con eclipse se leen como cero. Un contorno del 0,1 %
+persigue ahí una función que vale cero a trozos. El límite de verdad ya estaba
+dibujado desde el principio: es el contorno de la penumbra, la línea de trazos.
+
+Un polígono por banda, cada uno llevando como agujero el contorno del nivel
+superior. Así los rellenos no se apilan: dos rellenos translúcidos superpuestos
+multiplicarían sus alfas y los diez escalones dejarían de ser diez. Leaflet
+dibuja todos los anillos de un polígono en un solo trazado con
+`fill-rule: evenodd`, así que el agujero sale por paridad, sin averiguar qué
+anillo está dentro de cuál.
+
+Dos cosas sostienen la exactitud y conviene decirlas juntas:
+
+**La malla y el afinado tienen que ser la misma función.** El barrido de 121
+instantes se queda corto respecto al máximo verdadero: medido, 4·10⁻⁴ en la
+mediana y 1,4·10⁻² en la cola, que a un gradiente típico son decenas de
+kilómetros de contorno desplazado. Y se queda corto en cantidades distintas en
+cada punto, así que una malla construida sobre el barrido y un afinado
+construido sobre el valor exacto son conjuntos de nivel de dos funciones
+distintas: el 13 % de los vértices salía sin cambio de signo que bisecar. Por
+eso la malla hace una segunda pasada que afina el máximo en el tiempo por
+sección áurea, y por eso `maxObscuration` corre exactamente ese mismo afinado.
+
+**Sobre el terminador no hay curva de nivel, hay un salto.** La magnitud que se
+dibuja es la obscuración máxima *con el Sol sobre el horizonte*, así que en la
+línea del ocaso salta de cero a un valor finito. Ahí el borde de la región es
+una discontinuidad, la bisección converge a la propia línea del ocaso —que es
+lo correcto— y la comprobación `|g − nivel| ≈ 0` no significa nada. Los tests
+identifican esos vértices por la altura del Sol en el instante de su máximo y
+los cuentan aparte, en vez de descartarlos en silencio.
+
+**El horizonte es el geodésico, el mismo en el mapa y en la ficha.** Parece un
+detalle y no lo es: ζ > 0 es el horizonte geocéntrico, y sobre un elipsoide los
+dos criterios discrepan hasta 0,091° de altura solar. Cerca del ocaso esos
+minutos valían puntos de obscuración, y el mapa llegó a pintar una banda del
+30-40 % en un punto cuya ficha respondía 57,9 %. Un mapa que contradice a su
+propia respuesta es peor que un mapa tosco, y `SAFETY.md` lo prohíbe.
+
+La retícula del contorno es marco, borde del mundo, centros de celda, borde,
+marco. El **marco de −1** está una celda por fuera del mundo y hace que todo
+contorno cierre sin ningún caso especial para los polos ni para el
+antimeridiano; el **borde del mundo** lleva valores calculados, no
+interpolados, y es lo que garantiza que ese cierre caiga fuera del mapa. Sin él
+—y así estuvo escrito— la arista que une el último centro de celda con el marco
+se cortaba interpolando contra −1, y el corte caía **dentro** del mapa: hasta 66
+km adentro por el antimeridiano y 39 por los polos, con la banda equivocada
+pintada ahí, en los 56 eclipses. Una banda que cruza de verdad el antimeridiano
+sale cortada en los dos bordes, que es lo que un mapa que no se repite tiene que
+enseñar.
+
+Lo que hace asequible la malla es una poda exacta. Las dos condiciones que
 descartan una celda en un instante —el Sol bajo el horizonte y la penumbra
 fuera de alcance en η— son monótonas en `cos H`, porque tanto ζ como η dependen
 de la hora angular solo a través de su coseno. Su intersección es un intervalo,
 que en H son dos arcos, que en la malla son dos tramos de columnas: el resto de
 la fila se salta sin evaluar nada. Como `L1` se sustituye por su cota `l1`, el
 intervalo es un superconjunto y el resultado no cambia; `besselian.test.js`
-exige que sea **idéntico** al barrido sin podar, no parecido.
+contrasta la malla entera contra `maxObscuration`, que la calcula punto a punto
+sin podar nada.
 
 ### Los tres temas
 

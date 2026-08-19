@@ -226,54 +226,292 @@ ok(nz > 300 && nz < G.grid.length * 0.5, `la zona parcial cubre ${nz} de ${G.gri
 }
 
 // ---------------------------------------------------------------------------
-// 11. The raster prunes each row to the columns where the Sun can be up and
-//     the penumbra can reach, which is what makes a finer grid affordable.
-//     The pruning is derived, not tuned, so it must return the SAME numbers as
-//     a sweep of every column -- not close ones. Checked over the four
-//     geometries that stress it: an annular eclipse near the south pole, a
-//     total one crossing the north pole, one at low latitude, and a
-//     non-central one whose axis misses the Earth entirely.
+// 11. The grid against an independent per-point computation.
+//
+//     obscurationGrid prunes each row to the columns where the Sun can be up
+//     and the penumbra can reach, and then refines the maximum in time. Both
+//     are optimisations, and both have to be invisible: maxObscuration reaches
+//     the same number from scratch, scanning the whole window with no pruning
+//     and no grid. Checked over the four geometries that stress it -- annular
+//     near the south pole, total across the north pole, low latitude, and a
+//     non-central total whose axis misses the Earth.
 // ---------------------------------------------------------------------------
 {
-  const E2 = 0.0066943799901413165;
-  const sweep = (Bx, nlon, nlat, nt) => {          // sin podar: todas las columnas
-    const grid = new Float32Array(nlon * nlat);
-    const dmu = 1.002738 * Bx.delta_t_s * 15 / 3600 * D2R, rows = [];
-    for (let j = 0; j < nlat; j++) {
-      const lat = (90 - (j + 0.5) * 180 / nlat) * D2R;
-      const N = 1 / Math.sqrt(1 - E2 * Math.sin(lat) ** 2);
-      rows.push({ rc: N * Math.cos(lat), rs: N * (1 - E2) * Math.sin(lat) });
-    }
-    for (let k = 0; k < nt; k++) {
-      const e = Bess.evaluate(Bx, -3.2 + 6.4 * k / (nt - 1));
-      const sd = Math.sin(e.d), cd = Math.cos(e.d);
-      for (let j = 0; j < nlat; j++) {
-        const r = rows[j];
-        for (let i = 0; i < nlon; i++) {
-          const H = e.mu + (-180 + (i + 0.5) * 360 / nlon) * D2R - dmu, cH = Math.cos(H);
-          const zeta = r.rs * sd + r.rc * cH * cd;
-          if (zeta <= 0) continue;
-          const m = Math.hypot(e.x - r.rc * Math.sin(H), e.y - (r.rs * cd - r.rc * cH * sd));
-          const L1 = e.l1 - zeta * Bx.tan_f1, L2 = e.l2 - zeta * Bx.tan_f2;
-          if (m >= L1) continue;
-          const o = Bess.obscuration(m, (L1 + L2) / 2, (L1 - L2) / 2);
-          if (o > grid[j * nlon + i]) grid[j * nlon + i] = o;
-        }
-      }
-    }
-    return grid;
-  };
   for (const id of ['2026-02-17', '2026-08-12', '2027-08-02', '2043-04-09']) {
     const Bx = of(id).elements;
-    const a = sweep(Bx, 180, 90, 41), b = Bess.obscurationGrid(Bx, 180, 90, 41).grid;
-    let worst = 0, hit = 0;
-    for (let i = 0; i < a.length; i++) {
-      worst = Math.max(worst, Math.abs(a[i] - b[i]));
-      if (a[i] > 0.001) hit++;
+    const nlon = 120, nlat = 60;
+    const G = Bess.obscurationGrid(Bx, nlon, nlat, 121);
+    let worst = 0, hit = 0, where = null;
+    for (let j = 0; j < nlat; j++) {
+      for (let i = 0; i < nlon; i++) {
+        const la = 90 - (j + 0.5) * 180 / nlat, lo = -180 + (i + 0.5) * 360 / nlon;
+        const a = G.grid[j * nlon + i];
+        const b = Bess.maxObscuration(Bx, la, lo, { nt: 121 });
+        if (a > 0.001) hit++;
+        if (Math.abs(a - b) > worst) { worst = Math.abs(a - b); where = [la, lo, a, b]; }
+      }
     }
-    ok(hit > 200, `${id}: la malla de referencia apenas tiene eclipse (${hit} celdas)`);
-    ok(worst === 0, `${id}: podar la malla cambia el resultado (dif ${worst})`);
+    ok(hit > 150, `${id}: la malla de referencia apenas tiene eclipse (${hit} celdas)`);
+    // 1e-6 y no cero: la malla se guarda en Float32Array y la referencia sale
+    // en doble, así que el suelo son los 6e-8 de la precisión simple.
+    ok(worst < 1e-6, `${id}: la malla no coincide con el cálculo punto a punto ` +
+       `(dif ${worst.toExponential(2)} en ${JSON.stringify(where)})`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// 12. obsAt es evaluate + geom + obscuration, sin el objeto por medio.
+//
+//     Se escribió a mano para no asignar en el bucle caliente, así que es una
+//     copia de la aritmética de otras dos funciones y puede separarse de ellas
+//     en cualquier edición. Aquí se comparan sobre puntos y momentos variados,
+//     incluidos el hemisferio nocturno y los polos.
+// ---------------------------------------------------------------------------
+{
+  const Bx = of('2026-08-12').elements;
+  let worst = 0, n = 0;
+  for (const [la, lo] of [[41.65, -0.88], [0, 0], [89.5, 179], [-89.5, -179],
+                          [65, -25], [-40, 150], [23.5, 90], [70, -60]]) {
+    const o = Bess.observer(Bx, la, lo, 0);
+    for (let k = 0; k <= 64; k++) {
+      const t = -3.2 + 6.4 * k / 64;
+      const g = Bess.geom(Bx, o, t);
+      const ref = g.zeta <= 0 ? 0
+        : Bess.obscuration(g.m, (g.L1 + g.L2) / 2, (g.L1 - g.L2) / 2);
+      worst = Math.max(worst, Math.abs(ref - Bess.obsAt(Bx, o, t)));
+      n++;
+    }
+  }
+  ok(worst === 0, `obsAt se ha separado de geom+obscuration (dif ${worst}, ${n} muestras)`);
+}
+
+// ---------------------------------------------------------------------------
+// 13. Los contornos.
+//
+//     La malla decide la topología; la exactitud no la decide. Cada vértice se
+//     coloca bisecando la función real sobre la arista donde cae, y las
+//     cuerdas se subdividen hasta acercarse a la curva.
+//
+//     Con una excepción declarada: sobre el TERMINADOR la función salta de
+//     cero a un valor finito, porque el Sol se pone. Ahí el borde de la región
+//     no es una curva de nivel sino una discontinuidad, y |g − nivel| no
+//     significa nada. Esos vértices se identifican por la altura del Sol en el
+//     instante de su máximo y se cuentan aparte, no se ignoran en silencio.
+//
+//     Lo que NO se filtra es el borde del mundo. La revisión adversarial de
+//     agosto de 2026 encontró que la banda dibujada era la equivocada hasta
+//     66 km dentro del mapa por el antimeridiano y 39 km por los polos, en los
+//     56 eclipses, y este archivo no podía verlo porque descartaba justamente
+//     esa franja como «el marco». Ver docs/REVIEWS.md.
+// ---------------------------------------------------------------------------
+const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-17'];
+{
+  const KM = 111.19;
+  for (const id of SUITE) {
+    const Bx = of(id).elements;
+    const C = Bess.contours(Bx);
+    ok(C.fallbacks === 0,
+       `${id}: ${C.fallbacks} vértices sin cambio de signo que bisecar`);
+    ok(C.vertices > 800 && C.vertices < 40000,
+       `${id}: ${C.vertices} vértices, fuera del presupuesto de dibujo`);
+
+    // altura del Sol en el instante del máximo: separa terminador de curva
+    const onTerminator = (la, lo) => {
+      const o = Bess.observer(Bx, la, lo, 0);
+      let bz = 9, bo = -1;
+      for (let k = 0; k < 121; k++) {
+        const g = Bess.geom(Bx, o, -3.2 + 6.4 * k / 120);
+        const aa = Bess.altaz(o, g);
+        if (aa.alt <= 0) continue;
+        const ob = Bess.obscuration(g.m, (g.L1 + g.L2) / 2, (g.L1 - g.L2) / 2);
+        if (ob > bo) { bo = ob; bz = aa.alt; }
+      }
+      return bz < 0.5;
+    };
+
+    let malos = 0, muestras = 0, sinCerrar = 0, fuera = 0, fueraDelMundo = 0;
+    C.rings.forEach((rings, li) => {
+      const level = C.levels[li];
+      for (const ring of rings) {
+        const a = ring[0], b = ring[ring.length - 1];
+        if (Math.hypot((a[1] - b[1]) * Math.cos(a[0] * Math.PI / 180), a[0] - b[0]) * KM > 400)
+          sinCerrar++;
+        const st = Math.max(1, Math.floor(ring.length / 40));
+        for (let i = 0; i < ring.length; i += st) {
+          const [la, lo] = ring[i];
+          // Un vértice puede caer FUERA del mundo, y debe: ahí es donde cierran
+          // los contornos contra el marco, fuera de lo que la vista alcanza.
+          // Lo que no puede es caer fuera del marco.
+          if (Math.abs(la) > 91 || Math.abs(lo) > 181) fueraDelMundo++;
+          if (Math.abs(la) >= 90 || Math.abs(lo) >= 180) continue;
+          muestras++;
+          const g = Bess.maxObscuration(Bx, la, lo);
+          if (Math.abs(g - level) > 1e-3 && !onTerminator(la, lo)) malos++;
+          // anidamiento: un vértice de un nivel tiene que estar dentro de la
+          // región del anterior, o el relleno por paridad se invierte. Sobre el
+          // terminador todos los niveles comparten borde, así que no aplica.
+          if (li > 0 && g < C.levels[li - 1] - 1e-6 && !onTerminator(la, lo)) fuera++;
+        }
+      }
+    });
+    ok(sinCerrar === 0, `${id}: ${sinCerrar} anillos no cierran`);
+    ok(fueraDelMundo === 0, `${id}: ${fueraDelMundo} vértices fuera del marco`);
+    ok(malos === 0, `${id}: ${malos} de ${muestras} vértices no están sobre su contorno ` +
+       `y tampoco sobre el terminador`);
+    ok(fuera === 0, `${id}: ${fuera} vértices de un nivel caen fuera del nivel inferior`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 14. La banda dibujada contra la verdadera, en el borde del mundo.
+//
+//     Esto es lo que la revisión adversarial encontró y este archivo no veía.
+//     Se toma un punto, se calcula en qué banda cae según la función, y se
+//     mira en qué banda lo pinta el polígono contándole los cruces --- que es
+//     la misma regla de paridad que aplica `fill-rule: evenodd` en el
+//     navegador. Se recorre a propósito el antimeridiano y los dos polos.
+// ---------------------------------------------------------------------------
+{
+  const bandOf = (C, v) => { let b = -1; for (let i = 0; i < C.levels.length; i++) if (v >= C.levels[i]) b = i; return b; };
+  const bandDrawn = (C, la, lo) => {
+    let b = -1;
+    for (let i = 0; i < C.rings.length; i++) {
+      let inside = false;
+      for (const ring of C.rings[i]) {
+        for (let k = 0, j = ring.length - 1; k < ring.length; j = k++) {
+          const [ya, xa] = ring[k], [yb, xb] = ring[j];
+          if ((ya > la) !== (yb > la) && lo < (xb - xa) * (la - ya) / (yb - ya) + xa) inside = !inside;
+        }
+      }
+      if (inside) b = i;
+    }
+    return b;
+  };
+  for (const id of SUITE) {
+    const Bx = of(id).elements;
+    const C = Bess.contours(Bx);
+    let mal = 0, n = 0, peor = null;
+    const probe = (la, lo) => {
+      const v = Bess.maxObscuration(Bx, la, lo);
+      // no se juzgan los puntos pegados a un umbral: ahí la banda correcta
+      // depende de un dígito y el desacuerdo no dice nada
+      if (C.levels.some(l => Math.abs(v - l) < 0.02)) return;
+      n++;
+      const b0 = bandOf(C, v), b1 = bandDrawn(C, la, lo);
+      if (b0 !== b1) { mal++; if (!peor) peor = [la, lo, v, b0, b1]; }
+    };
+    for (let la = -88; la <= 88; la += 2) { probe(la, 179.6); probe(la, -179.6); }
+    for (let lo = -178; lo < 180; lo += 4) { probe(89.6, lo); probe(-89.6, lo); probe(31, lo); probe(-31, lo); }
+    ok(n > 200, `${id}: solo ${n} puntos juzgados`);
+    ok(mal === 0, `${id}: ${mal} de ${n} puntos con la banda equivocada` +
+       (peor ? ` (p. ej. ${peor[0]} ${peor[1]}: vale ${peor[2].toFixed(4)}, ` +
+               `debería ser la banda ${peor[3]} y se pinta la ${peor[4]})` : ''));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 15. Ningún anillo se cruza consigo mismo.
+//
+//     Con `fill-rule: evenodd` cada lazo invierte el relleno, así que un
+//     anillo que se cruza pinta la banda de al lado en la lengüeta que forma.
+//     La comprobación de anidamiento del apartado 13 no puede verlo, porque
+//     mira el valor en cada vértice y no la topología del polígono.
+// ---------------------------------------------------------------------------
+{
+  const corta = (p1, p2, p3, p4) => {
+    const d = (p2[1] - p1[1]) * (p4[0] - p3[0]) - (p2[0] - p1[0]) * (p4[1] - p3[1]);
+    if (Math.abs(d) < 1e-12) return false;
+    const t = ((p3[1] - p1[1]) * (p4[0] - p3[0]) - (p3[0] - p1[0]) * (p4[1] - p3[1])) / d;
+    const u = ((p3[1] - p1[1]) * (p2[0] - p1[0]) - (p3[0] - p1[0]) * (p2[1] - p1[1])) / d;
+    return t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9;
+  };
+  for (const id of SUITE) {
+    const C = Bess.contours(of(id).elements);
+    let n = 0;
+    C.rings.forEach(rings => rings.forEach(r => {
+      const m = r.length;
+      for (let a = 0; a < m; a++) {
+        for (let b = a + 2; b < m; b++) {
+          if (a === 0 && b === m - 1) continue;
+          if (corta(r[a], r[(a + 1) % m], r[b], r[(b + 1) % m])) n++;
+        }
+      }
+    }));
+    ok(n === 0, `${id}: ${n} autocruces de anillo`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 16. La flecha de la cuerda. Es lo único que la bisección de los vértices no
+//     acota por construcción, así que se mide: desde el punto medio de cada
+//     cuerda se busca el contorno real a lo largo de la normal, y se busca
+//     LEJOS --- cinco cuerdas --- porque un radio corto descarta justo las
+//     peores y deja pasar el percentil que se quiere vigilar.
+// ---------------------------------------------------------------------------
+{
+  const KM = 111.19, D2Rl = Math.PI / 180;
+  const Bx = of('2026-08-12').elements;
+  const C = Bess.contours(Bx);
+  const sag = (level, a, b) => {
+    const la = (a[0] + b[0]) / 2, lo = (a[1] + b[1]) / 2;
+    if (Math.abs(la) >= 90 || Math.abs(lo) >= 180) return null;
+    const cs = Math.cos(la * D2Rl);
+    const dx = (b[1] - a[1]) * cs, dy = b[0] - a[0], L = Math.hypot(dx, dy);
+    if (!(L > 0)) return null;
+    const nx = -dy / L, ny = dx / L;
+    const f = u => {
+      const q = [la + ny * u, lo + nx * u / cs];
+      if (Math.abs(q[0]) > 90 || Math.abs(q[1]) > 180) return null;
+      return Bess.maxObscuration(Bx, q[0], q[1]) - level;
+    };
+    const R = Math.min(5 * L, 3);
+    let f0 = f(-R), f1 = f(R);
+    if (f0 === null || f1 === null || (f0 < 0) === (f1 < 0)) return null;
+    let u0 = -R, u1 = R;
+    for (let i = 0; i < 22; i++) {
+      const u = (u0 + u1) / 2, fu = f(u);
+      if (fu === null) return null;
+      if ((f0 < 0) === (fu < 0)) { u0 = u; f0 = fu; } else { u1 = u; }
+    }
+    return Math.abs((u0 + u1) / 2) * KM;
+  };
+  // El terminador se aparta y se cuenta, no se disimula: ahí el borde de la
+  // región es un salto de la función, «la curva» de al lado está a kilómetros
+  // y la distancia medida no es el error del dibujo. Medido, TODAS las cuerdas
+  // peores de un kilómetro tienen el Sol a 0,00 grados en su máximo.
+  const enTerminador = (la, lo) => {
+    const o = Bess.observer(Bx, la, lo, 0);
+    let alt = 9, bo = -1;
+    for (let k = 0; k < 121; k++) {
+      const g = Bess.geom(Bx, o, -3.2 + 6.4 * k / 120);
+      const aa = Bess.altaz(o, g);
+      if (aa.alt <= 0) continue;
+      const ob = Bess.obscuration(g.m, (g.L1 + g.L2) / 2, (g.L1 - g.L2) / 2);
+      if (ob > bo) { bo = ob; alt = aa.alt; }
+    }
+    return alt < 0.5;
+  };
+  const vals = []; let saltoTerm = 0;
+  C.rings.forEach((rings, li) => {
+    for (const ring of rings) {
+      const st = Math.max(1, Math.floor(ring.length / 25));
+      for (let i = 0; i + 1 < ring.length; i += st) {
+        const a = ring[i], b = ring[i + 1];
+        const v = sag(C.levels[li], a, b);
+        if (v === null) continue;
+        if (v > 1 && enTerminador((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) { saltoTerm++; continue; }
+        vals.push(v);
+      }
+    }
+  });
+  vals.sort((x, y) => x - y);
+  const q = f => vals[Math.min(vals.length - 1, Math.floor(f * vals.length))];
+  ok(vals.length > 100, `solo ${vals.length} cuerdas medidas`);
+  ok(q(0.9) < 0.6, `la flecha de la cuerda en el percentil 90 es ${q(0.9).toFixed(2)} km`);
+  ok(q(1) < 2, `la peor flecha fuera del terminador es ${q(1).toFixed(2)} km`);
+  ok(saltoTerm < vals.length / 10,
+     `${saltoTerm} de ${vals.length + saltoTerm} cuerdas apartadas por el terminador: ` +
+     `son demasiadas para que la excepción siga siendo una excepción`);
 }
 
 console.log(fails ? `${fails} FALLOS` : 'besselian.js OK — concuerda con eclipsecat.py, DE440s y la NASA');
