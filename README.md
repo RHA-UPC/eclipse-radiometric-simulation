@@ -65,9 +65,8 @@ reproduce el PDF.
 
 ## Estabilizar un vídeo del eclipse
 
-`tools/stab_solar.py` clava el Sol en un punto fijo del plano, para ver a la
-Luna moverse sobre un disco que no se mueve. Por defecto lo deja centrado; con
-`--fit` lo fija donde el recorte permita, lo más cerca del centro que se pueda.
+`tools/stab_solar.py` deja el Sol quieto y centrado en el plano, para ver a la
+Luna moverse sobre un disco que no se mueve.
 
 ```bash
 uv pip install opencv-python-headless imageio-ffmpeg
@@ -96,9 +95,17 @@ signo se queda con uno y descarta el otro. Un Hough sin signo puntúa ambos igua
 y se va con el más brillante.
 
 `--fit` recorta a la mayor ventana 16:9 que ningún fotograma se sale, porque
-sobre cielo claro las franjas vacías del desplazamiento sí se ven. Cuesta
-exactamente lo que se movió el trípode. `--end` corta donde el plano deja de ser
-el mismo, por ejemplo si se reencuadra a mitad de toma.
+sobre cielo claro las franjas vacías del desplazamiento sí se ven.
+
+Lo que limita ese recorte no es cuánto se movió el trípode, sino el centrado. La
+ventana tiene que quedar simétrica respecto al Sol en todos los fotogramas, así
+que su semianchura no puede pasar de lo que el Sol se acerque al borde más
+próximo. Un astro encuadrado bajo cuesta altura por mucho cielo desaprovechado
+que quede encima: en la toma de la reaparición, con el Sol a 200 px del borde
+inferior, 1920×1080 se queda en 708×398.
+
+`--end` corta donde el plano deja de ser el mismo, por ejemplo si se reencuadra
+a mitad de toma.
 
 ## Estructura
 

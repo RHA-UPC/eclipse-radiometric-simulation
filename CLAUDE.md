@@ -161,8 +161,9 @@ paper. Cubre las cuatro cosas que pueden romperse en silencio:
 3. Con cielo iluminado, la Luna tiene que ganarle a un borde de halo de
    polaridad contraria y fuerza parecida. Es el caso que un Hough sin signo
    resuelve al revés.
-4. La invariante del recorte `--fit`: ningún píxel de salida puede caer fuera
-   del original en ningún fotograma.
+4. Las dos invariantes del recorte `--fit`: que el Sol quede en el centro
+   geométrico, y que ningún píxel de salida caiga fuera del original en ningún
+   fotograma.
 
 ## Documentación
 
@@ -228,3 +229,6 @@ Lo que sigue abierto:
 - Al enmascarar una búsqueda local, centinela finito y no `-inf`: el refinado
   parabólico da `NaN` si un vecino es infinito, y `NaN` pasa cualquier guarda
   escrita como `if den else ...`, porque `NaN` es verdadero.
+- El recorte de `--fit` centra el astro y no negocia. Lo tentador es agrandar la
+  ventana dejándolo descentrado, y sale mucho más encuadre, pero incumple lo que
+  se pide y se nota a simple vista. La ventana va simétrica respecto al Sol.

@@ -290,24 +290,25 @@ def clean(track, med_win=9, max_dev=12.0):
 
 
 def fit_window(cx, cy, w, h, aspect=16.0 / 9.0):
-    """Largest window of the given aspect that never runs off the source frame.
+    """Largest window of the given aspect holding the Sun dead centre throughout.
 
     Shifting a frame exposes blank edges. Against a dark sky nobody sees them;
     against a lit one they read as broken, so the output is cropped instead to
-    the region every frame can fill. What that costs is exactly how far the
-    tripod wandered: the window can be the full frame minus the travel.
+    a region every frame can fill.
 
-    Returns ((width, height), (tx, ty)), where the Sun is pinned to (tx, ty) in
-    output coordinates, as near the middle as the crop allows.
+    Centring is the binding constraint, not the travel. The window has to sit
+    symmetric about the Sun in every frame, so its half-width cannot exceed the
+    Sun's closest approach to any edge. A Sun framed low in the shot therefore
+    costs height, however much unused sky sits above it.
+
+    Returns ((width, height), (tx, ty)), the Sun landing on (tx, ty).
     """
-    span_x, span_y = cx.max() - cx.min(), cy.max() - cy.min()
-    ow = min(w - span_x, (h - span_y) * aspect)
+    ow = 2.0 * min(cx.min(), w - cx.max())
+    oh = 2.0 * min(cy.min(), h - cy.max())
+    ow = min(ow, oh * aspect)
     ow = max(2.0, int(ow) // 2 * 2.0)
     oh = max(2.0, int(ow / aspect) // 2 * 2.0)
-    # tx must satisfy 0 <= u - tx + cx_i <= w-1 for every output column u.
-    tx = float(np.clip(ow / 2.0, ow - w + cx.max(), cx.min()))
-    ty = float(np.clip(oh / 2.0, oh - h + cy.max(), cy.min()))
-    return (int(ow), int(oh)), (tx, ty)
+    return (int(ow), int(oh)), (ow / 2.0, oh / 2.0)
 
 
 def render(cap, cx, cy, path, size, fps, ffmpeg, target=None):
@@ -382,12 +383,12 @@ def _selftest():
     res = locate(sky, r_true)
     assert res is not None and res[3] == 2, res
     assert np.hypot(res[0] - 200, res[1] - 250) < 3.0, res
-    # The crop must be the biggest window of the right shape that no frame can
-    # run off. Checking the invariant directly beats checking the arithmetic.
-    cxs, cys = np.array([100.0, 140.0]), np.array([60.0, 80.0])
+    # The crop must centre the Sun and no frame may run off the source. Checking
+    # both invariants directly beats checking the arithmetic that produced them.
+    cxs, cys = np.array([974.0, 1230.0]), np.array([689.0, 880.0])
     (ow, oh), (tx, ty) = fit_window(cxs, cys, 1920, 1080)
     assert abs(ow / oh - 16.0 / 9.0) < 0.02, (ow, oh)
-    assert ow <= 1920 - 40 and oh <= 1080 - 20, (ow, oh)
+    assert abs(tx - ow / 2.0) < 1.0 and abs(ty - oh / 2.0) < 1.0, (tx, ty, ow, oh)
     for x0, y0 in zip(cxs, cys):
         assert x0 - tx >= 0 and (ow - 1) - tx + x0 <= 1919, (x0, tx, ow)
         assert y0 - ty >= 0 and (oh - 1) - ty + y0 <= 1079, (y0, ty, oh)
