@@ -34,6 +34,9 @@ sea la constante.
 
    `tools/stab_solar.py --selftest` va aparte y es instantáneo. No entra en la
    cadena del manuscrito, así que solo hace falta si tocas esa herramienta.
+   Comprueba sus cuatro modos de fallo: el ajuste al limbo frente al centroide
+   de brillo, la lectura de la totalidad, la Luna contra un borde de halo con
+   cielo iluminado, y que el recorte nunca se salga del fotograma original.
 
 2. **Corre `validate.py`.** Contrasta SPECTRL2 contra el espectro de referencia
    ASTM G173 y la reimplementación besseliana contra las duraciones centrales

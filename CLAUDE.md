@@ -9,10 +9,15 @@ Canon EOS 200D con un Tamron 16-300, cuánto tiempo se podía mirar sin filtro, 
 qué probabilidad había de captar una Perseida durante la totalidad.
 
 El eclipse ya ocurrió. El observador fotografió el evento y sus 23 archivos
-están en `fotografias/`, analizados en `docs/PHOTOS.md`. Ahí vive también el
-vídeo `MVI_2418.MP4`, 223 s de parcial profunda a totalidad, y el estabilizado
-que produce `tools/stab_solar.py`. **Esa carpeta no se publica**: ver las reglas
-de publicación más abajo.
+están en `fotografias/`, analizados en `docs/PHOTOS.md`. Ahí viven también dos
+vídeos y sus estabilizados, que produce `tools/stab_solar.py`:
+
+| Archivo | Duración | Contenido |
+|---|---|---|
+| `MVI_2418.MP4` | 223 s | parcial profunda hasta totalidad, cielo negro |
+| `MVI_2427.MP4` | 55 s | reaparición tras la totalidad, cielo con bruma; a los 48 s hay un zoom hacia atrás al paisaje, así que son dos planos |
+
+**Esa carpeta no se publica**: ver las reglas de publicación más abajo.
 
 El repositorio es público en GitHub bajo AGPL-3.0-only para el código y
 CC BY-SA 4.0 para el manuscrito, las figuras, los datos derivados y la
@@ -146,9 +151,18 @@ los límites asintóticos de Carslaw y Jaeger, la continuidad de las dos ramas d
 límite ICNIRP y el área exacta de lente círculo-círculo.
 
 `tools/stab_solar.py --selftest` va aparte, porque no entra en la cadena del
-paper. Ocluye un disco sintético y exige que el ajuste al limbo conserve el
-centro con menos de 1 px de error mientras el centroide de brillo se va 40 px,
-que es justamente la razón de que ese módulo exista.
+paper. Cubre las cuatro cosas que pueden romperse en silencio:
+
+1. Ocluye un disco sintético y exige que el ajuste al limbo conserve el centro
+   con menos de 1 px de error mientras el centroide de brillo se va 40 px, que
+   es justamente la razón de que el módulo exista.
+2. Un anillo de corona alrededor de una Luna oscura tiene que leerse como
+   totalidad, y un creciente jamás.
+3. Con cielo iluminado, la Luna tiene que ganarle a un borde de halo de
+   polaridad contraria y fuerza parecida. Es el caso que un Hough sin signo
+   resuelve al revés.
+4. La invariante del recorte `--fit`: ningún píxel de salida puede caer fuera
+   del original en ningún fotograma.
 
 ## Documentación
 
@@ -203,3 +217,14 @@ Lo que sigue abierto:
 - Las rutas ya no son absolutas. `siteconf.ROOT` se resuelve desde el propio
   archivo y los demás módulos hacen `from siteconf import ROOT`. No vuelvas a
   escribir una ruta absoluta del directorio personal: `tools/privacy_check.sh` la caza.
+- En `stab_solar.py`, el centroide de brillo **nunca** sirve para centrar un
+  eclipse: el de un creciente se mete en la parte iluminada y avanza hacia el
+  limbo descubierto conforme la Luna tapa, así que arrastra el Sol casi un radio
+  a lo largo de la fase parcial. Lo invariante es el limbo.
+- Con cielo iluminado hay que seguir la Luna, y el Hough circular tiene que
+  llevar signo. Sin signo puntúa igual el limbo lunar y el borde del halo solar,
+  que tienen polaridad opuesta, y se queda con el más brillante, que es el
+  equivocado. `cv2.HoughCircles` tampoco engancha nada en este material.
+- Al enmascarar una búsqueda local, centinela finito y no `-inf`: el refinado
+  parabólico da `NaN` si un vecino es infinito, y `NaN` pasa cualquier guarda
+  escrita como `if den else ...`, porque `NaN` es verdadero.

@@ -36,7 +36,10 @@ good the constant is.
    ephemerides.
 
    `tools/stab_solar.py --selftest` stands apart and is instant. It is outside
-   the manuscript chain, so you only need it if you touch that tool.
+   the manuscript chain, so you only need it if you touch that tool. It covers
+   its four failure modes: the limb fit against the brightness centroid, reading
+   totality, the Moon against a bloom edge under a lit sky, and the crop never
+   running off the source frame.
 
 2. **Run `validate.py`.** It checks SPECTRL2 against the ASTM G173 reference
    spectrum and the Besselian re-implementation against NASA's published

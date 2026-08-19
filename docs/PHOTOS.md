@@ -3,6 +3,11 @@
 23 archivos en `fotografias/`: 12 JPEG y 11 CR2. Analizados sin cargar ninguna
 imagen en el contexto del modelo, solo con EXIF, numpy y rawpy.
 
+Esa carpeta guarda además dos vídeos, `MVI_2418.MP4` y `MVI_2427.MP4`, que no
+entran en este análisis ni en ninguna cifra del manuscrito. Los trata
+`tools/stab_solar.py` y solo sirven para verlos. Con ellos no se sostuvo la
+regla anterior: para ajustar el detector hubo que mirar fotogramas sueltos.
+
 Productos: `data/photos_exif.json`, `data/photometry.json`, `data/raw_stats.json`,
 `data/raw_luminance.json`, `data/hotpixels.json`, `data/photo_analysis.json`.
 

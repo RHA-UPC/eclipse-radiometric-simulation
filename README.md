@@ -65,8 +65,9 @@ reproduce el PDF.
 
 ## Estabilizar un vídeo del eclipse
 
-`tools/stab_solar.py` deja el Sol quieto en el centro del plano, para ver a la
-Luna avanzar sobre un disco que no se mueve.
+`tools/stab_solar.py` clava el Sol en un punto fijo del plano, para ver a la
+Luna moverse sobre un disco que no se mueve. Por defecto lo deja centrado; con
+`--fit` lo fija donde el recorte permita, lo más cerca del centro que se pueda.
 
 ```bash
 uv pip install opencv-python-headless imageio-ffmpeg
