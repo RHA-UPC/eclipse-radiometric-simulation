@@ -853,5 +853,29 @@
     "source": "WOUDC OGC API, collection totalozone, station_id=411",
     "url": "https://api.woudc.org/collections/totalozone/items?station_id=411",
     "note": "Measured, not assumed. Replaces the 0.30 atm-cm placeholder the earlier version of this paper declared as NOT RETRIEVED."
+  },
+  "bird_riordan_1984": {
+    "quantity": "SPECTRL2 simple spectral model: 122-wavelength coefficient table (extraterrestrial irradiance, water-vapour, ozone and uniformly-mixed-gas absorption) and the default Angstrom exponent",
+    "citation": "Bird, R. E. & Riordan, C. (1984). Simple solar spectral model for direct and diffuse irradiance on horizontal and tilted planes at the Earth's surface for cloudless atmospheres. Journal of Climate and Applied Meteorology 25(1), 87-97. Also SERI/TR-215-2436.",
+    "obtained_from": "pvlib-python 0.15.2, pvlib.spectrum.spectrl2 and its _SPECTRL2_COEFFS table; BSD-3-Clause.",
+    "underlying_source": "The coefficient table is Bird & Riordan's. pvlib is the retrieval route, NOT the primary source; the paper itself was not consulted for this transcription.",
+    "angstrom_alpha_default": 1.14,
+    "angstrom_alpha_note": "Read at export time from inspect.signature(pvlib.spectrum.spectrl2)['alpha'].default rather than copied, so it cannot drift away from what src/spectral.py actually runs. data/atmosphere.json converts AOD(550) to AOD(500) with this same exponent.",
+    "redistributed_as": "web/data/spectral.json, so the browser can evaluate the model without pvlib. Full BSD-3-Clause notice in web/vendor/LICENSE-pvlib.txt; see THIRD-PARTY-DATA.md.",
+    "status": "verified-secondary"
+  },
+  "astm_g173_reference_atmosphere": {
+    "quantity": "Atmospheric conditions under which the ASTM G173-03 reference spectra are defined; used as the DEFAULT (not a measurement) in the web front end",
+    "citation": "ASTM G173-03(2020), Standard Tables for Reference Solar Spectral Irradiances: Direct Normal and Hemispherical on 37 deg Tilted Surface. ASTM International.",
+    "url": "https://www.nrel.gov/grid/solar-resource/spectra-am1.5.html",
+    "aod500": 0.084,
+    "precipitable_water_cm": 1.42,
+    "ozone_atm_cm": 0.34,
+    "p_surface_Pa": 101325.0,
+    "T_air_C": 15.0,
+    "ground_albedo": 0.2,
+    "underlying_standard": "The ASTM standard is paywalled and was NOT consulted directly. These are the reference conditions distributed by NREL alongside the G173 tables and reproduced in the SMARTS 2.9.2 documentation that generated them. Treated as a declared reference case, never as a measurement of anywhere.",
+    "why_default": "A published, recognisable reference case that the user can replace. The interface states that it is an assumption and lets it be overwritten; see SAFETY.md rule 1.",
+    "status": "verified-secondary"
   }
 }

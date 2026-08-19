@@ -7,28 +7,49 @@ análisis de seguridad.
 
 Lo que sigue está ordenado por lo que bloquea a lo demás, no por dificultad.
 
+**Actualización del 19 de agosto de 2026.** La mitad geométrica de ese salto ya
+está dada, y por un camino que esquiva los bloqueos en vez de resolverlos:
+`src/eclipsecat.py` ajusta elementos besselianos propios desde DE440s para los
+56 eclipses de 2026 a 2050, y `web/` los consume como sitio estático que calcula
+en el navegador. Ni `pathgeom.py`, ni `terrain.py`, ni la efeméride de 32 MB
+participan, así que ninguno de los tres bloqueos técnicos llega a plantearse
+para la geometría. Siguen bloqueando la parte radiométrica, que es la que
+todavía no se puede dar en cualquier punto. Abajo queda marcado qué cayó y qué
+no.
+
 ---
 
 ## 1. Generalizar el emplazamiento
 
 Es el paso que desbloquea todo el resto y es más fácil de lo que parece.
 
+- [x] **Hecho para la web, no para `src/`.** `web/` no tiene emplazamiento: las
+      circunstancias locales salen de los elementos y de un par de coordenadas.
+      La cadena del manuscrito sigue atada a `siteconf.py`.
 - [ ] **Sacar el sitio de `src/siteconf.py`.** Hoy ese módulo es la única fuente
       de las coordenadas, la altura y las constantes, así que la generalización
       consiste en convertirlo en una función que reciba un emplazamiento en vez
       de tener uno escrito. El resto de módulos ya lo importan y no necesitan
       cambios estructurales.
-- [ ] **Parametrizar la fecha del eclipse.** Los elementos besselianos de
-      `data/literature.json` son los del 12 de agosto de 2026. Hace falta
-      obtenerlos por evento, o calcularlos desde DE440s en lugar de leerlos.
+- [x] **Parametrizar la fecha del eclipse.** Resuelto por el segundo camino:
+      `eclipsecat.py` los calcula desde DE440s en vez de leerlos, y los contrasta
+      contra los publicados por la NASA para 2026. El manuscrito sigue usando la
+      entrada de `data/literature.json`, que ahora es una comprobación cruzada
+      y no la fuente.
 - [ ] **Resolver el huso horario desde las coordenadas.** Ahora todo está en
-      CEST porque el sitio está en España.
-- [ ] **Comprobar el caso del eclipse anular y el del parcial.** El código
-      supone totalidad en varios sitios. Un usuario en el borde de la franja o
-      fuera de ella tiene que obtener una respuesta correcta, y es precisamente
-      el usuario al que más daño puede hacerle una respuesta equivocada.
+      CEST porque el sitio está en España. La web enseña UTC y la hora del
+      navegador, y dice explícitamente que la segunda no es la del punto
+      marcado; es honesto, pero no es la respuesta.
+- [x] **Comprobar el caso del eclipse anular y el del parcial.** Hecho en la
+      web: el catálogo tipifica total, anular, híbrido y parcial por el signo del
+      radio umbral sobre el suelo, un punto fuera de la penumbra devuelve nada en
+      vez de una magnitud pequeña, y un eclipse cuyo máximo cae bajo el horizonte
+      se declara como tal. Sigue pendiente en `src/`.
 
 ## 2. Quitar los tres bloqueos técnicos de la plataforma
+
+Ninguno bloquea ya la geometría, porque la web no los usa. Los tres siguen en
+pie para lo radiométrico, que es lo que falta.
 
 - [ ] **`src/pathgeom.py` tarda entre treinta y sesenta minutos.** Inservible
       dentro de una petición HTTP. O se precalcula la franja umbral en una malla
@@ -49,16 +70,39 @@ Es el paso que desbloquea todo el resto y es más fácil de lo que parece.
 
 Vinculante. Ver [`SAFETY.md`](SAFETY.md).
 
-- [ ] Convertir la sección «Advertencia» del manuscrito en pantalla de entrada.
-- [ ] Mostrar la exigencia de filtro ISO 12312-2 en la interfaz, no en un aviso
-      legal enterrado.
-- [ ] Presentar cada resultado de exposición ocular junto a sus hipótesis:
-      diámetro pupilar, estado atmosférico, altura solar.
+- [x] Convertir la sección «Advertencia» del manuscrito en pantalla de entrada.
+      Es lo primero que aparece y hay que cerrarla para llegar al mapa.
+- [x] Mostrar la exigencia de filtro ISO 12312-2 en la interfaz, no en un aviso
+      legal enterrado. Va bajo cada resultado, no una sola vez al entrar.
+- [x] Presentar cada resultado junto a sus hipótesis. La ficha de un punto lleva
+      pegado qué se supone: terreno a cero, horizonte astronómico, sin refracción,
+      radio solar adoptado y de quién es la hora local.
 - [ ] **Mostrar la incertidumbre.** A masa de aire 10,7 los tres modelos de
       cielo claro difieren en un factor tres. Dar una cifra sola sería mentir por
       omisión.
-- [ ] Verificar la geometría antes de responder. Decirle a alguien que está
-      dentro de la franja cuando no lo está es el fallo más peligroso posible.
+- [x] Verificar la geometría antes de responder. `src/eclipsecat.py --selftest`
+      y `node web/js/besselian.test.js` exigen menos de 1,5 s por contacto contra
+      la cadena DE440s, menos de 3 km contra la línea central de la NASA, y que
+      el emplazamiento del estudio caiga a los 41,9 km del límite norte que
+      publica el manuscrito.
+- [ ] **Falta la incertidumbre de la propia geometría en la interfaz.** Las dos
+      convenciones declaradas (radio solar y ΔT) mueven los límites unos cientos
+      de metros, y quien esté a esa distancia del borde merece saberlo. Hoy solo
+      está escrito en la documentación.
+- [x] **Llevar la parte radiométrica a la web.** Hecho por la segunda vía y sin
+      precalcular nada: la ficha trae un botón que resuelve SPECTRL2, la
+      transmisión cromática con oscurecimiento del limbo y los dos límites de
+      ICNIRP en el equipo del visitante, con la atmósfera que él declare. Por
+      defecto las condiciones de la ASTM G173-03, marcadas como caso de
+      referencia y no como medida.
+- [x] **Mostrar la incertidumbre.** La ficha enseña la masa de aire, avisa por
+      encima de seis de que el modelo está extrapolando y cita el factor tres
+      que este trabajo encontró a masa de aire 10,7, y acompaña cada resultado
+      de una horquilla de sensibilidad al aerosol entre la mitad y el doble del
+      AOD declarado.
+- [ ] **Datos atmosféricos reales por punto y fecha.** Sería lo que cerraría el
+      hueco de verdad, y es lo único de esta lista que obliga a tener servidor:
+      un sitio estático no puede consultar CAMS.
 - [ ] Consultar con un abogado sobre responsabilidad civil antes de abrir al
       público, y valorar un seguro. La renuncia de garantía de la AGPL cubre
       reclamaciones de software, no daños personales.
@@ -88,7 +132,9 @@ Los tres están reconocidos en el manuscrito y en [`docs/FINDINGS.md`](docs/FIND
 ## 5. Ingeniería
 
 - [ ] **Pasar las autocomprobaciones a CI.** Hoy son siete `_selftest()` en
-      `src/`, más el de `tools/stab_solar.py`, que hay que lanzar a mano.
+      `src/`, más `src/eclipsecat.py --selftest` y `src/webdata.py --selftest`,
+      más `web/js/besselian.test.js` y `web/js/radiometry.test.js`, más el de
+      `tools/stab_solar.py`, todos a mano.
       `limbdark.py` tarda varios minutos, así que necesita su propio trabajo
       programado; los demás caben en un solo paso.
 - [ ] Añadir `tools/privacy_check.sh` como hook de pre-push, para que no dependa
@@ -119,6 +165,13 @@ Los tres están reconocidos en el manuscrito y en [`docs/FINDINGS.md`](docs/FIND
 **Convertir esto en una app que diga «seguro» o «no seguro».** El proyecto
 publica cálculos con sus hipótesis a la vista. Un semáforo obligaría a esconder
 la incertidumbre, que a masa de aire 10,7 llega a un factor tres.
+
+**Dar un número de exposición ocular sin enseñar de qué atmósfera sale.** La web
+calcula geometría en todo el planeta porque la geometría no depende del aire. La
+irradiancia sí, y el repositorio solo tiene medido un día y un sitio, así que la
+web la calcula bajo una hipótesis que el usuario ve y puede cambiar. Rellenarla
+con una atmósfera estándar y presentarla como dato sería inventarle procedencia
+a una cifra de seguridad.
 
 **Prometer cobertura mundial antes de validar fuera de Europa.** El DEM
 Copernicus cubre el planeta, pero el horizonte topográfico solo se ha

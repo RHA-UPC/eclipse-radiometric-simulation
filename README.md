@@ -35,8 +35,8 @@ entrada externa vive en `data/literature.json`, `data/atmosphere.json` o
 a mano: `src/paperdata.py` los emite todos, y aborta la compilación si algún
 bloque de hardware sigue marcado como provisional.
 
-Dos agentes independientes recibieron el encargo de refutar el trabajo. Lo que
-encontraron, incluidos tres errores numéricos reales, está en
+Tres agentes independientes recibieron el encargo de refutar el trabajo. Lo que
+encontraron, incluidos varios errores numéricos reales, está en
 [`docs/REVIEWS.md`](docs/REVIEWS.md) sin recortar.
 
 ## Reproducir
@@ -107,6 +107,104 @@ inferior, 1920×1080 se queda en 708×398.
 `--end` corta donde el plano deja de ser el mismo, por ejemplo si se reencuadra
 a mitad de toma.
 
+## La web: cualquier eclipse, cualquier punto
+
+`web/` es un sitio estático que lleva la geometría fuera de este emplazamiento y
+de esta fecha. Ábrelo con cualquier servidor de archivos:
+
+```bash
+cd web && python -m http.server 8000     # y abre http://localhost:8000
+```
+
+Funciona de dos maneras. **Por eclipse:** eliges uno de los 56 que hay entre
+2026 y 2050 —16 totales, 18 anulares, 3 híbridos y 19 parciales—, el mapa dibuja
+la línea central, los dos bordes de la umbra, el contorno de la penumbra y la
+obscuración máxima en bandas, y al marcar un punto salen sus circunstancias: qué
+fracción del disco se cubre, cuánto dura la fase central, los cuatro contactos en
+UTC y la altura y el acimut del Sol en cada uno.
+**Por lugar:** marcas el punto y sale la lista de los eclipses que se verán desde
+ahí, ordenados en el tiempo.
+
+No hay servidor ni petición externa: Leaflet y las fronteras van autoalojados y
+todo el cálculo ocurre en el navegador, así que las coordenadas que marques no
+salen de tu equipo.
+
+### De dónde salen esos números
+
+`src/eclipsecat.py` recorre las lunas nuevas sobre DE440s, se queda con las que
+producen eclipse y **ajusta sus propios elementos besselianos** en vez de copiar
+una tabla publicada. Son unos cuarenta números por eclipse que reproducen la
+sombra a menos de un kilómetro durante las horas que dura, y son la única forma
+de que un navegador conteste sin cargar una efeméride de 32 MB ni un buscador de
+raíces.
+
+Quedan dos diferencias declaradas frente a la NASA, y ninguna es un error: este
+proyecto adopta el radio solar nominal IAU 2015 (695 700 km) donde los elementos
+de Espenak implican 696 000, y usa el ΔT de Skyfield (69,10 s) donde la NASA
+adoptó 71,4 s. La primera mueve los límites unos 700 m. La segunda no mueve nada
+sobre el terreno, porque cada lado es coherente consigo mismo.
+
+Las comprobaciones son la parte que importa:
+
+```bash
+python src/eclipsecat.py --selftest      # elementos, línea central, catálogo
+python src/webdata.py --selftest         # tablas exportadas y su procedencia
+node web/js/besselian.test.js            # geometría: el port contra los tres
+node web/js/radiometry.test.js           # radiometría: el port contra el paper
+```
+
+Entre las dos exigen que las circunstancias locales reproduzcan la cadena DE440s
+de `geometry.py` con menos de 1,5 s en cada contacto, que la línea central caiga
+a menos de 3 km de la que publica la NASA, y que las duraciones de anularidad
+reproduzcan las publicadas para 2027, 2028 y 2031.
+
+La invariante que más importa ata el dibujo al cálculo: **sobre el borde de la
+franja la duración de la fase central es cero, tres kilómetros dentro no lo es,
+y tres kilómetros fuera vuelve a serlo.** Sin ella el mapa puede dibujar una
+franja perfectamente creíble en el sitio equivocado, que es el peor fallo que
+esta página puede cometer.
+
+Una tercera revisión adversarial atacó todo esto el 19 de agosto de 2026 y
+devolvió 17 hallazgos; lo que encontró, y el que se le escapó y salió tirando de
+uno de sus hilos, está sin recortar en [`docs/REVIEWS.md`](docs/REVIEWS.md).
+
+### Irradiancia y exposición ocular, a petición
+
+Debajo de la ficha de cada punto hay un botón que resuelve la parte
+radiométrica **en el ordenador de quien visita la página**: SPECTRL2 sobre 122
+longitudes de onda, la transmisión cromática del eclipse con oscurecimiento del
+limbo, y los dos límites de ICNIRP 2013. Unas dos décimas de segundo por punto.
+
+No viene precalculado a propósito, y no por ahorrar disco. La irradiancia
+depende del estado atmosférico del punto y del día, que este proyecto solo tiene
+medido sobre el Ebro; precalcular el planeta obligaría a inventar una atmósfera
+y a presentarla como si fuera un dato. Lo que hace la página es al revés:
+**pide la hipótesis y la enseña junto al resultado.** Por defecto usa las
+condiciones de referencia de la ASTM G173-03, ofrece la atmósfera medida del
+Ebro como segundo preajuste, y deja escribir la propia.
+
+Sale de ahí la irradiancia del haz directo antes y durante el eclipse, la
+iluminancia, la razón entre la radiancia de la fotosfera y el límite térmico
+retiniano, el tiempo de fijación que admite el límite fotoquímico con pupila de
+3 y de 7 mm, y la transmitancia que tendría que tener un filtro. Con sus
+hipótesis pegadas, la masa de aire a la vista, y un aviso explícito cuando esa
+masa de aire deja el modelo extrapolando.
+
+`node web/js/radiometry.test.js` exige que ese port reproduzca
+`data/spectral_timeseries.csv` y `data/eye_timeseries.csv`, o sea la cadena que
+produjo el manuscrito. Con la atmósfera medida del Ebro devuelve 187 W/m² al
+máximo, masa de aire 10,7 y el límite térmico superado 1,34 veces: los números
+del paper.
+
+### Lo que la web sigue sin calcular
+
+El relieve. El horizonte es el astronómico y la altura del terreno es cero, así
+que un Sol bajo puede quedar tras una montaña que el cálculo no ve.
+
+La corona. Durante la totalidad el haz directo es exactamente cero, y eso es lo
+que la página dice; la luz que queda entonces es coronal, del orden de un millón
+de veces más débil, y pide otra física.
+
 ## Estructura
 
 ```
@@ -116,6 +214,7 @@ docs/       arquitectura, resultados, revisiones adversariales, fuentes, fotos
 paper/      manuscrito LaTeX, tablas y macros generadas
 figs/       11 figuras, paleta validada para daltonismo
 tools/      comprobación de privacidad previa al push, estabilizador de vídeo
+web/        sitio estático: mapa de eclipses 2026-2050, cálculo en el navegador
 ```
 
 Empieza por [`CLAUDE.md`](CLAUDE.md) si vas a tocar el código, y por
@@ -146,9 +245,12 @@ Hoy calcula un eclipse en un punto. La intención es que calcule cualquier
 eclipse en cualquier punto, y que acabe siendo una plataforma donde alguien
 introduzca sus coordenadas y su equipo y obtenga su propio análisis.
 
-Lo que bloquea ese salto está desglosado en [`ROADMAP.md`](ROADMAP.md):
-`pathgeom.py` tarda entre treinta y sesenta minutos, `terrain.py` lee el DEM por
-HTTP en cada consulta, y el emplazamiento vive escrito en `siteconf.py`.
+La parte geométrica de ese salto ya está dada: `web/` calcula cualquiera de los
+56 eclipses de 2026 a 2050 en cualquier punto, y lo hace sin servidor. Lo que
+sigue bloqueado es la parte radiométrica, y está desglosado en
+[`ROADMAP.md`](ROADMAP.md): `pathgeom.py` tarda entre treinta y sesenta minutos,
+`terrain.py` lee el DEM por HTTP en cada consulta, y el emplazamiento vive
+escrito en `siteconf.py`.
 
 ## Contribuir
 

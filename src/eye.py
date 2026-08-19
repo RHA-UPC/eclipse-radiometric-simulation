@@ -120,12 +120,21 @@ def crescent_subtense(sep, r_sun, r_moon):
         c = np.clip((sep ** 2 + rs ** 2 - rm ** 2) / (2.0 * sep * rs), -1.0, 1.0)
     chord = 2.0 * rs * np.sin(np.arccos(c))
     long_ = np.where(sep >= rs + rm, 2 * rs, chord)
-    long_ = np.where(sep <= np.abs(rm - rs), 0.0, long_)
-    short = np.where(sep <= np.abs(rm - rs), 0.0, short)
+    nested = sep <= np.abs(rm - rs)
+    long_ = np.where(nested, 0.0, long_)
+    short = np.where(nested, 0.0, short)
     a = 0.5 * (np.clip(short, amin, amax) + np.clip(long_, amin, amax))
-    # During totality there is no photospheric source at all. Return 0 rather
-    # than NaN: the hazard is zero, not undefined.
-    return np.where(sep <= np.abs(rm - rs), 0.0, a)
+    # Nested discs are two cases and only one of them is harmless. Moon larger:
+    # the photosphere is gone, subtense zero, hazard zero rather than undefined.
+    # SUN larger: what is left is a full-brightness ring, and returning zero
+    # there would declare no thermal hazard at the moment the whole limb is on
+    # show. ICNIRP does not treat annuli explicitly; the outer subtense is the
+    # conservative reading and joins the uneclipsed case continuously.
+    # This eclipse is total, so the annular branch never fires here and no
+    # published figure of the manuscript changes; the branch exists because
+    # web/js/radiometry.js reuses this logic for annular eclipses.
+    annular = nested & (rs > rm)
+    return np.where(nested, np.where(annular, np.clip(2 * rs, amin, amax), 0.0), a)
 
 
 PUPIL_ICNIRP_MM = 3.0        # ICNIRP 2013: photochemical limit derived at ~3 mm

@@ -77,6 +77,26 @@ Linke de SoDa que trae empaquetada.
 es de pago; los espectros tabulados los distribuye NREL.
 <https://www.nrel.gov/grid/solar-resource/spectra-am1.5.html>
 
+Sus condiciones atmosféricas (AOD 0,084 a 500 nm, 1,42 cm de agua precipitable,
+0,34 atm-cm de ozono, 1013,25 hPa) son el **valor por defecto** de la web. Se
+eligieron por ser un caso de referencia publicado y reconocible, no porque
+describan ningún lugar: la interfaz lo dice y deja cambiarlas.
+
+**La tabla de coeficientes de SPECTRL2** — 122 longitudes de onda con la
+irradiancia extraterrestre y los coeficientes de absorción de vapor de agua,
+ozono y gases mezclados — se **redistribuye** en `web/data/spectral.json` para
+que el navegador pueda evaluar el modelo sin pvlib. Procede de Bird y Riordan
+(1984) a través de pvlib, **BSD-3-Clause**, cuya licencia exige conservar el
+aviso de copyright, la lista de condiciones y el descargo. El texto íntegro,
+copiado del propio paquete, está en **`web/vendor/LICENSE-pvlib.txt`**, y el pie
+de la web enlaza ahí. La exporta `src/webdata.py`, que también lleva las
+funciones de ponderación B(λ) y R(λ) de ICNIRP 2013 y la curva fotópica V(λ)
+del observador patrón CIE 1924.
+
+Hasta la revisión adversarial del 19 de agosto de 2026 este apartado afirmaba
+que los avisos se conservaban cuando lo único presente era una cita
+bibliográfica. Ver [`docs/REVIEWS.md`](docs/REVIEWS.md).
+
 ## Tratamiento de vídeo
 
 Solo las necesita `tools/stab_solar.py`. La cadena que produce el manuscrito
@@ -94,6 +114,26 @@ descarga. <https://github.com/imageio/imageio-ffmpeg>
 no bajo la LGPL de la configuración por defecto. Este repositorio no lo
 redistribuye: se instala en el entorno de quien ejecuta la herramienta, que lo
 invoca como proceso aparte. <https://ffmpeg.org/legal.html>
+
+## Cartografía y biblioteca del mapa
+
+La web de `web/` no carga nada de la red: todo va autoalojado, así que el
+navegador de quien la visite no habla con ningún tercero.
+
+**Leaflet 1.9.4** — `web/vendor/leaflet-1.9.4.{js,css}` y `web/vendor/images/`.
+Vladimir Agafonkin y colaboradores, licencia **BSD-2-Clause**. La cláusula 1
+exige conservar, además del aviso de copyright, la lista de condiciones y el
+descargo de garantía. El `@preserve` del bundle solo lleva el copyright, así que
+el texto completo vive en **`web/vendor/LICENSE-leaflet.txt`** y cubre también
+el CSS y las imágenes, que no llevan aviso propio. El pie de la web enlaza ahí.
+<https://leafletjs.com>
+
+**Natural Earth, admin-0 países a 1:110 m** — `web/data/world.geojson`.
+**Dominio público**, sin atribución exigida; se cita igualmente por cortesía y
+porque la procedencia importa. <https://www.naturalearthdata.com>
+
+Ninguno de los dos se relicencia: conservan sus propios términos aunque el resto
+del repositorio esté bajo AGPL-3.0 y CC BY-SA 4.0.
 
 ## Literatura citada
 

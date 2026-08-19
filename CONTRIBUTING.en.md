@@ -35,6 +35,13 @@ good the constant is.
    `limbdark.py` takes several minutes. The rest are fast except those that load
    ephemerides.
 
+   `src/eclipsecat.py --selftest`, `src/webdata.py --selftest`,
+   `node web/js/besselian.test.js` and `node web/js/radiometry.test.js` cover
+   the web front end. The first takes about twenty seconds, the second is instant.
+   You only need them if you touch the catalogue or the map, and then they are
+   mandatory: an error there draws a credible totality path in the wrong place,
+   which would lead someone to remove a filter with the photosphere in view.
+
    `tools/stab_solar.py --selftest` stands apart and is instant. It is outside
    the manuscript chain, so you only need it if you touch that tool. It covers
    its four failure modes: the limb fit against the brightness centroid, reading

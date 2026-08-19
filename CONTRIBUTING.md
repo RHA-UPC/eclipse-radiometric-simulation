@@ -32,6 +32,13 @@ sea la constante.
    `limbdark.py` tarda varios minutos. Los demás son rápidos salvo los que
    cargan efemérides.
 
+   `src/eclipsecat.py --selftest`, `src/webdata.py --selftest`,
+   `node web/js/besselian.test.js` y `node web/js/radiometry.test.js` cubren la
+   web. El primero tarda unos veinte segundos; el segundo es instantáneo. Solo
+   hacen falta si tocas el catálogo o el mapa, y entonces son obligatorios: un
+   error ahí dibuja una franja de totalidad creíble en el sitio equivocado, y
+   eso llevaría a alguien a quitarse el filtro con fotosfera a la vista.
+
    `tools/stab_solar.py --selftest` va aparte y es instantáneo. No entra en la
    cadena del manuscrito, así que solo hace falta si tocas esa herramienta.
    Comprueba sus cuatro modos de fallo: el ajuste al limbo frente al centroide

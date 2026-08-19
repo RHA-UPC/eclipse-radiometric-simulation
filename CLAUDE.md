@@ -19,6 +19,14 @@ vídeos y sus estabilizados, que produce `tools/stab_solar.py`:
 
 **Esa carpeta no se publica**: ver las reglas de publicación más abajo.
 
+Desde el 19 de agosto de 2026 hay además una **web estática** en `web/`, que
+lleva el trabajo a cualquier eclipse y a cualquier punto: catálogo de 56
+eclipses entre 2026 y 2050, franja de totalidad sobre el mapa y circunstancias
+locales al marcar un punto. Bajo demanda resuelve también la irradiancia
+espectral y los límites de ICNIRP con la atmósfera que el usuario declare. Todo
+el cálculo ocurre en el navegador: no hay servidor ni petición externa, y nada
+va precalculado más allá de los elementos besselianos y las tablas fijas.
+
 El repositorio es público en GitHub bajo AGPL-3.0-only para el código y
 CC BY-SA 4.0 para el manuscrito, las figuras, los datos derivados y la
 documentación. El reparto exacto está en `LICENSES.md`.
@@ -150,6 +158,37 @@ conservación de energía en la óptica, el límite termodinámico de concentrac
 los límites asintóticos de Carslaw y Jaeger, la continuidad de las dos ramas del
 límite ICNIRP y el área exacta de lente círculo-círculo.
 
+`src/eclipsecat.py --selftest` también va aparte. Tarda poco más de un segundo
+y comprueba seis cosas: los elementos ajustados contra los publicados por la NASA,
+que el polinomio se sostenga **entre** sus nodos de ajuste, las circunstancias
+locales contra la cadena DE440s de `geometry.py`, la línea central contra la
+tabla de trayectoria de la NASA, que un punto fuera de la penumbra devuelva
+nada en vez de una magnitud pequeña, y que el catálogo tipifique bien los dos
+eclipses de 2026.
+
+`src/webdata.py --selftest` comprueba que las tablas exportadas al navegador
+siguen siendo las tablas: 122 longitudes de onda crecientes, B(λ) con su pico
+entre 435 y 445 nm y cero por encima de 700, R(λ) igual a 1 en 500 nm y a 0,02
+en 1200, y V(λ) con su pico en 555. Un error de remuestreo aquí es mudo, porque
+el espectro sigue pareciendo un espectro.
+
+`node web/js/radiometry.test.js` contrasta el port radiométrico contra
+`data/spectral_timeseries.csv` y `data/eye_timeseries.csv`, es decir contra la
+cadena que produjo el manuscrito, y exige además dos invariantes de física que
+no se ven en una gráfica: que el déficit de flujo **cruce** al de área (por
+detrás mientras la Luna come limbo, por delante cuando alcanza el centro) y que
+el signo cromático se invierta con la fase.
+
+`node web/js/besselian.test.js` contrasta el port a JavaScript contra las tres
+referencias anteriores y añade lo que la tercera revisión adversarial demostró
+que faltaba: duraciones de anularidad contra las publicadas, orden de contactos
+barrido sobre todo el catálogo y una malla global, tipificación de un eclipse
+total no central, signo de γ, marcas de hueco en las curvas, hemisferio nocturno
+en la trama, y sobre todo la invariante que ata el dibujo al cálculo — sobre el
+borde de la franja la duración es cero, tres kilómetros dentro no lo es, tres
+kilómetros fuera vuelve a serlo. Un port que se desvíe dibuja una franja creíble
+en el sitio equivocado, que es el peor fallo posible aquí.
+
 `tools/stab_solar.py --selftest` va aparte, porque no entra en la cadena del
 paper. Cubre las cuatro cosas que pueden romperse en silencio:
 
@@ -182,6 +221,7 @@ paper. Cubre las cuatro cosas que pueden romperse en silencio:
 | `CLA.md` | cesión de derechos del contribuyente. Borrador sin revisar |
 | `SAFETY.md` | qué es y qué no es una cifra de exposición ocular de aquí |
 | `ROADMAP.md` | lo que falta para que esto sea una plataforma, y lo que no se hará |
+| `docs/ARCHITECTURE.md` §La web | qué hay dentro de `web/` y por qué es estático |
 
 `LICENSES`, `CONTRIBUTING`, `CLA` y `SAFETY` existen también en inglés
 (`*.en.md`). La versión española manda; si tocas una, toca las dos. `ROADMAP.md`
@@ -229,6 +269,76 @@ Lo que sigue abierto:
 - Al enmascarar una búsqueda local, centinela finito y no `-inf`: el refinado
   parabólico da `NaN` si un vecino es infinito, y `NaN` pasa cualquier guarda
   escrita como `if den else ...`, porque `NaN` es verdadero.
+- Los elementos besselianos de `eclipsecat.py` **no** coinciden con los de la
+  NASA al último dígito, y no deben. Son dos convenciones declaradas: radio
+  solar IAU 2015 nominal (695 700 km) frente a los 696 000 km que implican los
+  `tan f` de la NASA, y ΔT de Skyfield (69,10 s) frente a los 71,4 s de Espenak.
+  La primera mueve los límites unos 700 m; la segunda no mueve nada sobre el
+  terreno, porque cada lado es coherente consigo mismo. Para contrastar contra
+  la NASA hay que usar **su** ΔT en los dos lados, o se mide la diferencia entre
+  dos predicciones de la rotación terrestre en vez de la geometría.
+- La longitud va **positiva al este** en todo el proyecto. Meeus la tabula
+  positiva al oeste. Mezclarlas no rompe nada: espeja todas las trayectorias
+  respecto a Greenwich y el mapa sigue pareciendo un mapa.
+- Al enmascarar la búsqueda del eje sobre el elipsoide, centinela finito otra
+  vez no: ahí el problema es distinto, el `q <= 0` significa que el eje no toca
+  la Tierra y hay que devolver `null`, no un punto del limbo. Un `clamp` a cero
+  fabrica trayectorias que rodean el planeta.
+- La línea central se muestrea cada **seis segundos**, no cada minuto. Al final
+  de una trayectoria con incidencia rasante la umbra corre a unos 3 km/s, así
+  que un minuto deja huecos de 180 km y la línea dibujada deja de estar donde
+  está la sombra.
+- En Leaflet, un `imageOverlay` y un renderizador SVG son hermanos dentro del
+  mismo panel: `bringToBack()` sobre uno no lo mueve respecto al otro. El orden
+  se fija creando paneles con su `zIndex`, no reordenando capas.
+- El oscurecimiento del limbo no va siempre en el mismo sentido. Mientras la
+  Luna cubre el limbo, que es tenue, el déficit de flujo va **por detrás** del
+  de área; en cuanto alcanza el centro lo **adelanta**. Un port con el peso
+  invertido sigue dando una curva monótona creíble, y solo el cruce lo caza.
+- En `fluxObscuration`, `Math.pow(cos(theta), alpha)` da `NaN` si el coseno sale
+  negativo por redondeo en el último nodo de Simpson. Hay que acotarlo a cero.
+- El contacto interior es `|m| = |L2'|`, **nunca** `m + L2' = 0`. Esa segunda
+  forma es la que tabula Meeus para un eclipse total y no tiene raíz en uno
+  anular, porque `L2'` es negativo dentro de la umbra y positivo dentro de la
+  antumbra. Escrita así, los dieciocho anulares del catálogo daban cero segundos
+  de anularidad mientras seguían dando bien la magnitud.
+- Los contactos se nombran por **la dirección en que la curva cruza el cero**,
+  no por el orden de las raíces. Tomar la primera como C1 supone que las dos
+  caen dentro de la ventana; cuando no, un último contacto se etiqueta como
+  primero y todo lo que barre desde C1 hacia adelante concluye que no hay
+  eclipse. Por eso también la ventana es de ±4 h y los elementos se ajustan
+  sobre ese mismo rango.
+- Un eclipse puede ser total sin ser central. Entre γ = 0,9972 y γ ≈ 1,03 el eje
+  pasa fuera de la Tierra y el cono todavía roza el limbo. Clasificar mirando
+  solo el eje llama parciales a esos, y entonces el mapa no dibuja franja
+  mientras la ficha del punto responde «total».
+- El desplazamiento de los límites va perpendicular a la velocidad **relativa**
+  al suelo, no a la de la sombra en el plano fundamental. El observador aporta
+  unos cientos de m/s y omitirlo estrecha la banda hasta 5 km por lado.
+- `limits()` no devuelve norte y sur, devuelve `edges`. Esos nombres son el lado
+  izquierdo y derecho del movimiento y coinciden con la latitud solo mientras la
+  sombra va hacia el este. Reetiquetar época a época arregla el nombre y rompe
+  la curva, porque la polilínea empieza a zigzaguear entre los dos bordes.
+- γ lleva signo. Sin él no coincide con ningún catálogo publicado y se pierde el
+  hemisferio.
+- La radiancia retiniana sale del haz **sin eclipsar** dividido por la subtensa
+  solar entera, no del eclipsado. La radiancia es invariante bajo ocultación: la
+  Luna quita área, no brillo. Lo que el eclipse mueve es el **límite**, a través
+  de la subtensa del creciente. Dividir la irradiancia eclipsada por un ángulo
+  sólido lleva el peligro a cero justo cuando no está bajando; ese error vivió
+  en `eye.py` y por eso el módulo lleva la advertencia escrita.
+- Dos discos anidados son **dos** casos. Luna mayor es totalidad y la subtensa
+  es cero. Sol mayor es anularidad y queda un anillo entero de fotosfera: ahí
+  devolver cero declara peligro térmico nulo con todo el limbo a la vista.
+- La ficha nunca escribe «sin límite». ICNIRP solo se pronuncia hasta 30 000 s,
+  y la regla 3 de `SAFETY.md` prohíbe cualquier respuesta que se lea como
+  permiso. Una transmitancia exigida mayor que 1 tampoco se imprime como cifra.
+- Las dos ramas de la transmitancia se devuelven por separado, no solo su
+  mínimo. La que no manda es invisible dentro del mínimo, y un fallo ahí no se
+  puede ver: así estuvo la rama térmica dividiendo por el haz equivocado.
+- El paso fijo no muestrea bien una trayectoria de sombra: al final del recorrido
+  la umbra se dispara y seis segundos pasan de 2 km a 110 km de separación. Se
+  densifica por bisección solo donde hace falta.
 - El recorte de `--fit` centra el astro y no negocia. Lo tentador es agrandar la
   ventana dejándolo descentrado, y sale mucho más encuadre, pero incumple lo que
   se pide y se nota a simple vista. La ventana va simétrica respecto al Sol.
