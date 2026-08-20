@@ -5,13 +5,19 @@ the licence that suits it.
 
 | Part | Licence | File |
 |---|---|---|
-| Code in `src/` and `tools/` | **AGPL-3.0-only** | [`LICENSE`](LICENSE) |
+| Code in `src/`, `tools/`, `web/js/`, `web/css/` and `web/*.html` | **AGPL-3.0-only** | [`LICENSE`](LICENSE) |
 | Manuscript, figures and documentation: `paper/`, `figs/`, `out/`, `docs/`, `*.md` | **CC BY-SA 4.0** | [`LICENSE-DOCS`](LICENSE-DOCS) |
-| Derived data in `data/` produced by this project | **CC BY-SA 4.0** | [`LICENSE-DOCS`](LICENSE-DOCS) |
+| Derived data produced by this project: `data/`, `web/data/` | **CC BY-SA 4.0** | [`LICENSE-DOCS`](LICENSE-DOCS) |
+| Vendored third-party code in `web/vendor/` | Its own licence, kept beside it | [`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) |
 | Third-party data | Their own terms, not relicensed | [`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) |
 
-Every module in `src/` carries a header with
+Every source file carries a header with
 `SPDX-License-Identifier: AGPL-3.0-only`.
+
+`web/data/spectral.json` is the one exception inside `web/data/`: it
+redistributes a coefficient table that arrives under BSD-3-Clause, and that
+licence travels with it in `web/vendor/LICENSE-pvlib.txt`. See
+[`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md).
 
 ## Why AGPL and not GPL
 

@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# eclipse-radiometric-simulation
+# Copyright (C) 2026 Ricardo Heredia Alessandrello
+# SPDX-License-Identifier: AGPL-3.0-only
+#
 # Fails if anything that must not be published has reached the git index.
 # Run before every push:  bash tools/privacy_check.sh
 set -uo pipefail
