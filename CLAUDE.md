@@ -377,15 +377,18 @@ What is still open:
   **image**, not on the pane: that pane also holds the Natural Earth
   coastlines, which are already drawn in the theme's colours.
 - The offline map downloads **only if the tile server fails**, which is why it
-  can afford 0.66 MB. Falling back needs evidence, not one failed request: four
+  can afford 149 kB. Falling back needs evidence, not one failed request: four
   errors with no image loaded, or nine seconds with none. That second criterion
   is what covers the case that hangs instead of failing, which a `tileerror`
   handler never sees.
 - **The coastline file is not GeoJSON.** `web/data/world.json` is rings of
   integer thousandths of a degree, delta-encoded along the ring, with the
-  closing vertex implied and one entry per country. 287 kB instead of 659 for
-  the same 33 894 vertices. `loadWorld` decodes it; `tools/make_worldmap.py`
-  writes it. The per-country grouping is not cosmetic: Leaflet emits one SVG
+  closing vertex implied, one entry per country, and each run of deltas written
+  as one string of signed varints in the encoded-polyline alphabet. 149 kB
+  instead of 659 for the same 33 894 vertices. `loadWorld` decodes it;
+  `tools/make_worldmap.py` writes it. The packing is lossless and any change to
+  it has to be shown to be: decode every ring through both readers and compare
+  vertex by vertex, which is how this one was accepted. The per-country grouping is not cosmetic: Leaflet emits one SVG
   path per feature, so flattening the multipolygons turned 221 paths into 1485
   and a pair of zooms from 30 ms into seconds.
 - **Do not use Leaflet's canvas renderer for the offline map.** It is the right
@@ -558,10 +561,31 @@ What is still open:
   the fallback is not stored. A default nobody picked is not a preference, and
   storing it on load is the one thing on this page that would need asking
   about first.
-- `radiometry.js` and `terrain.js` are **not** in the page's script tags. They
-  are injected by `need()` when their button is pressed, which is the only
-  thing that reaches them. Adding a `<script>` for either puts 27 kB back on
-  the critical path of every visit that never asks.
+- `radiometry.js`, `radio-ui.js`, `terrain.js` and `profile.js` are **not** in
+  the page's script tags. They are injected by `need()` when their button is
+  pressed, which is the only thing that reaches them. Adding a `<script>` for
+  any of them puts 50 kB back on the critical path of every visit that never
+  asks. The pairing is deliberate: an interface that cannot draw anything until
+  its data module has arrived is fetched with it, not ahead of it, so a panel
+  and its computation are one download and one decision.
+- **Do not draw ground circles with `L.circle`.** The map is
+  `L.CRS.EPSG4326`, so a circle of fixed ground radius is an ellipse on screen,
+  stretched east to west by one over the cosine of the latitude. Leaflet draws
+  the screen circle instead, which puts the compass ring somewhere the azimuth
+  does not. `drawCompass` walks 72 bearings through the spherical destination
+  formula and unwraps the longitudes about the centre, so it is right in any
+  projection and does not smear across the antimeridian. Size it from the map's
+  own scale, measured north, where this projection has no stretch.
+- **The visibility profile picks its range from the subject, not from the
+  model's reach.** Two earlier versions were both wrong and both looked fine:
+  scaled to the far end of a 25 km section the relief is a line along the
+  floor, and framed on where the ray clears the highest ground it drew a clean
+  ray under a caption saying the Sun was covered, because what covered it was
+  three hundred metres away and one pixel wide. So: framed on the blocking
+  feature when there is one, cut where the ray clears everything when there is
+  not, and the caption says which. Whatever the picture shows, the verdict
+  above it comes from the whole section — if the two can disagree, the chart is
+  wrong, not the table.
 - Numbers never appear as literals in the dictionary. They arrive already
   formatted for the active locale through `Intl`: a decimal point in a Spanish
   sentence is a mistake and a decimal comma in an English one is a different

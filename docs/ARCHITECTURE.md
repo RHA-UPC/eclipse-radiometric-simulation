@@ -134,6 +134,7 @@ web/stabilise.html        the video stabiliser, a separate page
 web/js/lang.js            195 keys × 5 languages, plus the number formatting
 web/js/besselian.js       geometry: a port of eclipsecat.py
 web/js/radiometry.js      radiometry: a port of spectral, limbdark and eye
+web/js/radio-ui.js        the atmosphere form, the chart and the result panel
 web/js/terrain.js         skyline from an elevation model, and buildings
 web/js/profile.js         the visibility profile, fetched with terrain.js
 web/js/stabilise.js       the tracker: a port of tools/stab_solar.py
@@ -143,12 +144,12 @@ web/js/*.test.js          each port against its original, and the dictionaries
 web/css/style.css         the three themes, as variables
 web/data/eclipses.json    the catalogue, 51 kB
 web/data/spectral.json    fixed SPECTRL2, ICNIRP and CIE tables, 8.5 kB
-web/data/world.json       coastlines, Natural Earth 1:10 m, delta-encoded
+web/data/world.json       coastlines, Natural Earth 1:10 m, packed, 149 kB
 web/vendor/               Leaflet 1.9.4, BSD-2-Clause, with its notice
 ```
 
 Radiometry does not load until somebody presses the button, and neither does
-the terrain horizon: between them, 27 kB of code and 8 kB of tables that most
+the terrain horizon: between them, 50 kB of code and 8 kB of tables that most
 visits never need, and without a declared atmosphere the irradiance number
 would mean nothing anyway. `src/webdata.py` is what exports those tables, each
 with its citation. Their interfaces went the same way and for the same reason —
@@ -156,7 +157,7 @@ with its citation. Their interfaces went the same way and for the same reason �
 `terrain.js`, because a panel that cannot be drawn before its data arrives has
 no business arriving first.
 
-The first load is eight files and 127 kB gzipped, of which Leaflet is a third.
+The first load is eight files and 131 kB gzipped, of which Leaflet is a third.
 `world.json` is not among them: it arrives only with the coastline base map or
 when a tile server fails, and it is delta-encoded — rings of integer
 thousandths of a degree, differenced along the ring, the closing vertex
@@ -169,10 +170,10 @@ integers are the same to the last bit either way: the packing was checked
 vertex by vertex against the decoder it replaced, and none of the 33 894 moved.
 
 Coarser coordinates were measured and refused. Rounding to hundredths of a
-degree instead of thousandths takes the file to 82 kB gzipped, a further 24 kB,
-and moves the coastline by up to half a kilometre — on a page that draws
-umbral limits to the kilometre and lets anyone zoom to street level, that is
-buying bytes with the map. `loadWorld` decodes it back into GeoJSON, one feature per
+degree instead of thousandths takes the file to 75 kB gzipped, a further 31 kB,
+and moves a vertex by up to 557 m; five-hundredths give 98 kB for 111 m. On a
+page that draws umbral limits to the kilometre and lets anyone zoom to street
+level, both are buying bytes with the map. `loadWorld` decodes it back into GeoJSON, one feature per
 country, because Leaflet emits one SVG path per feature and the cost of a zoom
 goes with the path count.
 
@@ -209,8 +210,9 @@ calculations do not depend on the background, so an ugly fallback still answers
 the same.
 
 `tools/make_worldmap.py` generates that file from Natural Earth 1:10 m: 13 MB
-of source simplified by Douglas-Peucker to 34 000 vertices and 0.66 MB. The
-limit is not bandwidth but rendering, because Leaflet draws it as SVG.
+of source simplified by Douglas-Peucker to 34 000 vertices and, once packed,
+149 kB. The limit is not bandwidth but rendering, because Leaflet draws it as
+SVG.
 
 Zoom is bounded on both sides. The minimum is the level at which the world
 still covers the window, recomputed on resize, and panning is clamped to the

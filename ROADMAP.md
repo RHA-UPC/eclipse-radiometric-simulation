@@ -6,6 +6,7 @@ gap — a platform where anyone enters coordinates and equipment and gets their
 own safety analysis — is what is left.
 
 What follows is ordered by what blocks what, not by difficulty.
+[`TODO.md`](TODO.md) is the same list as a checklist, without the reasoning.
 
 **Update, 20 August 2026.** The geometric half of the jump is done, and by a
 route that sidesteps the blockers rather than solving them:

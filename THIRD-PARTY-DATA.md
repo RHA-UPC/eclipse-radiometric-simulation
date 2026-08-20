@@ -221,9 +221,9 @@ required; cited anyway out of courtesy and because provenance matters.
 <https://www.naturalearthdata.com>
 
 It is not redistributed as is: the original is 13 MB and
-`tools/make_worldmap.py` simplifies it by Douglas-Peucker to 34 000 vertices
-and 0.66 MB, drops rings below a minimum area and keeps only each country's
-name. The versioned file is that product, and the script regenerates it with
+`tools/make_worldmap.py` simplifies it by Douglas-Peucker to 34 000 vertices,
+drops rings below a minimum area, throws away every attribute including the
+name, and packs the rings as integer deltas: 149 kB. The versioned file is that product, and the script regenerates it with
 whatever tolerance it is given. An earlier version used the 1:110 m scale,
 which at country level drew coastlines as straight segments and had almost no
 islands.

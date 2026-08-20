@@ -274,8 +274,10 @@ tools/      pre-push privacy check, command-line video stabiliser
 web/        static site: eclipse map 2026-2050, calculation in the browser
 ```
 
-Start at [`CLAUDE.md`](CLAUDE.md) to touch the code, and at
-[`docs/FINDINGS.md`](docs/FINDINGS.md) for the results alone.
+Start at [`CLAUDE.md`](CLAUDE.md) to touch the code, at
+[`docs/FINDINGS.md`](docs/FINDINGS.md) for the results alone, and at
+[`TODO.md`](TODO.md) for what is open — including what was measured and
+deliberately refused, which is worth reading before proposing it again.
 
 ## What is not here
 
