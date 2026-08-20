@@ -208,10 +208,13 @@ function retitleBasemap() {
   map.attributionControl.addAttribution(next);
 }
 
-function setBasemap(kind) {
+function setBasemap(kind, remember) {
   if (!(kind in BASEMAPS)) kind = 'streets';
   basemap = kind;
-  store.set('mapa', kind);
+  // A tile server that is down for a minute is not a preference. Falling back
+  // switches the map and leaves the stored choice alone, so the next visit
+  // tries the chosen one again instead of silently keeping the fallback.
+  if (remember !== false) store.set('mapa', kind);
   document.getElementById('map').dataset.base = kind;
   if (streetLayer) { map.removeLayer(streetLayer); streetLayer = null; }
   // The caps only cover the black the WMS returns. With no WMS there is no
@@ -264,7 +267,7 @@ function fallback(why) {
   fellBack = true;
   const sel = document.getElementById('basemap');
   if (sel) sel.value = 'plain';
-  setBasemap('plain');
+  setBasemap('plain', false);
   const n = document.createElement('div');
   n.className = 'offline-note';
   n.innerHTML = t('offline_note', { why }) +
@@ -273,8 +276,8 @@ function fallback(why) {
   document.getElementById('retry').onclick = () => {
     n.remove(); fellBack = false;
     const s = document.getElementById('basemap');
-    if (s) s.value = 'streets';
-    setBasemap('streets');
+    if (s) s.value = store.get('mapa') || 'streets';
+    setBasemap(s ? s.value : 'streets', false);
   };
 }
 
