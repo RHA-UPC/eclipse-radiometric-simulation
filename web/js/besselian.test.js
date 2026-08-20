@@ -514,5 +514,108 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
      `son demasiadas para que la excepción siga siendo una excepción`);
 }
 
+// ---------------------------------------------------------------------------
+// 17. El límite de visibilidad.
+//
+//     Se dibuja a trazos y dice una cosa concreta: fuera de esa línea el Sol
+//     no llega a estar eclipsado en ningún instante. Así que se comprueba
+//     contra local(), que es quien responde esa misma pregunta en el panel y
+//     lo hace con 4001 instantes y sin malla ninguna.
+//
+//     No se contorneó la obscuración con un nivel diminuto, y por eso: cerca
+//     del borde el eclipse dura minutos y un barrido de 121 instantes lo lee
+//     como cero. El margen L1 - m es suave en el tiempo y no tiene ese
+//     problema.
+// ---------------------------------------------------------------------------
+{
+  const KM = 111.19;
+  for (const id of SUITE) {
+    const Bx = of(id).elements;
+    const C = Bess.contours(Bx);
+    ok(C.visible.length > 0, `${id}: no hay límite de visibilidad`);
+    let dentroSinEclipse = 0, fueraConEclipse = 0, n = 0, ejemplo = null;
+    // 40 km a cada lado de la línea: más que el paso de la malla y mucho menos
+    // que el radio de la penumbra, así que el signo tiene que estar decidido.
+    const D = 40 / KM;
+    for (const ring of C.visible) {
+      const st = Math.max(1, Math.floor(ring.length / 120));
+      for (let i = 0; i < ring.length; i += st) {
+        const [la, lo] = ring[i];
+        if (Math.abs(la) > 88 || Math.abs(lo) > 178) continue;
+        // la normal, por diferencias con el vecino
+        const b = ring[(i + 1) % ring.length];
+        const cs = Math.cos(la * Math.PI / 180);
+        const dx = (b[1] - lo) * cs, dy = b[0] - la, L = Math.hypot(dx, dy);
+        if (!(L > 0)) continue;
+        const nx = -dy / L, ny = dx / L;
+        const at = u => [la + ny * u, lo + nx * u / Math.max(1e-6, cs)];
+        const p1 = at(D), p2 = at(-D);
+        if (Math.abs(p1[0]) > 89 || Math.abs(p2[0]) > 89) continue;
+        const m1 = Bess.visMargin(Bx, p1[0], p1[1]), m2 = Bess.visMargin(Bx, p2[0], p2[1]);
+        // uno dentro y otro fuera, o el punto no sirve para juzgar
+        if ((m1 > 0) === (m2 > 0)) continue;
+        const dentro = m1 > 0 ? p1 : p2, fuera = m1 > 0 ? p2 : p1;
+        n++;
+        const ld = Bess.local(Bx, dentro[0], dentro[1], 0);
+        const lf = Bess.local(Bx, fuera[0], fuera[1], 0);
+        if (!ld || !(ld.visible_obscuration > 0)) {
+          dentroSinEclipse++; if (!ejemplo) ejemplo = ['dentro', dentro];
+        }
+        if (lf && lf.visible_obscuration > 0) {
+          fueraConEclipse++; if (!ejemplo) ejemplo = ['fuera', fuera];
+        }
+      }
+    }
+    ok(n > 25, `${id}: solo ${n} puntos del límite juzgados`);
+    ok(dentroSinEclipse === 0,
+       `${id}: ${dentroSinEclipse} de ${n} puntos 40 km DENTRO del límite sin eclipse` +
+       (ejemplo ? ` (p. ej. ${ejemplo[0]} ${ejemplo[1].map(v => v.toFixed(3)).join(' ')})` : ''));
+    ok(fueraConEclipse === 0,
+       `${id}: ${fueraConEclipse} de ${n} puntos 40 km FUERA del límite con eclipse visible`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 18. Ni un diente.
+//
+//     Un pico es un vértice que se sale de la recta que une a sus dos vecinos
+//     más de lo que mide esa recta. Sobre una curva bien resuelta no existe;
+//     sobre el terminador aparecía a decenas de kilómetros, porque allí el
+//     borde de la región es un salto y la malla lo cruza en zigzag. Lo que
+//     sujeta esto es el suavizado de los vértices de salto, que corre cada uno
+//     por SU arista y no se sale de ella.
+// ---------------------------------------------------------------------------
+{
+  const KM = 111.19;
+  for (const id of SUITE) {
+    const C = Bess.contours(of(id).elements);
+    let picos = 0, peor = 0, tot = 0, donde = null;
+    const scan = rings => rings.forEach(r => {
+      const m = r.length;
+      for (let i = 0; i < m; i++) {
+        const a = r[(i - 1 + m) % m], b = r[i], c = r[(i + 1) % m];
+        if (Math.abs(b[0]) >= 89.5 || Math.abs(b[1]) >= 179.5) continue;
+        if (Math.abs(a[1] - b[1]) > 5 || Math.abs(c[1] - b[1]) > 5) continue;
+        const cs = Math.cos(b[0] * Math.PI / 180);
+        const ax = (a[1] - b[1]) * cs, ay = a[0] - b[0];
+        const cx = (c[1] - b[1]) * cs, cy = c[0] - b[0];
+        const L = Math.hypot(cx - ax, cy - ay);
+        if (!(L > 0)) continue;
+        tot++;
+        const h = Math.abs(ax * (cy - ay) - ay * (cx - ax)) / L * KM;
+        if (h > 0.35 * L * KM && h > 0.5) {
+          picos++;
+          if (h > peor) { peor = h; donde = [b[0].toFixed(2), b[1].toFixed(2)]; }
+        }
+      }
+    });
+    C.rings.forEach(scan);
+    scan(C.visible);
+    ok(picos <= 8, `${id}: ${picos} picos de ${tot} vértices, el peor de ${peor.toFixed(1)} km` +
+       (donde ? ` en ${donde.join(' ')}` : ''));
+    ok(peor < 25, `${id}: el peor pico mide ${peor.toFixed(1)} km`);
+  }
+}
+
 console.log(fails ? `${fails} FALLOS` : 'besselian.js OK — concuerda con eclipsecat.py, DE440s y la NASA');
 process.exit(fails ? 1 : 0);

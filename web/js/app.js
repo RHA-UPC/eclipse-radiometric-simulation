@@ -46,11 +46,19 @@ let legendBox = null, bandLayers = [], lastR = null, caps = [];
 const bandCache = new Map();
 const WORLD = L.latLngBounds([-90, -180], [90, 180]);
 
-// The street basemap is the default and there is no switch for it. This is
-// meant to be deployed on the web, where there is a connection; offering the
-// choice made the visitor decide something they have no way to judge. The
-// offline outline stays as a FALLBACK and loads only when the map server turns
-// out to be unreachable, which keeps 1.2 MB of coastline off the normal path.
+// Tres fondos, y hay que elegir porque ninguno gana en todo.
+//
+// El de calles y el de relieve los sirve un tercero, gratis, y a cambio
+// estampa su marca: una pastilla con un codigo QR cada pocos centenares de
+// pixeles. No es un fallo de carga ni algo que el navegador pueda quitar --
+// viene dentro de la propia imagen, y quitarla seria incumplir las
+// condiciones del servicio que la regala. Sobre una ciudad pasa
+// desapercibida; sobre desierto o mar abierto, que es donde una franja de
+// eclipse pasa la mayor parte de su recorrido, se queda sola en la pantalla.
+//
+// El tercero, la costa de Natural Earth, va dentro de la pagina: sin marca,
+// sin peticiones a nadie, y por tanto sin que la visita se registre en
+// ningun sitio. Es lo que dibujan los mapas de eclipses de toda la vida.
 //
 // Streets without giving up the poles.
 //
@@ -64,7 +72,15 @@ const WORLD = L.latLngBounds([-90, -180], [90, 180]);
 // WMS, which is the projection this map already uses. One projection for
 // everything: poles included, the obscuration raster laid down unchanged, and
 // no rebuilding the map to switch basemap.
-const WMS_URL = 'https://ows.terrestris.de/osm/service';
+const OSM_CREDIT = '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL)';
+const BASEMAPS = {
+  streets: { url: 'https://ows.terrestris.de/osm/service', layer: 'OSM-WMS',
+             attr: '<a href="https://www.terrestris.de">terrestris</a> &middot; ' + OSM_CREDIT },
+  relief:  { url: 'https://ows.mundialis.de/services/service', layer: 'TOPO-OSM-WMS',
+             attr: '<a href="https://www.mundialis.de">mundialis</a> &middot; ' + OSM_CREDIT +
+                   ', SRTM, GEBCO, <a href="https://www.naturalearthdata.com">Natural Earth</a>' },
+  plain:   null
+};
 
 // --- formatting ---------------------------------------------------------
 
@@ -103,8 +119,8 @@ function initMap() {
     map.createPane(name);
     Object.assign(map.getPane(name).style, { zIndex: z, pointerEvents: 'none' });
   }
-  addStreets();
   addCaps();
+  setBasemap(store.get('mapa') || 'streets');
 
   // No hay franjas negras: el zoom minimo es aquel en el que el mundo todavia
   // tapa la ventana, y el desplazamiento esta sujeto al mundo. Depende del
@@ -145,7 +161,7 @@ function renderLegend() {
   const ramp = RAMPS[theme].map(c => `rgb(${c[0]},${c[1]},${c[2]})`).join(',');
   legendBox.innerHTML = `<i style="background:${cssv('--central')}"></i>línea central<br>
     <i style="background:${cssv('--limit')};opacity:.55"></i>límites de la umbra<br>
-    <i style="background:${cssv('--penumbra')};border-top:1px dashed ${cssv('--penumbra')}"></i>borde de la penumbra<br>
+    <i class="dashed" style="border-top-color:${cssv('--penumbra')}"></i>límite de visibilidad<br>
     <span>obscuración máxima</span>
     <span class="ramp" style="background:linear-gradient(90deg,${ramp})"></span>5 → 100 %
     ${theme === 'a11y' ? '<br>cada escalón del 10 % va contorneado' : ''}`;
@@ -171,12 +187,23 @@ function applyTheme(choice) {
   if (cv && lastR) drawCurve(cv, lastR);
 }
 
-function addStreets() {
-  streetLayer = L.tileLayer.wms(WMS_URL, {
-    layers: 'OSM-WMS', format: 'image/png', version: '1.1.1', transparent: false,
+function setBasemap(kind) {
+  if (!(kind in BASEMAPS)) kind = 'streets';
+  basemap = kind;
+  store.set('mapa', kind);
+  document.getElementById('map').dataset.base = kind;
+  if (streetLayer) { map.removeLayer(streetLayer); streetLayer = null; }
+  // Los casquetes solo tapan el negro que devuelve el WMS. Sin WMS no hay
+  // negro que tapar y taparlo esconderia la costa que si llega al polo.
+  caps.forEach(c => (kind === 'plain' ? map.removeLayer(c) : c.addTo(map)));
+  if (kind === 'plain') { loadWorld(); return; }
+  if (landLayer) map.removeLayer(landLayer);
+
+  const b = BASEMAPS[kind];
+  streetLayer = L.tileLayer.wms(b.url, {
+    layers: b.layer, format: 'image/png', version: '1.1.1', transparent: false,
     pane: 'land', maxZoom: 15, noWrap: true, bounds: WORLD,
-    attribution: '&copy; <a href="https://www.terrestris.de">terrestris</a>, ' +
-      'datos de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL)'
+    attribution: b.attr + ' &mdash; <a href="../THIRD-PARTY-DATA.md">fuentes</a>'
   }).addTo(map);
 
   // Falling back needs evidence, not a single failed request. A handful of
@@ -186,9 +213,8 @@ function addStreets() {
   let ok = 0, err = 0;
   streetLayer.on('tileload', () => { ok++; });
   streetLayer.on('tileerror', () => { if (++err >= 4 && ok === 0) fallback('no responde'); });
-  setTimeout(() => { if (ok === 0) fallback('no responde'); }, 9000);
+  setTimeout(() => { if (ok === 0 && basemap === kind) fallback('no responde'); }, 9000);
   if (navigator.onLine === false) fallback('sin conexión');
-  window.addEventListener('offline', () => fallback('sin conexión'));
 }
 
 // The outline is fetched only here, so a visit that never needs it never pays
@@ -203,33 +229,43 @@ function addStreets() {
 // The canvas renderer is not optional either: as SVG paths, 3 800 rings take
 // seconds to lay out and stutter on every pan.
 function loadWorld() {
-  if (worldLoad) return worldLoad;
+  if (worldLoad) return worldLoad.then(() => { if (landLayer) landLayer.addTo(map); });
   worldLoad = fetch('data/world.geojson').then(r => r.json()).then(g => {
-    landLayer = L.geoJSON(g, {
-      pane: 'land', interactive: false, style: landStyle()
-    }).addTo(map);
+    landLayer = L.geoJSON(g, { pane: 'land', interactive: false, style: landStyle() });
     borderLayer = null;
   }).catch(() => { worldLoad = null; });
-  return worldLoad;
+  return worldLoad.then(() => { if (landLayer) landLayer.addTo(map); });
 }
 
 function fallback(why) {
-  if (fellBack) return;
+  if (fellBack || basemap === 'plain') return;
   fellBack = true;
-  basemap = 'offline';
-  if (streetLayer) { map.removeLayer(streetLayer); streetLayer = null; }
+  const sel = document.getElementById('basemap');
+  if (sel) sel.value = 'plain';
+  setBasemap('plain');
   const n = document.createElement('div');
   n.className = 'offline-note';
-  n.innerHTML = `Mapa de calles no disponible (${why}). Se dibujan las costas
+  n.innerHTML = `Mapa de fondo no disponible (${why}). Se dibujan las costas
     de Natural Earth, que van en la propia página. Las circunstancias del
     eclipse se calculan igual: no dependen del fondo.
     <button id="retry">Reintentar</button>`;
   document.getElementById('map').appendChild(n);
-  document.getElementById('retry').onclick = () => location.reload();
-  loadWorld();
+  document.getElementById('retry').onclick = () => {
+    n.remove(); fellBack = false;
+    const s = document.getElementById('basemap');
+    if (s) s.value = 'streets';
+    setBasemap('streets');
+  };
 }
 
 const clearPaths = () => { pathLayers.forEach(l => map.removeLayer(l)); pathLayers = []; };
+
+// Los contornos cierran contra un marco que está fuera del mundo, y eso a un
+// relleno no se le ve pero a un trazo sí: saldría una línea de puntos pegada
+// al borde del mapa. Los tramos de fuera se cortan insertando un hueco, que
+// segments() convierte después en polilíneas separadas.
+const clipWorld = ring => ring.map(p =>
+  (Math.abs(p[0]) <= 90 && Math.abs(p[1]) <= 180) ? p : null);
 const landStyle = () => ({ color: cssv('--land-line'), weight: 0.7 * (+cssv('--stroke') || 1),
                            fillColor: cssv('--land-fill'), fillOpacity: 1 });
 
@@ -254,7 +290,6 @@ const capStyle = () => ({ pane: 'caps', stroke: false, fillColor: cssv('--map-bg
 function addCaps() {
   caps = [L.rectangle([[MERCATOR_LIMIT, -180], [90, 180]], capStyle()),
           L.rectangle([[-90, -180], [-MERCATOR_LIMIT, 180]], capStyle())];
-  caps.forEach(c => c.addTo(map));
 }
 
 
@@ -325,7 +360,7 @@ function drawBands(e) {
 // question. Zoomed in on a path it only hides the coastline, so it fades.
 const shadeOpacity = () => {
   const z = map.getZoom();
-  if (basemap === 'streets') return z >= 8 ? 0.18 : z >= 5 ? 0.32 : 0.55;
+  if (basemap !== 'plain') return z >= 8 ? 0.18 : z >= 5 ? 0.32 : 0.55;
   return z >= 5 ? 0.26 : 0.62;
 };
 
@@ -349,9 +384,16 @@ function drawEclipse(e) {
   const B = e.elements;
   drawBands(e);
   const thick = +cssv('--stroke') || 1;
-  for (const seg of Bess.penumbraOutline(B, e.greatest_h))
-    pathLayers.push(L.polyline(segments(seg), { color: cssv('--penumbra'), weight: thick,
-      dashArray: '4 4', interactive: false }).addTo(map));
+  // El límite de visibilidad: fuera de esta línea el Sol no llega a estar
+  // eclipsado en ningún momento. Antes se dibujaba aquí el borde de la
+  // penumbra EN EL INSTANTE del máximo, que es una circunferencia y no un
+  // límite: caía dentro de las bandas y las cruzaba, y la leyenda no decía
+  // cuál de las dos cosas era.
+  for (const ring of bandsOf(e).visible)
+    for (const seg of segments(clipWorld(ring)))
+      if (seg.length > 1)
+        pathLayers.push(L.polyline(seg, { color: cssv('--penumbra'), weight: thick,
+          dashArray: '5 4', interactive: false }).addTo(map));
   // A non-central total or annular eclipse has an umbral band that this code
   // cannot anchor, because every path curve is built outwards from the axis
   // intersection and the axis misses the Earth. The summary says so rather
@@ -523,6 +565,15 @@ function setMode(m) {
 const themeSel = $('#theme');
 themeSel.value = store.get('tema') || 'auto';
 themeSel.onchange = () => applyTheme(themeSel.value);
+
+const baseSel = $('#basemap');
+baseSel.value = store.get('mapa') || 'streets';
+baseSel.onchange = () => {
+  document.querySelector('.offline-note')?.remove();
+  fellBack = false;
+  setBasemap(baseSel.value);
+  bandLayers.forEach(l => l.setStyle({ fillOpacity: l._alpha * shadeOpacity() }));
+};
 matchMedia('(prefers-color-scheme: dark)')
   .addEventListener('change', () => { if (themeSel.value === 'auto') applyTheme('auto'); });
 

@@ -71,7 +71,7 @@ header{display:flex;align-items:center;gap:1rem;padding:.7rem 1.1rem;
 header h1{font-size:1rem;font-weight:600;margin:0;letter-spacing:.02em}
 .range{color:var(--dim);font-weight:400}
 .modes{display:flex;gap:.3rem;margin-left:auto}
-#theme{width:auto;padding:.3rem .5rem;font-size:.8rem;color:var(--dim)}
+#theme,#basemap{width:auto;padding:.3rem .5rem;font-size:.8rem;color:var(--dim)}
 .offline-note{position:absolute;left:50%;top:14px;transform:translateX(-50%);
   z-index:900;max-width:min(560px,90%);background:var(--overlay);
   border:var(--hair) solid var(--line);border-radius:8px;padding:.6rem .8rem;
@@ -86,18 +86,24 @@ header h1{font-size:1rem;font-weight:600;margin:0;letter-spacing:.02em}
 .mode.active{background:var(--accent);border-color:var(--accent);
   color:var(--accent-ink);font-weight:600}
 
-/* El fondo de calles lo sirve un tercero y viene en un solo estilo. Un modo
-   oscuro cuyo elemento dominante es una lámina blanca no es un modo oscuro,
-   así que en oscuro se atenúan las TESELAS, y solo las teselas: el filtro va
-   sobre la imagen y no sobre el panel, porque en ese mismo panel viven las
-   costas de respaldo, que ya se dibujan con los colores del tema.
+/* Los fondos de terceros vienen en un solo estilo, y el estilo manda sobre
+   el tema. Se corrige sobre la TESELA, y solo sobre la tesela: el filtro va
+   en la imagen y no en el panel, porque en ese mismo panel viven las costas
+   de Natural Earth, que ya se dibujan con los colores del tema.
 
-   Atenuar y no invertir. El truco habitual de invertir el mapa está pensado
-   para estilos de mar claro y tierra blanca; este estilo ya trae el mar azul
-   oscuro, así que invertirlo lo dejaba de un cian luminoso, con el océano
+   El relieve llega en verdes y ocres saturados, y ahí el fondo compite con el
+   dato: las bandas de obscuración son una escala de grises translúcida y
+   sobre un verde intenso dejan de leerse como escala. Se desatura.
+
+   En oscuro se atenúa, no se invierte. El truco habitual de invertir el mapa
+   está pensado para estilos de mar claro y tierra blanca; estos traen el mar
+   azul oscuro, e invertirlos los dejaba de un cian luminoso, con el océano
    brillando más que el continente. */
-:root[data-theme="dark"] .leaflet-land-pane img.leaflet-tile{
-  filter:brightness(.58) saturate(.85) contrast(1.06)}
+#map[data-base="relief"] img.leaflet-tile{filter:saturate(.4) contrast(.92) brightness(1.05)}
+:root[data-theme="dark"] #map img.leaflet-tile{filter:brightness(.58) saturate(.85) contrast(1.06)}
+:root[data-theme="dark"] #map[data-base="relief"] img.leaflet-tile{
+  filter:brightness(.5) saturate(.45) contrast(1.08)}
+:root[data-theme="a11y"] #map img.leaflet-tile{filter:grayscale(1) contrast(.7) brightness(1.15)}
 
 #layout{flex:1;display:flex;min-height:0}
 #panel{width:370px;flex:none;overflow-y:auto;padding:1rem;
@@ -165,6 +171,7 @@ tr.clickable:hover td{background:var(--bg)}
 .legend{background:var(--overlay);padding:.5rem .6rem;border-radius:6px;
   border:var(--hair) solid var(--line);font-size:.72rem;color:var(--dim);line-height:1.7}
 .legend i{display:inline-block;width:18px;height:3px;margin-right:.4rem;vertical-align:middle}
+.legend i.dashed{height:0;border-top:2px dashed}
 .ramp{display:block;height:8px;width:150px;margin:.25rem 0;border-radius:2px;
   border:var(--hair) solid var(--line)}
 
