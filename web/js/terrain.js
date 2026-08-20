@@ -39,6 +39,13 @@ const Terrain = (() => {
   const R_EFF = 6371008.8 / (1 - 0.13);
   const D2R = Math.PI / 180;
 
+  // The model carries bathymetry, not a land mask: over the sea it returns the
+  // depth of the sea floor, and a point in the Arctic Ocean came back at
+  // -3721 m. For a skyline the surface of the water is at zero, so anything
+  // below the lowest dry land on Earth -- the Dead Sea shore, -430 m -- is
+  // read as sea level. Real depressions above that keep their value.
+  const SEA_FLOOR = -450;
+
   const tiles = new Map();
   let footprint = 0;                     // bytes fetched this session
 
@@ -94,13 +101,23 @@ const Terrain = (() => {
   async function sampler(lat, lon, radiusM) {
     const z = zoomFor(lat, radiusM), n = 2 ** z;
     const mPerPx = 40075016.7 * Math.cos(lat * D2R) / (n * 256);
-    const rx = radiusM / (mPerPx * 256), cx = xOf(lon, n), cy = yOf(lat, n);
-    // The vertical extent in tile units is not the same as the horizontal one
-    // away from the equator: Mercator stretches y, so the same ground distance
-    // is fewer tiles north-south than the naive radius suggests. It is within
-    // a few per cent over one tile, and erring wide only costs a fetch.
+    // Mercator is conformal, so one tile is the same ground distance across
+    // and down; erring wide only costs a fetch.
+    //
+    // And it has to be capped. A Mercator tile shrinks with the cosine of the
+    // latitude and the zoom cannot go below the shallowest level the service
+    // publishes, so near a pole one tile is a few hundred metres of ground and
+    // a 25 km radius asks for ninety-five tiles across -- nine thousand
+    // requests for one click. Beyond the cap the radius is what got fetched,
+    // and the answer says so rather than pretending otherwise.
+    const SPAN = 2;
+    const rx = Math.min(radiusM / (mPerPx * 256), SPAN);
+    const cx = xOf(lon, n), cy = yOf(lat, n);
     const x0 = Math.floor(cx - rx), x1 = Math.floor(cx + rx);
     const y0 = Math.floor(cy - rx), y1 = Math.floor(cy + rx);
+    // How far the fetched rectangle actually reaches from the point, which is
+    // the smallest distance to any of its four edges.
+    const covered = 256 * mPerPx * Math.min(cx - x0, x1 + 1 - cx, cy - y0, y1 + 1 - cy);
     const grid = new Map();
     const jobs = [];
     for (let x = x0; x <= x1; x++)
@@ -118,10 +135,11 @@ const Terrain = (() => {
         const d = grid.get(tx + ',' + ty);
         return d ? d[(Y - ty * 256) * 256 + (X - tx * 256)] : 0;
       };
-      return px(ix, iy) * (1 - dx) * (1 - dy) + px(ix + 1, iy) * dx * (1 - dy)
-           + px(ix, iy + 1) * (1 - dx) * dy + px(ix + 1, iy + 1) * dx * dy;
+      const v = px(ix, iy) * (1 - dx) * (1 - dy) + px(ix + 1, iy) * dx * (1 - dy)
+              + px(ix, iy + 1) * (1 - dx) * dy + px(ix + 1, iy + 1) * dx * dy;
+      return v < SEA_FLOOR ? 0 : v;
     };
-    return { at, z, mPerPx, tiles: jobs.length };
+    return { at, z, mPerPx, tiles: jobs.length, covered };
   }
 
   // Walk one azimuth outwards and keep the highest apparent elevation angle.
@@ -155,16 +173,19 @@ const Terrain = (() => {
     const radiusM = (opts.radiusKm || 25) * 1000;
     const step = opts.stepDeg || 1;
     const sam = await sampler(lat, lon, radiusM);
+    // Never walk further than the model that was fetched: past its edge every
+    // sample reads as sea level and invents a horizon that is not there.
+    const reach = Math.max(1000, Math.min(radiusM, sam.covered));
     const h0 = sam.at(lat, lon) + (opts.eyeM || 0);
     const from = opts.azFrom === undefined ? 0 : opts.azFrom;
     const to = opts.azTo === undefined ? 360 : opts.azTo;
     const prof = [];
     for (let a = from; a <= to + 1e-9; a += step)
       prof.push(Object.assign({ az: ((a % 360) + 360) % 360 },
-                              ridge(sam, lat, lon, h0, a, radiusM)));
+                              ridge(sam, lat, lon, h0, a, reach)));
     prof.forEach(p => { if (p.alt < -89) { p.alt = 0; p.distM = 0; } });
     return { elevM: sam.at(lat, lon), h0, prof, step, from, to,
-             radiusKm: radiusM / 1000, zoom: sam.z, mPerPx: sam.mPerPx,
+             radiusKm: reach / 1000, zoom: sam.z, mPerPx: sam.mPerPx,
              tiles: sam.tiles, credit: CREDIT };
   }
 
