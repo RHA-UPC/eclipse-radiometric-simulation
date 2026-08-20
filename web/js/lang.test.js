@@ -82,6 +82,7 @@ for (const k of keys) {
 const W = '(?:^|[^\\p{L}])';
 const rx = words => new RegExp(W + '(?:' + words + ')(?![\\p{L}])', 'iu');
 const SECOND_PERSON = {
+  en: rx('you|your|yours|yourself'),
   es: rx('tu|tus|tú|ti|contigo|escribiste|declares|tienes|puedes|tuyo|tuya'),
   ca: rx('teu|teva|teus|teves|tu'),
   it: rx('tuo|tua|tuoi|tue|tuo'),
