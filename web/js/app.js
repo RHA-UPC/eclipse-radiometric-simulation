@@ -27,6 +27,7 @@ const need = src => pending[src] || (pending[src] = new Promise((ok, no) => {
 const TYPE = k => Lang.t('type_' + k);
 const $ = s => document.querySelector(s);
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const D2R = Math.PI / 180;
 // localStorage throws outright in some privacy modes; a colour preference is
 // not worth taking the page down for.
 const store = {
@@ -60,6 +61,7 @@ let current = null, mode = 'eclipse', lastPoint = null;
 let basemap = 'streets', streetLayer = null, worldLoad = null, fellBack = false;
 let theme = document.documentElement.dataset.theme || 'light';
 let legendBox = null, bandLayers = [], lastR = null, caps = [];
+let compass = null, compassAz = null, lastProf = null;
 const bandCache = new Map();
 const WORLD = L.latLngBounds([-90, -180], [90, 180]);
 
@@ -160,6 +162,7 @@ function initMap() {
   map.on('zoomend', () => {
     const op = shadeOpacity();
     bandLayers.forEach(l => l.setStyle({ fillOpacity: l._alpha * op }));
+    if (lastPoint && compassAz !== null) drawCompass(lastPoint[0], lastPoint[1], compassAz);
   });
   map.on('click', e => {
     const lon = ((e.latlng.lng + 180) % 360 + 360) % 360 - 180;
@@ -208,6 +211,9 @@ function applyTheme(choice) {
   if (mode === 'eclipse' && current) drawEclipse(current);
   const cv = document.getElementById('curve');
   if (cv && lastR) drawCurve(cv, lastR);
+  if (lastProf && typeof paintProfile === 'function')
+    paintProfile(document.getElementById('profile'), lastProf);
+  if (lastPoint && compassAz !== null) drawCompass(lastPoint[0], lastPoint[1], compassAz);
 }
 
 // The attribution string carries one translated word, so it changes with the
@@ -515,6 +521,72 @@ function contactRows(r) {
     </tr>`).join('');
 }
 
+/* --- compass -------------------------------------------------------------
+   Which way to look. The panel already gives the azimuth as a number, and a
+   number is the one form of it that nobody standing in a field can use. This
+   is the same value drawn on the ground: a ring around the marked point, the
+   north tick, and the ray towards the Sun at maximum.
+
+   Drawn point by point rather than with L.circle. The map is plate carree, so
+   a ground circle is not a circle on screen -- it is stretched east to west by
+   one over the cosine of the latitude -- and Leaflet's circle would draw the
+   screen shape instead of the ground one. Seventy-two bearings cost nothing
+   and are right in any projection.
+
+   It appears only at a scale where it means something. Sized to about seventy
+   pixels and capped at sixty kilometres, so once the cap binds -- around zoom
+   eight and below -- it is not drawn at all: a compass spanning a continent
+   answers a question nobody asked. */
+const dest = (lat, lon, az, dM) => {
+  const d = dM / 6371008.8, a = az * D2R;
+  const p = lat * D2R, l = lon * D2R;
+  const p2 = Math.asin(Math.sin(p) * Math.cos(d) + Math.cos(p) * Math.sin(d) * Math.cos(a));
+  const l2 = l + Math.atan2(Math.sin(a) * Math.sin(d) * Math.cos(p),
+                            Math.cos(d) - Math.sin(p) * Math.sin(p2));
+  return [p2 / D2R, l2 / D2R];
+};
+
+function clearCompass() {
+  if (compass && map) map.removeLayer(compass);
+  compass = null;
+}
+
+function drawCompass(lat, lon, az) {
+  clearCompass();
+  compassAz = Number.isFinite(az) ? az : null;
+  if (compassAz === null || !map) return;
+  // The scale straight from the map, measured north where plate carree has no
+  // latitude stretch, so this holds whatever the CRS ends up being.
+  const a = map.latLngToLayerPoint([lat, lon]);
+  const b = map.latLngToLayerPoint(dest(lat, lon, 0, 1000));
+  const mPerPx = 1000 / Math.max(1e-6, a.distanceTo(b));
+  const rad = 70 * mPerPx;
+  if (rad > 60000) return;
+
+  // Longitudes unwrapped about the centre: a ring that steps over the
+  // antimeridian would otherwise be drawn as a stripe across the whole sheet.
+  const at = (bearing, k) => {
+    const q = dest(lat, lon, bearing, rad * (k || 1));
+    return [q[0], lon + (((q[1] - lon + 540) % 360) - 180)];
+  };
+  const w = +cssv('--stroke') || 1;
+  const ink = cssv('--penumbra'), sun = cssv('--warm');
+  const g = L.layerGroup();
+  const ring = [];
+  for (let i = 0; i <= 72; i++) ring.push(at(i * 5));
+  L.polyline(ring, { color: ink, weight: 2 * w, opacity: .85, interactive: false }).addTo(g);
+  L.polyline([[lat, lon], at(0)], { color: ink, weight: 2 * w, interactive: false }).addTo(g);
+  L.polyline([[lat, lon], at(compassAz)],
+             { color: sun, weight: 3 * w, interactive: false }).addTo(g);
+  L.circleMarker(at(compassAz), { radius: 6, color: cssv('--marker-ring'), weight: 2 * w,
+    fillColor: sun, fillOpacity: 1, interactive: false }).addTo(g);
+  const label = (ll, cls, html) => L.marker(ll, { interactive: false, keyboard: false,
+    icon: L.divIcon({ className: cls, html, iconSize: [70, 18], iconAnchor: [35, 9] }) }).addTo(g);
+  label(at(0, 1.2), 'cmp-lbl', 'N');
+  label(at(compassAz, 1.45), 'cmp-lbl cmp-sun', Lang.nf(compassAz, 1) + '°');
+  compass = g.addTo(map);
+}
+
 // The real horizon of the marked point, once it has been asked for. It lives
 // outside renderPoint because it survives changing eclipse: the relief of a
 // place does not depend on which eclipse is being looked at, and downloading
@@ -572,6 +644,7 @@ function horizonBlock(r) {
   const b = horizon.buildings;
   return `
     <div id="hztab">${horizonRows(r)}</div>
+    <div id="profbox"></div>
     <div class="assume"><b>${t('hz_assume_h')}</b> ${t('hz_assume', {
         elev: Lang.nf(horizon.elevM, 0), radius: Lang.nf(horizon.radiusKm, 0),
         step: Lang.nf(horizon.mPerPx, 0), tiles: horizon.tiles })}
@@ -595,6 +668,7 @@ function renderPoint(e, lat, lon) {
   const r = Bess.local(e.elements, lat, lon, horizon ? horizon.elevM : 0);
   const box = $('#result');
   if (!r || r.visible_obscuration <= 0) {
+    clearCompass();
     box.innerHTML = `<h2>${t('pt_none_h')}</h2>
       <p class="sub">${dms(lat, 'N', 'S')} · ${dms(lon, 'E', 'W')}</p>
       <p class="hint">${t(r ? 'pt_below' : 'pt_outside')}</p>`;
@@ -631,6 +705,8 @@ function renderPoint(e, lat, lon) {
   const btn = document.getElementById('calc');
   if (btn) btn.onclick = () => runRadio(btn, lat, lon);
   wireHorizon(e, lat, lon);
+  drawCompass(lat, lon, r.MAX && r.MAX.az);
+  if (horizon && typeof drawProfile === 'function') drawProfile(e, lat, lon);
 }
 
 function wireHorizon(e, lat, lon) {
@@ -639,7 +715,7 @@ function wireHorizon(e, lat, lon) {
     rel.disabled = true;
     rel.textContent = t('hz_loading');
     try {
-      await need('js/terrain.js');
+      await Promise.all([need('js/terrain.js'), need('js/profile.js')]);
       const r0 = Bess.local(e.elements, lat, lon, 0);
       const [a0, a1] = azRange(r0 || {});
       horizon = await Terrain.horizon(lat, lon, { azFrom: a0, azTo: a1, stepDeg: 1 });
@@ -654,7 +730,7 @@ function wireHorizon(e, lat, lon) {
   if (ed) ed.onclick = async () => {
     ed.disabled = true; ed.textContent = t('hz_loading');
     try {
-      await need('js/terrain.js');
+      await Promise.all([need('js/terrain.js'), need('js/profile.js')]);
       horizon = Terrain.withBuildings(horizon, await Terrain.buildings(lat, lon, 400));
     } catch (err) {
       ed.disabled = false; ed.textContent = t('hz_buildings_failed');
@@ -675,6 +751,7 @@ function wireHorizon(e, lat, lon) {
     // typed into: tabbing from height to distance, the first change took the
     // second field away mid-entry.
     tab.innerHTML = horizonRows(Bess.local(e.elements, lat, lon, horizon.elevM));
+    if (typeof drawProfile === 'function') drawProfile(e, lat, lon);
   };
   ['obs-h', 'obs-d'].forEach(id => {
     const el = document.getElementById(id);
@@ -726,6 +803,7 @@ function setPoint(lat, lon) {
   // the same place downloads nothing again.
   if (!lastPoint || Math.abs(lastPoint[0] - lat) > 1e-6 || Math.abs(lastPoint[1] - lon) > 1e-6) {
     horizon = null;
+    lastProf = null;
     OBSTACLE.h = OBSTACLE.d = 0;
   }
   lastPoint = [lat, lon];
@@ -743,7 +821,7 @@ function setMode(m) {
   document.querySelectorAll('.mode').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
   $('#ctl-eclipse').hidden = m !== 'eclipse';
   $('#ctl-lugar').hidden = m === 'eclipse';
-  if (m === 'lugar') { clearPaths(); clearBands(); }
+  if (m === 'lugar') { clearPaths(); clearBands(); clearCompass(); }
   else if (current) drawEclipse(current);
   if (lastPoint) setPoint(lastPoint[0], lastPoint[1]);
   else $('#result').innerHTML = '';
@@ -818,6 +896,7 @@ $('#go').onclick = () => {
     $('#result').innerHTML = `<h2>${t('err_coords_h')}</h2>
       <p class="hint">${t('err_coords_p')}</p>`;
     if (marker) { map.removeLayer(marker); marker = null; }
+    clearCompass();
     lastPoint = null;
     return;
   }

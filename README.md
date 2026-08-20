@@ -35,6 +35,18 @@ behind a ridge. OpenStreetMap building heights can be folded in where anyone
 has recorded them, and there is a field for declaring the obstacle nobody has
 mapped — the block across the street, the tree line.
 
+**Which way to look.** A ring on the map at the marked point, with north and
+a ray towards the Sun at maximum carrying the azimuth. It is drawn bearing by
+bearing rather than as a screen circle, because the map is plate carree and a
+ground circle is not a circle on it.
+
+**Visibility profile.** With the relief downloaded, a section of the ground
+from the marked point out along that azimuth, against the ray that has to
+clear it. It shows the working behind the horizon table: what covers the Sun,
+how far off it is, and how high the Sun stands at maximum. OpenStreetMap
+building heights are drawn on it where they exist, which is the one thing the
+national mapping agencies' equivalents leave out.
+
 **Irradiance and ocular exposure.** A button under each point solves SPECTRL2
 over 122 wavelengths, the chromatic transmission of the eclipse with limb
 darkening, and both ICNIRP 2013 limits. Around two tenths of a second per

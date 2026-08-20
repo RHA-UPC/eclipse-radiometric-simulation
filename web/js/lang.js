@@ -364,6 +364,67 @@ const Lang = (() => {
   hz_obstacle_alt: { en: ': {a}° high', es: ': {a}° de altura', ca: ': {a}° d’altura',
     it: ': {a}° di altezza', fr: ' : {a}° de hauteur' },
 
+  /* ---- visibility profile --------------------------------------------- */
+  prof_h: {
+    en: 'Visibility profile', es: 'Perfil de visibilidad', ca: 'Perfil de visibilitat',
+    it: 'Profilo di visibilità', fr: 'Profil de visibilité' },
+  prof_visible: {
+    en: 'At maximum the Sun stands {alt}° above the astronomical horizon and clears the skyline: the eclipse is in view from the marked point.',
+    es: 'En el máximo el Sol está a {alt}° sobre el horizonte astronómico y supera el perfil del relieve: el eclipse se ve desde el punto marcado.',
+    ca: 'Al màxim el Sol és a {alt}° sobre l’horitzó astronòmic i supera el perfil del relleu: l’eclipsi es veu des del punt marcat.',
+    it: 'Al massimo il Sole si trova a {alt}° sopra l’orizzonte astronomico e supera il profilo del rilievo: l’eclissi è visibile dal punto segnato.',
+    fr: 'Au maximum, le Soleil est à {alt}° au-dessus de l’horizon astronomique et dépasse la ligne de crête : l’éclipse est visible depuis le point marqué.' },
+  prof_hidden: {
+    en: 'At maximum the Sun stands {alt}° up and the skyline reaches {sky}°: the eclipse is behind the relief from the marked point.',
+    es: 'En el máximo el Sol está a {alt}° y el perfil del relieve llega a {sky}°: el eclipse queda tapado desde el punto marcado.',
+    ca: 'Al màxim el Sol és a {alt}° i el perfil del relleu arriba a {sky}°: l’eclipsi queda tapat des del punt marcat.',
+    it: 'Al massimo il Sole si trova a {alt}° e il profilo del rilievo arriva a {sky}°: l’eclissi resta coperta dal punto segnato.',
+    fr: 'Au maximum, le Soleil est à {alt}° et la ligne de crête atteint {sky}° : l’éclipse est masquée depuis le point marqué.' },
+  prof_below: {
+    en: 'At maximum the Sun is below the horizon at this point.',
+    es: 'En el máximo el Sol está bajo el horizonte en este punto.',
+    ca: 'Al màxim el Sol és sota l’horitzó en aquest punt.',
+    it: 'Al massimo il Sole è sotto l’orizzonte in questo punto.',
+    fr: 'Au maximum, le Soleil est sous l’horizon en ce point.' },
+  prof_lg_terrain: {
+    en: 'Elevation', es: 'Elevación', ca: 'Elevació', it: 'Elevazione', fr: 'Élévation' },
+  prof_lg_obs: {
+    en: 'Observation point', es: 'Punto de observación', ca: 'Punt d’observació',
+    it: 'Punto di osservazione', fr: 'Point d’observation' },
+  prof_lg_sun: { en: 'Sun', es: 'Sol', ca: 'Sol', it: 'Sole', fr: 'Soleil' },
+  prof_lg_sight: {
+    en: 'Line of sight', es: 'Línea de visión', ca: 'Línia de visió',
+    it: 'Linea di vista', fr: 'Ligne de visée' },
+  prof_lg_build: {
+    en: 'Buildings', es: 'Edificios', ca: 'Edificis', it: 'Edifici', fr: 'Bâtiments' },
+  prof_note_cut: {
+    en: 'The chart stops at {km} km, past which the ray already stands above the highest ground in the section.',
+    es: 'El gráfico se detiene en {km} km, más allá de los cuales el rayo ya pasa por encima del terreno más alto de la sección.',
+    ca: 'El gràfic s’atura als {km} km, més enllà dels quals el raig ja passa per sobre del terreny més alt de la secció.',
+    it: 'Il grafico si ferma a {km} km, oltre i quali il raggio passa già sopra il terreno più alto della sezione.',
+    fr: 'Le graphique s’arrête à {km} km, au-delà desquels le rayon passe déjà au-dessus du terrain le plus haut de la coupe.' },
+  prof_note_frame: {
+    en: 'The chart stops at {km} km, framed on whatever covers the Sun.',
+    es: 'El gráfico se detiene en {km} km, encuadrado sobre lo que tapa el Sol.',
+    ca: 'El gràfic s’atura als {km} km, enquadrat sobre allò que tapa el Sol.',
+    it: 'Il grafico si ferma a {km} km, inquadrato su ciò che copre il Sole.',
+    fr: 'Le graphique s’arrête à {km} km, cadré sur ce qui masque le Soleil.' },
+  prof_lg_block: {
+    en: 'What covers the Sun', es: 'Lo que tapa el Sol', ca: 'El que tapa el Sol',
+    it: 'Ciò che copre il Sole', fr: 'Ce qui masque le Soleil' },
+  prof_lg_obst: {
+    en: 'Declared obstacle', es: 'Obstáculo declarado', ca: 'Obstacle declarat',
+    it: 'Ostacolo dichiarato', fr: 'Obstacle déclaré' },
+  prof_axis_alt: {
+    en: 'Altitude (m)', es: 'Altitud (m)', ca: 'Altitud (m)', it: 'Quota (m)',
+    fr: 'Altitude (m)' },
+  prof_note: {
+    en: 'The section follows the azimuth of the Sun at maximum, {az}°, and the check runs out to {km} km. Building heights are placed above the ground at the marked point rather than above the ground beneath each building, which is the convention the table above uses.',
+    es: 'El corte sigue el azimut del Sol en el máximo, {az}°, y la comprobación llega hasta {km} km. Las alturas de los edificios se sitúan sobre el terreno del punto marcado y no sobre el terreno bajo cada edificio, que es el convenio de la tabla de arriba.',
+    ca: 'El tall segueix l’azimut del Sol al màxim, {az}°, i la comprovació arriba fins a {km} km. Les altures dels edificis se situen sobre el terreny del punt marcat i no sobre el terreny sota cada edifici, que és el conveni de la taula de dalt.',
+    it: 'La sezione segue l’azimut del Sole al massimo, {az}°, e la verifica arriva fino a {km} km. Le altezze degli edifici sono poste sopra il terreno del punto segnato e non sopra il terreno sotto ciascun edificio, che è la convenzione della tabella qui sopra.',
+    fr: 'La coupe suit l’azimut du Soleil au maximum, {az}°, et la vérification va jusqu’à {km} km. Les hauteurs des bâtiments sont placées au-dessus du sol du point marqué et non au-dessus du sol sous chaque bâtiment, ce qui est la convention du tableau ci-dessus.' },
+
   /* ---- intensity block ----------------------------------------------- */
   int_h: { en: 'Intensity.', es: 'Intensidad.', ca: 'Intensitat.',
     it: 'Intensità.', fr: 'Intensité.' },

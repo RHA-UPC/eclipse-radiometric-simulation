@@ -131,10 +131,11 @@ three expensive modules takes part.
 ```
 web/index.html            two modes: by eclipse and by place
 web/stabilise.html        the video stabiliser, a separate page
-web/js/lang.js            180 keys × 5 languages, plus the number formatting
+web/js/lang.js            195 keys × 5 languages, plus the number formatting
 web/js/besselian.js       geometry: a port of eclipsecat.py
 web/js/radiometry.js      radiometry: a port of spectral, limbdark and eye
 web/js/terrain.js         skyline from an elevation model, and buildings
+web/js/profile.js         the visibility profile, fetched with terrain.js
 web/js/stabilise.js       the tracker: a port of tools/stab_solar.py
 web/js/stabilise-ui.js    two passes over the video, and the recording
 web/js/app.js             map, layers and the writing of the panels
@@ -351,6 +352,44 @@ Coverage is the whole story, and the panel prints it: of the buildings within
 400 m, Manhattan declares a height for 86 % of them, Zaragoza for 0.2 %,
 Nairobi for 3 %. So the panel says how many declared one and how many did not,
 and leaves a field for declaring by hand the obstacle nobody has mapped.
+
+### The compass and the visibility profile
+
+The panel gives the Sun's azimuth as a number, which is the one form of it
+nobody standing in a field can use. `app.js` draws the same value on the
+ground: a ring at the marked point, the north tick, and a ray towards the Sun
+at maximum.
+
+Point by point, not with `L.circle`. The map is plate carree, so a circle of
+fixed ground radius is not a circle on screen — it is stretched east to west by
+one over the cosine of the latitude — and Leaflet's circle draws the screen
+shape instead of the ground one. Seventy-two bearings from the spherical
+destination formula cost nothing and are right in any projection, and the ray
+lands on the ring exactly where the azimuth says. The ring is sized to about
+seventy pixels from the map's own scale and is not drawn once that would
+exceed sixty kilometres, which is where a straight segment stops being the
+great circle it claims to be.
+
+`web/js/profile.js` draws the section behind the horizon table: the ground from
+the marked point outwards along that azimuth, against the ray that has to clear
+it. The terrain is drawn as real altitudes and the curvature drop is added to
+the ray rather than taken off the ground — the same comparison `Terrain.ridge`
+makes, and it leaves the profile readable as a relief instead of as a bowl.
+
+What decides the drawn range is the subject, not the model's reach. A ray at
+six degrees is two and a half kilometres up by the far end of a 25 km section,
+and a chart scaled to that leaves the relief as a line along the floor. So when
+the Sun is covered the section is framed on whatever covers it — a rise three
+hundred metres away is otherwise a pixel wide, and the chart would show a clear
+ray under a caption saying the opposite — and when it is not, the section stops
+where the ray has risen above the highest ground in it, buildings included.
+Either way the verdict above the chart comes from the whole section, and the
+caption says which of the two happened and where the picture ends.
+
+The file is fetched with `terrain.js` and not before it. Nothing in it can run
+until the elevation model has been downloaded, which is a button nobody has to
+press, so putting it on the critical path would charge every visitor for a
+feature most of them never open.
 
 ### Five languages
 

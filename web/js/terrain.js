@@ -214,6 +214,26 @@ const Terrain = (() => {
              tiles: sam.tiles, credit: CREDIT };
   }
 
+  /* The ground itself along one azimuth, instead of the single angle `ridge`
+     keeps out of the same walk. Same model, same step, same cache: after
+     `horizon` has run the tiles are already in memory, so this downloads
+     nothing and costs a few hundred bilinear reads.
+     Distances are ground distances from the point; elevations are metres above
+     the ellipsoid, uncorrected -- whoever draws them adds the curvature drop
+     to the line of sight rather than bending the ground, which keeps the
+     terrain on the chart readable as real altitudes. */
+  async function slice(lat, lon, az, radiusM) {
+    const sam = await sampler(lat, lon, radiusM);
+    const reach = Math.max(1000, Math.min(radiusM, sam.covered));
+    const step = Math.max(60, sam.mPerPx);
+    const s = Math.sin(az * D2R), c = Math.cos(az * D2R);
+    const mLat = 111132.9, mLon = 111319.5 * Math.cos(lat * D2R);
+    const pts = [];
+    for (let d = 0; d <= reach; d += step)
+      pts.push({ d, elev: sam.at(lat + c * d / mLat, lon + s * d / Math.max(1e-6, mLon)) });
+    return { pts, h0: sam.at(lat, lon), reachM: reach, stepM: step, rEff: R_EFF };
+  }
+
   // The skyline at one azimuth, by linear interpolation of the profile. The
   // profile is sampled every degree and a ridge line is smooth at that scale,
   // so interpolating is closer than picking the nearest sample.
@@ -302,7 +322,7 @@ const Terrain = (() => {
     return Object.assign({}, hz, { prof, buildings: b });
   }
 
-  return { horizon, altAt, buildings, withBuildings, zoomFor,
+  return { horizon, altAt, slice, buildings, withBuildings, zoomFor,
            credit: CREDIT, bytes: () => footprint };
 })();
 
