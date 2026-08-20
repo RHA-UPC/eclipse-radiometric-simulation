@@ -240,5 +240,6 @@ for (const i of [300, 600]) {
      `fila ${i} (obsc ${rows[i][col('obsc_geometric')].toFixed(2)}): 450 nm ${t450.toFixed(4)} vs 700 nm ${t700.toFixed(4)}`);
 }
 
-console.log(fails ? `${fails} FAILED` : 'radiometry.js OK — reproduce la cadena espectral del manuscrito');
+console.log(fails ? `${fails} FAILURES`
+                  : 'radiometry.js OK — reproduces the manuscript spectral chain');
 process.exit(fails ? 1 : 0);

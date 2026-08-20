@@ -192,6 +192,22 @@ function applyTheme(choice) {
   if (cv && lastR) drawCurve(cv, lastR);
 }
 
+// The attribution string carries one translated word, so it changes with the
+// language. Rebuilding the layer to update it would re-request every tile;
+// swapping the string inside the control does not.
+function attributionOf(kind) {
+  const b = BASEMAPS[kind];
+  return b ? b.attr + ` &mdash; <a href="../THIRD-PARTY-DATA.md">${t('attr_sources')}</a>` : '';
+}
+
+function retitleBasemap() {
+  if (!streetLayer || !map.attributionControl) return;
+  const next = attributionOf(basemap);
+  map.attributionControl.removeAttribution(streetLayer.options.attribution);
+  streetLayer.options.attribution = next;
+  map.attributionControl.addAttribution(next);
+}
+
 function setBasemap(kind) {
   if (!(kind in BASEMAPS)) kind = 'streets';
   basemap = kind;
@@ -209,7 +225,7 @@ function setBasemap(kind) {
   streetLayer = L.tileLayer.wms(b.url, {
     layers: b.layer, format: 'image/png', version: '1.1.1', transparent: false,
     pane: 'land', maxZoom: 15, noWrap: true, bounds: WORLD,
-    attribution: b.attr + ' &mdash; <a href="../THIRD-PARTY-DATA.md">fuentes</a>'
+    attribution: attributionOf(kind)
   }).addTo(map);
 
   // Falling back needs evidence, not a single failed request. A handful of
@@ -698,6 +714,7 @@ function relabel() {
     sel.value = keep;
   }
   renderLegend();
+  retitleBasemap();
   if (mode === 'eclipse' && current) drawEclipse(current);
   if (lastPoint) setPoint(lastPoint[0], lastPoint[1]);
 }

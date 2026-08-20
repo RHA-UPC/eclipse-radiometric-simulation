@@ -71,7 +71,7 @@ header{display:flex;align-items:center;gap:1rem;padding:.7rem 1.1rem;
 header h1{font-size:1rem;font-weight:600;margin:0;letter-spacing:.02em}
 .range{color:var(--dim);font-weight:400}
 .modes{display:flex;gap:.3rem;margin-left:auto}
-#theme,#basemap{width:auto;padding:.3rem .5rem;font-size:.8rem;color:var(--dim)}
+#theme,#basemap,#lang{width:auto;padding:.3rem .5rem;font-size:.8rem;color:var(--dim)}
 .offline-note{position:absolute;left:50%;top:14px;transform:translateX(-50%);
   z-index:900;max-width:min(560px,90%);background:var(--overlay);
   border:var(--hair) solid var(--line);border-radius:8px;padding:.6rem .8rem;

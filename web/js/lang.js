@@ -58,6 +58,7 @@ const Lang = (() => {
     en: 'Eclipse calculator', es: 'Calculadora de eclipses', ca: 'Calculadora d’eclipsis',
     it: 'Calcolatore di eclissi', fr: 'Calculateur d’éclipses' },
 
+  attr_sources: { en: 'sources', es: 'fuentes', ca: 'fonts', it: 'fonti', fr: 'sources' },
   base_label: { en: 'Map', es: 'Fondo', ca: 'Fons', it: 'Sfondo', fr: 'Fond' },
   base_streets: { en: 'Map: streets', es: 'Fondo: calles', ca: 'Fons: carrers',
     it: 'Sfondo: strade', fr: 'Fond : rues' },
