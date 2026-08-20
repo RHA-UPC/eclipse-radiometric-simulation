@@ -360,13 +360,14 @@ const Bess = (() => {
     const d = poly(B.d_deg, t) * D2R, mu = poly(B.mu_deg, t) * D2R;
     const H = mu + o.lon - o.dmu;
     const cH = Math.cos(H), sd = Math.sin(d), cd = Math.cos(d);
-    // El Sol tiene que estar sobre el horizonte GEODESICO, que es con el que
-    // local() decide si hay eclipse visible en el panel. zeta > 0 es el
-    // horizonte geocentrico y sobre un elipsoide no es lo mismo: los dos
-    // criterios discrepan hasta 0,091 grados de altura solar y, cerca del
-    // ocaso, esos minutos valian 19 puntos de obscuracion entre la banda que
-    // pintaba el mapa y la cifra que daba la ficha del mismo punto. Un mapa
-    // que contradice a su propia respuesta es peor que un mapa tosco.
+    // The Sun has to be above the GEODETIC horizon, which is what local()
+    // uses to decide whether there is a visible eclipse in the panel.
+    // zeta > 0 is the geocentric horizon, and on an ellipsoid they are not
+    // the same: the two criteria disagree by up to 0.091 degrees of solar
+    // altitude and, near sunset, those minutes were worth 19 points of
+    // obscuration between the band the map painted and the figure the panel
+    // gave for the same point. A map that contradicts its own answer is
+    // worse than a coarse map.
     if (Math.sin(o.p) * sd + Math.cos(o.p) * cd * cH <= 0) return 0;
     const zeta = o.rs * sd + o.rc * cH * cd;
     const L1 = poly(B.l1, t) - zeta * B.tan_f1;
@@ -376,19 +377,19 @@ const Bess = (() => {
     return obscuration(m, (L1 + L2) / 2, (L1 - L2) / 2);
   }
 
-  // Margen de visibilidad: cuanto le sobra o le falta al observador para
-  // estar dentro de la penumbra, en radios terrestres, con el Sol sobre el
-  // horizonte. Positivo dentro, negativo fuera, cero justo en el contacto
-  // exterior.
+  // Visibility margin: how much the observer has to spare, or is short of,
+  // being inside the penumbra, in Earth radii, with the Sun above the
+  // horizon. Positive inside, negative outside, zero exactly at external
+  // contact.
   //
-  // Es el criterio exacto de "aqui se ve algo", y por eso lo dibuja el limite
-  // de visibilidad en vez de un contorno de obscuracion muy pequena. La
-  // diferencia no es cosmetica: cerca de ese borde el eclipse dura minutos, y
-  // un barrido de 121 instantes de la obscuracion se lo pierde hasta por
-  // 0,0165 -- treinta y dos de cada dos mil doscientos puntos de la orla se
-  // leen como cero. L1 - m, en cambio, es suave en el tiempo y no depende de
-  // que el muestreo caiga dentro del eclipse: pasa por cero exactamente donde
-  // el borde de la penumbra toca el suelo.
+  // It is the exact criterion for "something is visible here", which is why
+  // the visibility limit contours it instead of a very small obscuration
+  // level. The difference is not cosmetic: near that edge the eclipse lasts
+  // minutes, and a 121-instant sweep of the obscuration misses it by as much
+  // as 0.0165 -- thirty-two of every two thousand two hundred fringe points
+  // read as zero. L1 - m, by contrast, is smooth in time and does not depend
+  // on the sampling landing inside the eclipse: it passes through zero
+  // exactly where the edge of the penumbra touches the ground.
   function visAt(B, o, t) {
     const x = poly(B.x, t), y = poly(B.y, t);
     const d = poly(B.d_deg, t) * D2R, mu = poly(B.mu_deg, t) * D2R;
@@ -409,10 +410,10 @@ const Bess = (() => {
     let a = T(Math.max(0, k - 1)), b = T(Math.min(nt - 1, k + 1));
     const gr = 0.6180339887498949;
     let c = b - gr * (b - a), d = a + gr * (b - a), fc = at(c), fd = at(d);
-    // Nueve pasos dejan el intervalo en el 1,3 % de sus 6,4 minutos, o sea
-    // cinco segundos de tiempo. Cerca de un maximo suave eso son 1e-6 de
-    // obscuracion; no compensa seguir. El valor del propio T(k) no se vuelve a
-    // evaluar aqui: quien llama ya lo tiene del barrido grueso.
+    // Nine steps leave the interval at 1.3 % of its 6.4 minutes, that is,
+    // five seconds of time. Near a smooth maximum that is 1e-6 of
+    // obscuration; going further does not pay. T(k) itself is not
+    // re-evaluated here: the caller already has it from the coarse sweep.
     for (let i = 0; i < 9; i++) {
       if (fc > fd) { b = d; d = c; fd = fc; c = b - gr * (b - a); fc = at(c); }
       else { a = c; c = d; fc = fd; d = a + gr * (b - a); fd = at(d); }
@@ -422,15 +423,15 @@ const Bess = (() => {
 
   function obscurationGrid(B, nlon = 640, nlat = 320, nt = 121) {
     const grid = new Float32Array(nlon * nlat);
-    // En que instante ocurre el maximo de cada celda. No lo usa el dibujo: lo
-    // usa el afinado de los contornos, que asi puede mirar solo unos pocos
-    // instantes alrededor en vez de barrer las seis horas otra vez. Es la
-    // diferencia entre afinar un vertice en 4 us y en 18.
+    // At which instant each cell's maximum happens. The drawing does not use
+    // it: the contour refinement does, so it can look at a few instants
+    // around it rather than sweeping the six hours again. It is the
+    // difference between refining a vertex in 4 us and in 18.
     const tmax = new Int16Array(nlon * nlat).fill(-1);
-    // Segundo campo, el margen de visibilidad, en la misma pasada: el bucle ya
-    // tiene m y L1 en la mano y quedarse con su maximo no cuesta nada. De aqui
-    // sale el limite exterior que se dibuja a trazos, y sale exacto donde un
-    // contorno de obscuracion pequena solo llegaba a aproximado.
+    // A second field, the visibility margin, in the same pass: the loop
+    // already has m and L1 in hand and keeping their maximum costs nothing.
+    // The dashed outer limit comes out of this, and it comes out exact where
+    // a small-obscuration contour only got as far as approximate.
     const vis = new Float32Array(nlon * nlat).fill(-1);
     const tvis = new Int16Array(nlon * nlat).fill(-1);
     const dmu = dmuOf(B), rows = [];
@@ -465,7 +466,7 @@ const Bess = (() => {
             const i = ((ii % nlon) + nlon) % nlon;
             const H = e.mu + (-180 + (i + 0.5) * 360 / nlon) * D2R - dmu;
             const cH = Math.cos(H);
-            // Horizonte geodesico, el mismo que obsAt y que local().
+            // Geodetic horizon, the same one obsAt and local() use.
             if (Math.sin(r.p) * sd + Math.cos(r.p) * cd * cH <= 0) continue;
             const zeta = r.rs * sd + r.rc * cH * cd;
             const m = Math.hypot(e.x - r.rc * Math.sin(H), e.y - (r.rs * cd - r.rc * cH * sd));
@@ -482,9 +483,9 @@ const Bess = (() => {
       }
     }
 
-    // Segunda pasada: donde el eclipse es parcial, el maximo se afina en el
-    // tiempo. Fuera de ahi no hace falta -- una celda en totalidad ya vale 1 y
-    // una sin eclipse vale 0 -- asi que esto cuesta sobre el 20 % de la malla.
+    // Second pass: where the eclipse is partial, the maximum is refined in
+    // time. Outside that it is not needed -- a cell in totality is already 1
+    // and one with no eclipse is 0 -- so this costs about 20 % of the grid.
     for (let j = 0; j < nlat; j++) {
       const r = rows[j], lat = (90 - (j + 0.5) * 180 / nlat) * D2R;
       for (let i = 0; i < nlon; i++) {
@@ -497,12 +498,12 @@ const Bess = (() => {
       }
     }
 
-    // Y lo mismo para el margen, pero ahi la orla necesita mas cuidado. Una
-    // celda de la mismisima orilla puede no caer dentro de la penumbra en
-    // NINGUNO de los 121 instantes y estar dentro entre dos de ellos: se
-    // queda con el suelo, -1, y el limite pasa por el sitio equivocado. Asi
-    // que se rehace la celda entera, sin pista, cuando su signo discrepa del
-    // de alguna vecina; con pista basta donde el valor ya esta cerca de cero.
+    // And the same for the margin, except the fringe needs more care there.
+    // A cell right on the shore can fail to be inside the penumbra at ANY of
+    // the 121 instants and be inside between two of them: it keeps the floor,
+    // -1, and the limit passes through the wrong place. So the whole cell is
+    // recomputed, with no hint, whenever its sign disagrees with a
+    // neighbour's; a hint is enough where the value is already near zero.
     const near = new Uint8Array(nlon * nlat);
     for (let j = 0; j < nlat; j++) {
       for (let i = 0; i < nlon; i++) {
@@ -543,9 +544,9 @@ const Bess = (() => {
     return fieldMax(B, lat, lon, opts, obsAt, 0);
   }
 
-  // Igual que maxObscuration pero sobre el margen de visibilidad. El suelo es
-  // -1 y no 0: fuera de la penumbra el margen es negativo y ese signo es lo
-  // que el contorno necesita.
+  // Same as maxObscuration but over the visibility margin. The floor is -1
+  // and not 0: outside the penumbra the margin is negative, and that sign is
+  // what the contour needs.
   function visMargin(B, lat, lon, opts) {
     return fieldMax(B, lat, lon, opts, visAt, -1);
   }
@@ -561,28 +562,28 @@ const Bess = (() => {
       for (let k = a; k <= b; k++) { const v = at(T(k)); if (v > best) { best = v; bk = k; } }
     };
 
-    // La pista es el instante del maximo de una celda vecina de la malla, y
-    // sirve para no barrer seis horas en cada uno de los miles de vertices que
-    // hay que afinar. Se aceptan VARIAS, y no es una comodidad: cerca del
-    // terminador la obscuracion visible tiene dos jorobas separadas, una por
-    // cada rato que el Sol pasa sobre el horizonte, y dos celdas vecinas
-    // pueden tener su maximo en jorobas distintas. Con una sola pista la
-    // biseccion entre esas dos celdas persigue la joroba equivocada: medido en
-    // 2036-08-21, a 78 N daba 0,207 donde el barrido entero da 0,715, y el
-    // vertice salia clavado a cuatro kilometros de su curva, en punta.
+    // The hint is the instant of a neighbouring grid cell's maximum, and it
+    // exists so as not to sweep six hours at every one of the thousands of
+    // vertices that need refining. SEVERAL are accepted, and that is not a
+    // convenience: near the terminator the visible obscuration has two
+    // separate humps, one for each spell the Sun spends above the horizon,
+    // and two neighbouring cells can have their maximum in different ones.
+    // With a single hint the bisection between those two cells chases the
+    // wrong hump: measured on 2036-08-21, at 78 N it gave 0.207 where the
+    // full sweep gives 0.715, and the vertex came out pinned four kilometres
+    // from its curve, in a spike.
     //
-    // Ensanchar la ventana no basta ahi, porque el maximo de la joroba
-    // equivocada es interior a su ventana y la deja de crecer. Lo que sujeta
-    // el caso es mirar en las dos.
+    // Widening the window does not help there, because the wrong hump's
+    // maximum is interior to its own window and stops it growing. What holds
+    // the case up is looking in both.
     const ks = (Array.isArray(opts.k) ? opts.k : [opts.k]).filter(k => k >= 0);
     let lo = 0, hi = nt - 1;
     if (ks.length) {
-      // La ventana cubre TODO lo que hay entre las pistas, no una rodaja
-      // alrededor de cada una. El instante del maximo se corre de forma
-      // continua a lo largo de la arista que se esta bisecando, asi que en
-      // cualquier punto intermedio cae entre los de los dos extremos; mirar
-      // solo alrededor de cada extremo deja fuera justo la parte de en medio,
-      // y ahi la funcion bisecada deja de ser la que se quiere.
+      // The window covers EVERYTHING between the hints, not a slice around
+      // each. The instant of the maximum moves continuously along the edge
+      // being bisected, so at any intermediate point it falls between the two
+      // ends'; looking only around each end leaves out exactly the middle,
+      // and there the bisected function stops being the intended one.
       lo = Math.max(0, Math.min.apply(null, ks) - 2);
       hi = Math.min(nt - 1, Math.max.apply(null, ks) + 2);
     }
@@ -613,16 +614,16 @@ const Bess = (() => {
   // that runs through the frame is off the map: the view is clamped to the
   // world and cannot pan there. A band that genuinely crosses the antimeridian
   // comes out cut at both edges, which is what a non-wrapping map has to show.
-  // La banda mas exterior empieza en el 5 %, no en el 0,1 %.
+  // The outermost band starts at 5 %, not at 0.1 %.
   //
-  // No es una eleccion estetica. Cerca del borde de la penumbra el eclipse
-  // dura minutos, y el barrido de 121 instantes se lo pierde: medido contra un
-  // barrido de 2001, la perdida llega a 0,0165 de obscuracion y 32 de 2227
-  // puntos de la orla con eclipse se leen como cero. Un contorno del 0,1 %
-  // persigue ahi una funcion que vale cero a trozos, y sale dentado. El 5 % da
-  // tres veces de margen sobre esa perdida. Lo que queda por fuera son unos
-  // 175 km de orla sobre una penumbra de 7000, y el limite de verdad ya esta
-  // dibujado: es el contorno de la penumbra, la linea de trazos.
+  // Not an aesthetic choice. Near the edge of the penumbra the eclipse lasts
+  // minutes and the 121-instant sweep misses it: measured against a
+  // 2001-instant sweep, the loss reaches 0.0165 of obscuration and 32 of 2227
+  // fringe points with an eclipse read as zero. A 0.1 % contour chases a
+  // function that is zero in patches there, and comes out ragged. 5 % gives
+  // three times the margin over that loss. What is left undrawn is some
+  // 175 km of fringe over a 7000 km penumbra, and the real limit is drawn
+  // already: it is the visibility contour, the dashed line.
   const BAND_LEVELS = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
 
   // Conexiones de marching squares. Bits: tl 8, tr 4, br 2, bl 1.
@@ -637,22 +638,23 @@ const Bess = (() => {
     opts = opts || {};
     const levels = opts.levels || BAND_LEVELS;
     const tolKm = opts.tolKm === undefined ? 0.5 : opts.tolKm;
-    // Diez pasadas y no siete: medido, la septima seguia insertando puntos en
-    // 113 combinaciones de eclipse y nivel, o sea que el corte llegaba antes
-    // que la convergencia. La subdivision solo trabaja donde hace falta, asi
-    // que subir el tope no cuesta donde ya habia terminado.
+    // Ten passes and not seven: measured, the seventh was still inserting
+    // points in 113 combinations of eclipse and level, that is, the cut-off
+    // arrived before convergence did. The subdivision only works where it is
+    // needed, so raising the cap costs nothing where it had already
+    // finished.
     const maxDepth = opts.maxDepth === undefined ? 10 : opts.maxDepth;
     const G = opts.grid || obscurationGrid(B, opts.nlon || 400, opts.nlat || 200, opts.nt || 121);
     const nlon = G.nlon, nlat = G.nlat, nt = G.nt;
-    // La retícula: marco, borde del mundo, centros de celda, borde, marco.
+    // The lattice: frame, world edge, cell centres, edge, frame.
     //
-    // El borde del mundo lleva valores REALES, calculados, no interpolados.
-    // Sin él, la arista que une el último centro de celda con el marco de -1
-    // se cortaba interpolando contra -1 sobre 1,35 grados, y ese corte caía
-    // DENTRO del mapa: medido, hasta 66 km adentro por el antimeridiano y 39
-    // por los polos, con la banda equivocada pintada ahí, en los 56 eclipses.
-    // Con nodos reales en ±180 y ±90, todo cruce contra el marco cae en el
-    // borde o más allá, que es donde se pretendía que cayera.
+    // The world edge carries REAL values, computed, not interpolated. Without
+    // it, the edge joining the last cell centre to the -1 frame was cut by
+    // interpolating against -1 over 1.35 degrees, and that cut fell INSIDE
+    // the map: measured, up to 66 km in along the antimeridian and 39 at the
+    // poles, with the wrong band painted there, across all 56 eclipses. With
+    // real nodes at +-180 and +-90, every crossing against the frame falls on
+    // the world edge or beyond, which is where it was meant to fall.
     const nrow = nlat + 4, ncol = nlon + 4;
     const dlat = 180 / nlat, dlon = 360 / nlon;
 
@@ -664,11 +666,12 @@ const Bess = (() => {
     for (let j = 0; j < nlat; j++) lats[j + 2] = 90 - (j + 0.5) * dlat;
     for (let i = 0; i < nlon; i++) lons[i + 2] = -180 + (i + 0.5) * dlon;
 
-    // Dos campos con la misma maquinaria. Las bandas se trazan sobre la
-    // obscuracion maxima; el limite exterior, sobre el margen de visibilidad,
-    // que pasa por cero justo donde el borde de la penumbra toca el suelo.
-    // Todo lo de abajo -- marching squares, biseccion, subdivision, suavizado
-    // -- lee `val`, `kAt` y `FLD`, que se reasignan al cambiar de campo.
+    // Two fields through the same machinery. The bands are traced over the
+    // greatest obscuration; the outer limit, over the visibility margin,
+    // which passes through zero exactly where the edge of the penumbra
+    // touches the ground. Everything below -- marching squares, bisection,
+    // subdivision, smoothing -- reads `val`, `kAt` and `FLD`, which are
+    // reassigned when the field changes.
     let val, kAt, FLD;
     const lattice = (arr, karr, F) => {
       const v = new Float32Array(nrow * ncol).fill(-1);
@@ -701,8 +704,8 @@ const Bess = (() => {
     if (opts.visible !== false && G.vis)
       jobs.push({ lat: lattice(G.vis, G.tvis, F_VIS), levels: [0], vis: true });
 
-    // Instante del maximo en la celda mas cercana, como pista temporal para
-    // un punto que no esta en la malla.
+    // The instant of the maximum in the nearest cells, as a time hint for a
+    // point that is not on the grid.
     const kNear = (la, lo) => {
       const j = Math.min(nlat - 1, Math.max(0, Math.floor((90 - la) / dlat)));
       const i = Math.min(nlon - 1, Math.max(0, Math.floor((lo + 180) / dlon)));
@@ -717,10 +720,10 @@ const Bess = (() => {
       return out;
     };
 
-    // Punto del contorno sobre la normal a una cuerda, buscado a media cuerda
-    // de distancia a cada lado. Devuelve null si ahi no hay cambio de signo,
-    // que es lo que pasa sobre el terminador: alli el borde de la region es un
-    // salto de la funcion y no una curva de nivel, y no hay nada que afinar.
+    // A point of the contour on the normal to a chord, searched half a chord
+    // to either side. Returns null if there is no sign change there, which is
+    // what happens above the terminator: the region boundary there is a jump
+    // in the function and not a level curve, and there is nothing to refine.
     const onCurve = (level, a, b) => {
       const la = (a[0] + b[0]) / 2, lo = (a[1] + b[1]) / 2;
       if (Math.abs(la) > 90 || Math.abs(lo) > 180) return null;
@@ -729,19 +732,19 @@ const Bess = (() => {
       const L = Math.hypot(dx, dy);
       if (!(L > 0)) return null;
       const nx = -dy / L, ny = dx / L, kh = kNear(la, lo);
-      // La normal se traza en distancia de arco y se devuelve a longitud
-      // dividiendo por el coseno de la latitud. Cerca del polo ese coseno es
-      // diminuto y un desplazamiento de un grado de arco se convierte en cien
-      // de longitud: medido, salian vertices a 185 grados, fuera del dominio.
-      // De ahi las dos guardas: el radio de busqueda no pasa de medio grado de
-      // arco, y un resultado que se salga del marco se descarta.
+      // The normal is traced in arc distance and converted back to longitude
+      // by dividing by the cosine of the latitude. Near the pole that cosine
+      // is tiny and a displacement of one degree of arc becomes a hundred of
+      // longitude: measured, vertices came out at 185 degrees, outside the
+      // domain. Hence the two guards: the search radius never exceeds half a
+      // degree of arc, and a result that leaves the frame is discarded.
       const at = u => [la + ny * u, lo + nx * u / cs];
       const inside = q => Math.abs(q[0]) <= 90 && Math.abs(q[1]) <= 180;
-      // Media cuerda a cada lado, que es lo que decia el comentario y lo que
-      // hace falta: con una cuerda entera la biseccion podia engancharse a
-      // OTRA rama del contorno que pasara cerca, y el anillo se cruzaba
-      // consigo mismo. La curva verdadera se aparta de su cuerda mucho menos
-      // que media cuerda, asi que si la raiz no esta ahi, no es esta.
+      // Half a chord to either side, which is what the comment used to say
+      // and what is needed: with a whole chord the bisection could latch onto
+      // ANOTHER branch of the contour passing nearby, and the ring crossed
+      // itself. The true curve departs from its chord by far less than half a
+      // chord, so if the root is not there, it is not this one.
       const R = Math.min(L / 2, 0.5);
       const f = u => { const q = at(u); return FLD(q[0], q[1], kh) - level; };
       let u0 = -R, u1 = R, f0 = f(u0);
@@ -752,22 +755,22 @@ const Bess = (() => {
       }
       const um = (u0 + u1) / 2, q = at(um);
       if (!inside(q)) return null;
-      // Un cambio de signo no es siempre una raiz. Sobre el terminador la
-      // obscuracion maxima SALTA de cero a un valor finito, porque el Sol se
-      // pone antes del maximo, y una biseccion que atraviese ese salto
-      // converge a la linea del ocaso en vez de a la curva de nivel. El punto
-      // que devolvia estaba perfectamente calculado y no pertenecia a esta
-      // curva: medido en 2026-08-12, 348 puntos asi, hasta seis kilometros
-      // fuera, y cada uno un diente en el dibujo.
+      // A sign change is not always a root. Above the terminator the greatest
+      // obscuration JUMPS from zero to a finite value, because the Sun sets
+      // before the maximum, and a bisection that crosses that jump converges
+      // to the sunset line instead of to the level curve. The point it
+      // returned was perfectly computed and did not belong to this curve:
+      // measured on 2026-08-12, 348 points like that, up to six kilometres
+      // out, and every one of them a tooth in the drawing.
       //
-      // Doce bisecciones sobre medio grado dejan el resto en unos trece
-      // metros, o sea |f| del orden de 1e-4 en una raiz de verdad; en un salto
-      // |f| se queda en el tamano del salto. Un umbral de 1e-3 los separa sin
-      // ambiguedad. Rechazar deja el tramo recto, que es tosco pero es la
-      // forma del borde: un salto no tiene curva que seguir.
+      // Twelve bisections over half a degree leave the remainder at some
+      // thirteen metres, that is |f| of order 1e-4 at a real root; at a jump
+      // |f| stays at the size of the jump. A threshold of 1e-3 separates them
+      // unambiguously. Rejecting leaves the segment straight, which is coarse
+      // but is the shape of the boundary: a jump has no curve to follow.
       if (Math.abs(f(um)) <= 1e-3) return q;
-      // Antes de rechazar, la misma duda que en la arista: puede no ser un
-      // salto sino una pista temporal que no vale aqui. Se reintenta sin ella.
+      // Before rejecting, the same doubt as on the grid edge: it may not be a
+      // jump but a time hint that does not hold here. Retried without it.
       const g = u => { const w = at(u); return FLD(w[0], w[1], -1) - level; };
       let g0 = g(-R);
       if ((g0 < 0) === (g(R) < 0)) return null;
@@ -780,12 +783,12 @@ const Bess = (() => {
       return (inside(q2) && Math.abs(g(um2)) <= 1e-3) ? q2 : null;
     };
 
-    // Subdivision adaptativa. La malla decide DONDE EMPIEZAN los vertices; la
-    // tolerancia decide donde acaban. Para una curva muestreada a paso
-    // constante, la distancia h de un vertice a la cuerda que une sus dos
-    // vecinos es cuatro veces la flecha de un solo tramo, asi que h/4 estima
-    // el error sin evaluar nada. Los tramos que se pasan de tolerancia reciben
-    // un punto nuevo, y ese si se calcula contra la funcion real.
+    // Adaptive subdivision. The grid decides WHERE THE VERTICES START; the
+    // tolerance decides where they end up. For a curve sampled at constant
+    // step, the distance h from a vertex to the chord joining its two
+    // neighbours is four times the sagitta of one segment, so h/4 estimates
+    // the error without evaluating anything. Segments over tolerance get a
+    // new point, and that one is computed against the real function.
     const segKm = (a, b) => Math.hypot((b[1] - a[1]) * Math.cos((a[0] + b[0]) / 2 * D2R),
                                        b[0] - a[0]) * KM_PER_DEG;
     function densify(ring, level) {
@@ -805,10 +808,10 @@ const Bess = (() => {
         for (let i = 0; i < n; i++) {
           const a = ring[i], b = ring[(i + 1) % n];
           out.push(a);
-          // a[2] marca un tramo que ya se probo y no tiene raiz que afinar:
-          // sobre el terminador el borde de la region es un salto, no una
-          // curva de nivel. Sin esta marca se vuelve a sondear en cada pasada,
-          // y la mitad del contorno de un eclipse va por el terminador.
+          // a[2] marks a segment already tried that has no root to refine:
+          // above the terminator the region boundary is a jump, not a level
+          // curve. Without the mark it gets probed again on every pass, and
+          // half of an eclipse's contour runs along the terminator.
           if (a[2]) continue;
           const est = Math.max(h[i], h[(i + 1) % n]) / 4;
           const len = segKm(a, b);
@@ -822,21 +825,20 @@ const Bess = (() => {
       return ring;
     }
 
-    // El borde de la region sobre el terminador es un salto, y un salto no
-    // tiene curva que seguir: lo unico que se sabe de el es por que par de
-    // nodos de la malla pasa. La biseccion lo situa con precision sobre cada
-    // arista, pero la malla mide 0,9 grados y en latitudes altas eso son
-    // veinte kilometros de lado en longitud contra cien en latitud, asi que
-    // la cadena de cortes sale en zigzag: dientes de hasta cincuenta
-    // kilometros, y los diez niveles amontonados encima del mismo salto los
-    // dibujaban como una maranja.
+    // The region boundary above the terminator is a jump, and a jump has no
+    // curve to follow: the only thing known about it is which pair of grid
+    // nodes it passes between. Bisection places it precisely on each edge,
+    // but the grid is 0.56 degrees and at high latitude that is twenty
+    // kilometres of longitude against sixty of latitude, so the chain of cuts
+    // comes out as a zigzag: teeth up to fifty kilometres, with the ten
+    // levels piled on the same jump drawn as a tangle.
     //
-    // Se suavizan, y SOLO ellos. Un vertice de nivel esta donde la funcion
-    // dice y no se toca -- de eso vive la exactitud medida del dibujo. Un
-    // vertice de salto esta en una arista concreta y en ningun sitio mejor
-    // dentro de ella, asi que promediarlo con sus vecinos no pierde nada que
-    // se supiera: quita el ruido de muestreo y deja la linea que el salto
-    // realmente describe.
+    // They get smoothed, and ONLY they do. A level vertex is where the
+    // function says it is and does not get touched -- the drawing's measured
+    // accuracy lives on that. A jump vertex is on one particular edge and
+    // nowhere better inside it, so averaging it with its neighbours loses
+    // nothing that was known: it removes the sampling noise and leaves the
+    // line the jump actually describes.
     function smoothJumps(ring, rounds = 20) {
       const n = ring.length;
       if (n < 5) return ring;
@@ -846,16 +848,16 @@ const Bess = (() => {
           const b = ring[i];
           if (!b[3]) continue;
           const a = ring[(i - 1 + n) % n], c = ring[(i + 1) % n];
-          // Un anillo que cruza el antimeridiano trae saltos de 360 grados
-          // entre vertices consecutivos; promediar a traves de uno de esos
-          // manda el punto al centro del mapa.
+          // A ring that crosses the antimeridian carries 360-degree jumps
+          // between consecutive vertices; averaging across one of those sends
+          // the point to the middle of the map.
           if (Math.abs(a[1] - b[1]) > 5 || Math.abs(c[1] - b[1]) > 5) continue;
-          // Promedio de Laplace, y despues PROYECTADO SOBRE SU PROPIA ARISTA.
-          // Que el salto cruza esa arista se sabe con certeza; donde la cruza
-          // no se sabe mejor que la malla. Asi que se deja correr el vertice a
-          // lo largo de la arista, que es la direccion en la que no hay
-          // informacion, y se le prohibe salir de ella, que es la direccion en
-          // la que si la hay. Un suavizado libre se comeria las curvas.
+          // A Laplacian average, and then PROJECTED ONTO ITS OWN EDGE. That
+          // the jump crosses that edge is certain; where along it, the grid
+          // knows no better. So the vertex is allowed to run along the edge,
+          // which is the direction carrying no information, and forbidden to
+          // leave it, which is the direction that does. Free smoothing would
+          // eat the curves.
           const mla = (a[0] + 2 * b[0] + c[0]) / 4, mlo = (a[1] + 2 * b[1] + c[1]) / 4;
           const dla = b[6] - b[4], dlo = b[7] - b[5];
           const den = dla * dla + dlo * dlo;
@@ -865,11 +867,12 @@ const Bess = (() => {
         }
         ring = next;
       }
-      // Lo que quede en punta despues de veinte pasadas no es una punta de la
-      // curva: es un vertice de salto atrapado entre dos vecinos que van por
-      // otra rama. Su arista no dice donde esta el salto, solo que lo cruza,
-      // asi que quitarlo no borra nada que se supiera y deja la cuerda recta
-      // entre sus vecinos, que pasa por el mismo sitio sin el diente.
+      // Whatever is still a spike after twenty passes is not a spike of the
+      // curve: it is a jump vertex trapped between two neighbours that follow
+      // another branch. Its edge does not say where the jump is, only that it
+      // crosses it, so removing it erases nothing that was known and leaves
+      // the straight chord between its neighbours, which passes through the
+      // same place without the tooth.
       const keep = [];
       for (let i = 0; i < ring.length; i++) {
         const b = ring[i];
@@ -911,10 +914,11 @@ const Bess = (() => {
                     | (br >= level ? 2 : 0) | (bl >= level ? 1 : 0);
           let segs = MS_CASE[idx];
           if (segs === null) {
-            // Silla de montar. El centro decide si el interior pasa por el
-            // medio (y entonces lo que se separa son las dos esquinas de
-            // fuera) o al reves. Cualquiera de las dos da curvas cerradas;
-            // lo que no puede es decidirse distinto en celdas vecinas.
+            // Saddle. The centre decides whether the interior runs through
+            // the middle (and then what gets separated are the two outer
+            // corners) or the other way round. Either choice gives closed
+            // curves; what it cannot do is be decided differently in
+            // neighbouring cells.
             const mid = (tl + tr + br + bl) / 4;
             segs = (mid >= level) ? [[3, 0], [1, 2]] : [[0, 1], [2, 3]];
             if (idx === 10) segs = (mid >= level) ? [[0, 1], [2, 3]] : [[3, 0], [1, 2]];
@@ -926,8 +930,8 @@ const Bess = (() => {
         }
       }
 
-      // Cada arista cortada pertenece a exactamente dos celdas, asi que tiene
-      // grado dos y todo lo que se recorre son anillos cerrados.
+      // Every cut edge belongs to exactly two cells, so it has degree two and
+      // everything walked is a closed ring.
       const rings = [];
       for (let e = 0; e < NE; e++) {
         if (nb1[e] < 0 || seen[e]) continue;
@@ -950,8 +954,9 @@ const Bess = (() => {
           const v0 = val[r0 * ncol + c0], v1 = val[r1 * ncol + c1];
           const la0 = lats[r0], lo0 = lons[c0], la1 = lats[r1], lo1 = lons[c1];
           let t = (v1 === v0) ? 0.5 : (level - v0) / (v1 - v0), jump = 0;
-          // Afinado. Solo entre nodos reales: en el marco no hay funcion que
-          // afinar, y esa parte del anillo cae fuera del mapa de todas formas.
+          // Refinement. Only between real nodes: on the frame there is no
+          // function to refine, and that part of the ring falls outside the
+          // map anyway.
           const real = r0 >= 1 && r0 <= nlat + 2 && c0 >= 1 && c0 <= nlon + 2
                     && r1 >= 1 && r1 <= nlat + 2 && c1 >= 1 && c1 <= nlon + 2;
           if (real) {
@@ -967,18 +972,18 @@ const Bess = (() => {
               const u = (a + b) / 2;
               return { u, res: Math.abs(f(u)) };
             };
-            // Sin cambio de signo tampoco quiere decir que no lo haya: la
-            // pista temporal puede rebajar el valor en un extremo por debajo
-            // del nivel. Antes de rendirse, el barrido entero.
+            // No sign change does not mean there is none: the time hint can
+            // pull the value at one end below the level. Before giving up,
+            // the full sweep.
             let r = run(fOf(kh)) || run(fOf(-1));
-            // Un residuo grande al acabar significa una de dos cosas, y hay
-            // que distinguirlas antes de dibujar. O la pista temporal no
-            // valia en mitad de la arista -- pasa: los extremos la traen de
-            // su propia celda y en medio puede mandar otra joroba -- o el
-            // borde es de verdad un salto. Se repite el corte con el barrido
-            // entero, que no depende de ninguna pista; si sigue sin cerrar,
-            // es un salto y se marca. Son unas decenas de aristas por
-            // eclipse, asi que el barrido entero ahi no se nota.
+            // A large residual at the end means one of two things, and they
+            // have to be told apart before drawing. Either the time hint did
+            // not hold in the middle of the edge -- it happens: the ends
+            // bring it from their own cell and in between another hump can
+            // govern -- or the boundary really is a jump. The cut is redone
+            // with the full sweep, which depends on no hint; if it still
+            // does not close, it is a jump and gets marked. A few dozen
+            // edges per eclipse, so the full sweep there does not show.
             if (r && r.res > 1e-3) {
               const r2 = run(fOf(-1));
               if (r2) r = r2;
@@ -990,16 +995,16 @@ const Bess = (() => {
                          : [la0 + t * (la1 - la0), lo0 + t * (lo1 - lo0)]);
         }
         vertices += ring.length;
-        // Suavizar ANTES de subdividir. Al reves, la subdivision ya ha
-        // sembrado el zigzag de puntos intermedios que el suavizado no toca
-        // -- solo mueve los vertices de salto -- y el diente sobrevive
-        // sostenido por sus propios hijos.
+        // Smooth BEFORE subdividing. The other way round, the subdivision has
+        // already seeded the zigzag with intermediate points the smoothing
+        // does not touch -- it only moves jump vertices -- and the tooth
+        // survives, held up by its own children.
         const sm = smoothJumps(ring);
         rings.push(tolKm > 0 ? densify(sm, level) : sm);
       }
-      // Fuera la marca de tramo no afinable: es andamiaje de densify() y no
-      // tiene por que salir en el resultado, donde Leaflet la leeria como una
-      // altitud.
+      // Drop the unrefinable-segment marker: it is densify() scaffolding and
+      // has no business in the result, where Leaflet would read it as an
+      // altitude.
       const clean = rings.map(r => r.map(q => [q[0], q[1]]));
       if (job.vis) visOut.push.apply(visOut, clean); else out.push(clean);
     }

@@ -274,8 +274,8 @@ if __name__ == '__main__':
     for s in (-3000, -1800, -600, -120, -40, 0, 40, 120, 600, 1800):
         i = (df['seconds_from_max'] - s).abs().idxmin()
         r = df.loc[i]
-        f = lambda v: 'sin límite' if np.isinf(v) else '%.1f s' % v
-        print('t%+6.0f s  alt=%5.2f  obsc=%.3f  E_B=%8.3f  térmico=%5.3f  3mm=%s  7mm=%s'
+        f = lambda v: 'no limit' if np.isinf(v) else '%.1f s' % v
+        print('t%+6.0f s  alt=%5.2f  obsc=%.3f  E_B=%8.3f  thermal=%5.3f  3mm=%s  7mm=%s'
               % (r['seconds_from_max'], r['sun_alt_deg'], r['obscuration'],
                  r['E_blue_W_m2'], r['thermal_hazard_ratio'],
                  f(r['safe_stare_p3_s']), f(r['safe_stare_p7_s'])))

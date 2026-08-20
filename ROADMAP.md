@@ -1,179 +1,184 @@
-# Hoja de ruta
+# Roadmap
 
-Hoy el proyecto calcula un eclipse en un punto. La intención es que llegue a
-calcular cualquier eclipse en cualquier punto, y que acabe siendo una plataforma
-donde alguien introduzca sus coordenadas y su equipo y obtenga su propio
-análisis de seguridad.
+The web page already computes any of 56 eclipses at any point on Earth. The
+manuscript chain behind it still computes one eclipse at one site. Closing that
+gap — a platform where anyone enters coordinates and equipment and gets their
+own safety analysis — is what is left.
 
-Lo que sigue está ordenado por lo que bloquea a lo demás, no por dificultad.
+What follows is ordered by what blocks what, not by difficulty.
 
-**Actualización del 19 de agosto de 2026.** La mitad geométrica de ese salto ya
-está dada, y por un camino que esquiva los bloqueos en vez de resolverlos:
-`src/eclipsecat.py` ajusta elementos besselianos propios desde DE440s para los
-56 eclipses de 2026 a 2050, y `web/` los consume como sitio estático que calcula
-en el navegador. Ni `pathgeom.py`, ni `terrain.py`, ni la efeméride de 32 MB
-participan, así que ninguno de los tres bloqueos técnicos llega a plantearse
-para la geometría. Siguen bloqueando la parte radiométrica, que es la que
-todavía no se puede dar en cualquier punto. Abajo queda marcado qué cayó y qué
-no.
-
----
-
-## 1. Generalizar el emplazamiento
-
-Es el paso que desbloquea todo el resto y es más fácil de lo que parece.
-
-- [x] **Hecho para la web, no para `src/`.** `web/` no tiene emplazamiento: las
-      circunstancias locales salen de los elementos y de un par de coordenadas.
-      La cadena del manuscrito sigue atada a `siteconf.py`.
-- [ ] **Sacar el sitio de `src/siteconf.py`.** Hoy ese módulo es la única fuente
-      de las coordenadas, la altura y las constantes, así que la generalización
-      consiste en convertirlo en una función que reciba un emplazamiento en vez
-      de tener uno escrito. El resto de módulos ya lo importan y no necesitan
-      cambios estructurales.
-- [x] **Parametrizar la fecha del eclipse.** Resuelto por el segundo camino:
-      `eclipsecat.py` los calcula desde DE440s en vez de leerlos, y los contrasta
-      contra los publicados por la NASA para 2026. El manuscrito sigue usando la
-      entrada de `data/literature.json`, que ahora es una comprobación cruzada
-      y no la fuente.
-- [ ] **Resolver el huso horario desde las coordenadas.** Ahora todo está en
-      CEST porque el sitio está en España. La web enseña UTC y la hora del
-      navegador, y dice explícitamente que la segunda no es la del punto
-      marcado; es honesto, pero no es la respuesta.
-- [x] **Comprobar el caso del eclipse anular y el del parcial.** Hecho en la
-      web: el catálogo tipifica total, anular, híbrido y parcial por el signo del
-      radio umbral sobre el suelo, un punto fuera de la penumbra devuelve nada en
-      vez de una magnitud pequeña, y un eclipse cuyo máximo cae bajo el horizonte
-      se declara como tal. Sigue pendiente en `src/`.
-
-## 2. Quitar los tres bloqueos técnicos de la plataforma
-
-Ninguno bloquea ya la geometría, porque la web no los usa. Los tres siguen en
-pie para lo radiométrico, que es lo que falta.
-
-- [ ] **`src/pathgeom.py` tarda entre treinta y sesenta minutos.** Inservible
-      dentro de una petición HTTP. O se precalcula la franja umbral en una malla
-      y se interpola, o se reescribe el algoritmo. La interpolación de la tabla
-      de límites de la NASA que se usó para validarlo ya demostró acuerdo de
-      220 m, así que precalcular parece la vía barata.
-- [ ] **`src/terrain.py` lee el DEM Copernicus por `/vsicurl` en cada
-      consulta**, muestreando radiales cada 0,25° de acimut hasta 100 km. Con
-      tráfico real eso choca contra los límites del bucket. Hace falta caché de
-      teselas y, probablemente, precálculo del horizonte por zonas.
-- [ ] **Cachear las efemérides.** `de440s.bsp` son 32 MB. En un servidor se
-      cargan una vez, pero conviene medir cuánto cuesta un cálculo completo
-      antes de prometer tiempos de respuesta.
-- [ ] **Medir el coste de una simulación completa** antes de diseñar nada.
-      Ninguna decisión de arquitectura tiene sentido sin ese número.
-
-## 3. Diseñar la plataforma como calculadora, no como consejera
-
-Vinculante. Ver [`SAFETY.md`](SAFETY.md).
-
-- [x] Convertir la sección «Advertencia» del manuscrito en pantalla de entrada.
-      Es lo primero que aparece y hay que cerrarla para llegar al mapa.
-- [x] Mostrar la exigencia de filtro ISO 12312-2 en la interfaz, no en un aviso
-      legal enterrado. Va bajo cada resultado, no una sola vez al entrar.
-- [x] Presentar cada resultado junto a sus hipótesis. La ficha de un punto lleva
-      pegado qué se supone: terreno a cero, horizonte astronómico, sin refracción,
-      radio solar adoptado y de quién es la hora local.
-- [ ] **Mostrar la incertidumbre.** A masa de aire 10,7 los tres modelos de
-      cielo claro difieren en un factor tres. Dar una cifra sola sería mentir por
-      omisión.
-- [x] Verificar la geometría antes de responder. `src/eclipsecat.py --selftest`
-      y `node web/js/besselian.test.js` exigen menos de 1,5 s por contacto contra
-      la cadena DE440s, menos de 3 km contra la línea central de la NASA, y que
-      el emplazamiento del estudio caiga a los 41,9 km del límite norte que
-      publica el manuscrito.
-- [ ] **Falta la incertidumbre de la propia geometría en la interfaz.** Las dos
-      convenciones declaradas (radio solar y ΔT) mueven los límites unos cientos
-      de metros, y quien esté a esa distancia del borde merece saberlo. Hoy solo
-      está escrito en la documentación.
-- [x] **Llevar la parte radiométrica a la web.** Hecho por la segunda vía y sin
-      precalcular nada: la ficha trae un botón que resuelve SPECTRL2, la
-      transmisión cromática con oscurecimiento del limbo y los dos límites de
-      ICNIRP en el equipo del visitante, con la atmósfera que él declare. Por
-      defecto las condiciones de la ASTM G173-03, marcadas como caso de
-      referencia y no como medida.
-- [x] **Mostrar la incertidumbre.** La ficha enseña la masa de aire, avisa por
-      encima de seis de que el modelo está extrapolando y cita el factor tres
-      que este trabajo encontró a masa de aire 10,7, y acompaña cada resultado
-      de una horquilla de sensibilidad al aerosol entre la mitad y el doble del
-      AOD declarado.
-- [ ] **Datos atmosféricos reales por punto y fecha.** Sería lo que cerraría el
-      hueco de verdad, y es lo único de esta lista que obliga a tener servidor:
-      un sitio estático no puede consultar CAMS.
-- [ ] Consultar con un abogado sobre responsabilidad civil antes de abrir al
-      público, y valorar un seguro. La renuncia de garantía de la AGPL cubre
-      reclamaciones de software, no daños personales.
-
-## 4. Cerrar los huecos científicos declarados
-
-Los tres están reconocidos en el manuscrito y en [`docs/FINDINGS.md`](docs/FINDINGS.md).
-
-- [ ] **No existe umbral de daño publicado para un sensor CMOS de consumo
-      moderno.** El único contraste disponible es Schwarz et al. 2017, que midió
-      un Aptina MT9V024 de 2010 con píxeles de 6 µm. Encontrar o producir una
-      medida sobre un sensor actual es la aportación más valiosa que podría
-      recibir este proyecto.
-- [ ] **La ausencia de pérdida de sensibilidad no está verificada.** El modo de
-      daño que describe Schwarz es una caída permanente de al menos un 10 % que
-      solo se ve en campo plano, y no se dispone de ninguno. Quien repita la
-      observación debería tomar un campo plano uniforme antes y después.
-- [ ] **La afirmación sobre la cortinilla del obturador no tiene respaldo
-      revisado por pares.** Descansa solo en el cálculo de placa delgada de este
-      trabajo. La búsqueda bibliográfica se hizo y falló.
-- [ ] Modelar la pantalla de enfoque y la cortinilla de forma explícita, en vez
-      de citarlas como fuera de alcance.
-- [ ] Incorporar el limbo lunar real. El cálculo del anillo de diamante usa el
-      limbo medio, y las montañas rompen el creciente en perlas de Baily, de modo
-      que los instantes de contacto pueden desplazarse uno o dos segundos.
-
-## 5. Ingeniería
-
-- [ ] **Pasar las autocomprobaciones a CI.** Hoy son siete `_selftest()` en
-      `src/`, más `src/eclipsecat.py --selftest` y `src/webdata.py --selftest`,
-      más `web/js/besselian.test.js` y `web/js/radiometry.test.js`, más el de
-      `tools/stab_solar.py`, todos a mano.
-      `limbdark.py` tarda varios minutos, así que necesita su propio trabajo
-      programado; los demás caben en un solo paso.
-- [ ] Añadir `tools/privacy_check.sh` como hook de pre-push, para que no dependa
-      de que alguien se acuerde.
-- [ ] Fijar las versiones de las dependencias. El manuscrito declara las que se
-      usaron, pero no hay `requirements.txt` ni `pyproject.toml`.
-- [ ] Reducir el tiempo de `limbdark.py`, o separar su estudio de convergencia
-      del resto de la autocomprobación.
-- [ ] Traducir el manuscrito al inglés. Ampliaría mucho quién puede revisarlo.
-
-## 6. Licencia y contribuciones
-
-- [ ] **Revisión de [`CLA.md`](CLA.md) por un abogado antes de fusionar la
-      primera aportación externa.** El borrador actual lo redactó alguien que no
-      lo es. Importa especialmente la cesión de la cláusula 2 frente a los
-      límites del artículo 43 del texto refundido de la Ley de Propiedad
-      Intelectual, y la renuncia parcial a derechos morales de la cláusula 5.
-- [ ] Traducir el CLA al inglés, manteniendo la versión española como auténtica.
-- [ ] Decidir si se acepta el CLA firmado por línea de commit o mediante un bot,
-      y automatizar la comprobación.
-- [ ] Definir el precio y el alcance de la licencia comercial antes de que
-      alguien la pida.
+**Update, 20 August 2026.** The geometric half of the jump is done, and by a
+route that sidesteps the blockers rather than solving them:
+`src/eclipsecat.py` fits its own Besselian elements from DE440s for the 56
+eclipses between 2026 and 2050, and `web/` consumes them as a static site that
+computes in the browser. Neither `pathgeom.py` nor `terrain.py` nor the 32 MB
+ephemeris takes part, so none of the three technical blockers even arises for
+geometry. They still block the radiometric half, which is the one that cannot
+yet be given anywhere. What fell and what did not is marked below.
 
 ---
 
-## Lo que no se va a hacer
+## 1. Generalize the site
 
-**Convertir esto en una app que diga «seguro» o «no seguro».** El proyecto
-publica cálculos con sus hipótesis a la vista. Un semáforo obligaría a esconder
-la incertidumbre, que a masa de aire 10,7 llega a un factor tres.
+The step that unblocks everything else, and easier than it looks.
 
-**Dar un número de exposición ocular sin enseñar de qué atmósfera sale.** La web
-calcula geometría en todo el planeta porque la geometría no depende del aire. La
-irradiancia sí, y el repositorio solo tiene medido un día y un sitio, así que la
-web la calcula bajo una hipótesis que el usuario ve y puede cambiar. Rellenarla
-con una atmósfera estándar y presentarla como dato sería inventarle procedencia
-a una cifra de seguridad.
+- [x] **Done for the web, not for `src/`.** `web/` has no site: local
+      circumstances come out of the elements and a pair of coordinates. The
+      manuscript chain is still tied to `siteconf.py`.
+- [ ] **Take the site out of `src/siteconf.py`.** Today that module is the only
+      source of the coordinates, the elevation and the constants, so
+      generalizing means turning it into a function that receives a site
+      instead of having one written into it. The other modules already import
+      it and need no structural change.
+- [x] **Parameterize the eclipse date.** Solved by the second route:
+      `eclipsecat.py` computes them from DE440s instead of reading them, and
+      checks them against NASA's published values for 2026. The manuscript
+      still uses the `data/literature.json` entry, which is now a cross-check
+      rather than the source.
+- [ ] **Resolve the time zone from the coordinates.** Everything is in CEST
+      because the site is in Spain. The web page shows UTC and the browser's
+      time, and says explicitly that the second is not the marked point's; that
+      is honest, but it is not the answer.
+- [x] **Cover the annular and partial cases.** Done in the web: the catalogue
+      classifies total, annular, hybrid and partial by the sign of the umbral
+      radius at the ground, a point outside the penumbra returns nothing rather
+      than a small magnitude, and an eclipse whose maximum falls below the
+      horizon is declared as such. Still pending in `src/`.
 
-**Prometer cobertura mundial antes de validar fuera de Europa.** El DEM
-Copernicus cubre el planeta, pero el horizonte topográfico solo se ha
-contrastado en un emplazamiento. Ampliar la cobertura exige validar, no solo
-descargar más teselas.
+## 2. Clear the three technical blockers
+
+None of them blocks geometry any more, because the web does not use them. All
+three still stand for radiometry, which is what is missing.
+
+- [ ] **`src/pathgeom.py` takes thirty to sixty minutes.** Unusable inside an
+      HTTP request. Either the umbral path gets precomputed on a grid and
+      interpolated, or the algorithm gets rewritten. Interpolating NASA's limit
+      table, used to validate it, already showed 220 m agreement, so
+      precomputing looks like the cheap route.
+- [ ] **`src/terrain.py` reads the Copernicus DEM over `/vsicurl` on every
+      query**, sampling radials every 0.25° of azimuth out to 100 km. Under
+      real traffic that runs into the bucket's limits. It needs a tile cache
+      and, probably, horizon precomputation by region. The browser page already
+      does a cheaper version of this against a different model — nine tiles out
+      to 25 km, cached in the tab — which is a working sketch of the answer, not
+      the answer.
+- [ ] **Cache the ephemerides.** `de440s.bsp` is 32 MB. On a server it loads
+      once, but the cost of a full calculation is worth measuring before
+      promising response times.
+- [ ] **Measure the cost of a full simulation** before designing anything. No
+      architectural decision makes sense without that number.
+
+## 3. Design the platform as a calculator, not an adviser
+
+Binding. See [`SAFETY.md`](SAFETY.md).
+
+- [x] Turn the manuscript's "Warning" section into an entry screen. It comes
+      first and has to be dismissed to reach the map.
+- [x] Show the ISO 12312-2 filter requirement in the interface, not in a buried
+      legal notice. It sits under every result, not once on entry.
+- [x] Present every result next to its assumptions. A point's panel carries
+      what is assumed: ground at zero, astronomical horizon, no refraction, the
+      adopted solar radius, and whose local time is being shown.
+- [x] **Show the uncertainty.** The panel shows the air mass, warns above six
+      that the model is extrapolating, cites the factor of three this work
+      found at air mass 10.7, and accompanies every result with a sensitivity
+      bracket over aerosol between half and double the declared AOD.
+- [x] Verify the geometry before answering. `src/eclipsecat.py --selftest` and
+      `node web/js/besselian.test.js` require under 1.5 s per contact against
+      the DE440s chain, under 3 km against NASA's central line, and that the
+      study's site falls at the 41.9 km from the northern limit the manuscript
+      publishes.
+- [x] **Take the radiometric half to the web.** Done by the second route and
+      without precomputing anything: the panel carries a button that solves
+      SPECTRL2, the chromatic transmission with limb darkening and both ICNIRP
+      limits on the visitor's machine, under a declared atmosphere. The ASTM
+      G173-03 conditions are the default, marked as a reference case and not as
+      a measurement.
+- [x] **Real terrain in the horizon.** Done on request and client-side: the
+      page takes the elevation of the point from a public model, builds the
+      skyline azimuth by azimuth out to 25 km, and says at each contact whether
+      the Sun is in view or behind a ridge. Building heights come in where
+      OpenStreetMap records them, with the coverage stated, and there is a
+      field for the obstacle nobody has mapped.
+- [ ] **The geometry's own uncertainty is still missing from the interface.**
+      The two declared conventions (solar radius and ΔT) move the limits by a
+      few hundred metres, and anyone that close to the edge deserves to know.
+      Today it is only written in the documentation.
+- [ ] **Real atmospheric data per point and date.** That would close the gap
+      properly, and it is the only item on this list that forces a server: a
+      static site cannot query CAMS.
+- [ ] Consult a lawyer about civil liability before opening to the public, and
+      consider insurance. The AGPL's warranty disclaimer covers software
+      claims, not personal injury.
+
+## 4. Close the declared scientific gaps
+
+All three are acknowledged in the manuscript and in
+[`docs/FINDINGS.md`](docs/FINDINGS.md).
+
+- [ ] **No published damage threshold exists for a modern consumer CMOS
+      sensor.** The only available comparison is Schwarz et al. 2017, which
+      measured a 2010 Aptina MT9V024 with 6 µm pixels. Finding or producing a
+      measurement on a current sensor is the most valuable contribution this
+      project could receive.
+- [ ] **The absence of sensitivity loss is unverified.** The damage mode
+      Schwarz describes is a permanent drop of at least 10 % visible only in a
+      flat field, and none is available. Anyone repeating the observation
+      should take a uniform flat field before and after.
+- [ ] **The claim about the shutter curtain has no peer-reviewed backing.** It
+      rests only on this work's thin-plate calculation. The literature search
+      was made and it failed.
+- [ ] Model the focusing screen and the shutter curtain explicitly, instead of
+      citing them as out of scope.
+- [ ] Bring in the real lunar limb. The diamond-ring calculation uses the mean
+      limb, and mountains break the crescent into Baily's beads, so contact
+      instants can shift by a second or two.
+
+## 5. Engineering
+
+- [ ] **Move the self-checks into CI.** Today they are seven `_selftest()` in
+      `src/`, plus `src/eclipsecat.py --selftest` and `src/webdata.py
+      --selftest`, plus `web/js/besselian.test.js`, `radiometry.test.js`,
+      `stabilise.test.js` and `lang.test.js`, plus the one in
+      `tools/stab_solar.py`, all by hand. `limbdark.py` takes several minutes,
+      so it needs its own scheduled job; the rest fit in one step.
+- [ ] Add `tools/privacy_check.sh` as a pre-push hook, so it does not depend on
+      somebody remembering.
+- [ ] Pin the dependency versions. The manuscript declares the ones used, but
+      there is no `requirements.txt` or `pyproject.toml`.
+- [ ] Cut `limbdark.py`'s runtime, or separate its convergence study from the
+      rest of the self-check.
+- [ ] Translate the manuscript into English. It would widen who can review it
+      considerably. The repository and the interface are already there.
+
+## 6. Licence and contributions
+
+- [ ] **Review of [`CLA.md`](CLA.md) by a lawyer before merging the first
+      outside contribution.** The current draft was written by someone who is
+      not one. Clause 2's assignment against the limits of article 43 of the
+      Spanish consolidated Intellectual Property Act matters especially, as
+      does clause 5's partial waiver of moral rights.
+- [ ] Decide whether the CLA is accepted signed per commit line or through a
+      bot, and automate the check.
+- [ ] Define the price and scope of the commercial licence before anybody asks
+      for it.
+
+---
+
+## What will not be done
+
+**Turning this into an app that says "safe" or "unsafe".** The project
+publishes calculations with their hypotheses in view. A traffic light would
+force hiding the uncertainty, which at air mass 10.7 reaches a factor of three.
+
+**Giving an ocular exposure number without showing which atmosphere it comes
+from.** The web computes geometry across the planet because geometry does not
+depend on the air. Irradiance does, and the repository has one day and one site
+measured, so the page computes it under a hypothesis the visitor sees and can
+change. Filling it in with a standard atmosphere and presenting it as data
+would be inventing provenance for a safety figure.
+
+**Promising worldwide coverage before validating outside Europe.** The
+Copernicus DEM covers the planet, but the topographic horizon has been checked
+against one site. Widening coverage requires validating, not just downloading
+more tiles.

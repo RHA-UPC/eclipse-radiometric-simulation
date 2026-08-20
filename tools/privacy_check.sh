@@ -1,42 +1,42 @@
 #!/usr/bin/env bash
-# Falla si algo que no debe publicarse ha llegado al índice de git.
-# Correr antes de cada push:  bash tools/privacy_check.sh
+# Fails if anything that must not be published has reached the git index.
+# Run before every push:  bash tools/privacy_check.sh
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
 fail=0
-report() { echo "FALLA: $1"; fail=1; }
+report() { echo "FAIL: $1"; fail=1; }
 
-# Lo que se comprueba son los archivos que git va a subir, no el disco.
-tracked=$(git ls-files 2>/dev/null) || { echo "no es un repo git"; exit 2; }
+# What gets checked is the files git is about to push, not the disk.
+tracked=$(git ls-files 2>/dev/null) || { echo "not a git repository"; exit 2; }
 
-# 1) Número de serie del cuerpo de la cámara.
-serial="04407""0005621"   # partido para que este archivo no contenga el literal
+# 1) The camera body's serial number.
+serial="04407""0005621"   # split so this file does not contain the literal
 if echo "$tracked" | xargs -r grep -lI "$serial" 2>/dev/null | grep -q .; then
-  report "el número de serie de la cámara está en un archivo rastreado"
+  report "the camera serial number is in a tracked file"
 fi
 
-# 2) Rutas absolutas del equipo del autor.
+# 2) Absolute paths from the author's machine.
 home="/ho""me/"
 hits=$(echo "$tracked" | xargs -r grep -lI "$home" 2>/dev/null)
-[ -n "$hits" ] && report "rutas absolutas de /home en: $hits"
+[ -n "$hits" ] && report "absolute /home paths in: $hits"
 
-# 3) Fotografías, RAW o vídeo del observador. El vídeo cuenta doble: metadatos
-# de cámara igual que las fotos, y además una pista de audio con voces.
+# 3) The observer's photographs, RAW or video. Video counts twice over: camera
+# metadata like the photographs, plus an audio track with voices on it.
 if echo "$tracked" | grep -qiE '\.(cr2|nef|arw|jpe?g|mp4|mov|avi|mkv)$|^fotografias/'; then
-  report "hay imágenes o vídeo rastreados; llevan metadatos del cuerpo de la cámara"
+  report "images or video are tracked; they carry camera body metadata"
 fi
 
-# 4) Los blobs grandes de terceros.
+# 4) The large third-party blobs.
 if echo "$tracked" | grep -qE 'de440s\.bsp|finals2000A\.all'; then
-  report "un kernel de terceros está rastreado; debe descargarse, no versionarse"
+  report "a third-party kernel is tracked; it should be downloaded, not versioned"
 fi
 
-# 5) Correo electrónico en el contenido (el del commit es otra cosa).
-# example.com/net/org están reservados por la RFC 2606 y son marcadores válidos.
+# 5) Email addresses in the content (the commit's own is a different matter).
+# example.com/net/org are reserved by RFC 2606 and are valid placeholders.
 found=$(echo "$tracked" | xargs -r grep -hoIE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' 2>/dev/null \
         | grep -vE '@example\.(com|net|org)$' | sort -u)
-[ -n "$found" ] && report "hay direcciones de correo reales en el índice: $(echo $found)"
+[ -n "$found" ] && report "real email addresses in the index: $(echo $found)"
 
-[ $fail -eq 0 ] && echo "OK: nada que comprometa la privacidad en el índice"
+[ $fail -eq 0 ] && echo "OK: nothing that compromises privacy in the index"
 exit $fail

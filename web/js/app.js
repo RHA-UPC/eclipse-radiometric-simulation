@@ -20,18 +20,19 @@ const store = {
 };
 
 // Obscuration ramps, one per theme. They live here and not in the stylesheet
-// because the raster is built pixel by pixel on a canvas, which needs the
+// because the band colours are interpolated between stops, which needs the
 // numbers rather than a gradient.
 //
-//   claro     grises: el fondo es claro y la sombra oscurece, que es lo literal
-//   oscuro    la rampa fria-caliente de siempre, legible sobre negro
-//   accesible una aproximacion de cinco paradas a cividis (Nunez, Anderton y
-//             Renslow 2018): no son sus valores tabulados, sino cinco puntos
-//             sobre el mismo eje azul-amarillo y con la misma luminancia
-//             monotona, que es de donde sale la propiedad que interesa --
-//             ningun par rojo/verde y ninguna inversion de claridad. Ademas
-//             va contorneado escalon a escalon, para que la informacion no
-//             dependa en absoluto del canal del color
+//   light  greys: the background is light and shadow darkens, which is the
+//          literal thing
+//   dark   the usual cold-to-hot ramp, the one that read well on black
+//   a11y   a five-stop approximation to cividis (Nunez, Anderton and Renslow
+//          2018): not their tabulated values, but five points on the same
+//          blue-yellow axis and with the same monotone luminance, which is
+//          where the property that matters comes from -- no red/green pair
+//          and no inversion of lightness. Every 10 % step is outlined on top
+//          of that, so the information does not depend on the colour channel
+//          at all
 const RAMPS = {
   light: [[228, 232, 228], [186, 193, 188], [138, 147, 141], [92, 100, 95],
           [48, 54, 50], [18, 21, 19]],
@@ -47,19 +48,20 @@ let legendBox = null, bandLayers = [], lastR = null, caps = [];
 const bandCache = new Map();
 const WORLD = L.latLngBounds([-90, -180], [90, 180]);
 
-// Tres fondos, y hay que elegir porque ninguno gana en todo.
+// Three base maps, and a choice has to be made because none of them wins
+// outright.
 //
-// El de calles y el de relieve los sirve un tercero, gratis, y a cambio
-// estampa su marca: una pastilla con un codigo QR cada pocos centenares de
-// pixeles. No es un fallo de carga ni algo que el navegador pueda quitar --
-// viene dentro de la propia imagen, y quitarla seria incumplir las
-// condiciones del servicio que la regala. Sobre una ciudad pasa
-// desapercibida; sobre desierto o mar abierto, que es donde una franja de
-// eclipse pasa la mayor parte de su recorrido, se queda sola en la pantalla.
+// Streets and relief come from a third party, free of charge, and in exchange
+// it stamps its mark on them: a panel with a QR code every few hundred pixels.
+// It is not a loading failure and not something the browser can remove -- it
+// comes inside the image itself, and removing it would breach the terms of the
+// service that gives it away. Over a city it goes unnoticed; over desert or
+// open sea, which is where an eclipse path spends most of its run, it is left
+// alone on the screen.
 //
-// El tercero, la costa de Natural Earth, va dentro de la pagina: sin marca,
-// sin peticiones a nadie, y por tanto sin que la visita se registre en
-// ningun sitio. Es lo que dibujan los mapas de eclipses de toda la vida.
+// The third, the Natural Earth coastline, ships inside the page: no mark, no
+// requests to anybody, and therefore no record of the visit anywhere. It is
+// what eclipse maps have always drawn.
 //
 // Streets without giving up the poles.
 //
@@ -123,13 +125,13 @@ function initMap() {
   addCaps();
   setBasemap(store.get('mapa') || 'streets');
 
-  // No hay franjas negras: el zoom minimo es aquel en el que el mundo todavia
-  // tapa la ventana, y el desplazamiento esta sujeto al mundo. Depende del
-  // tamano del elemento, asi que se recalcula al cambiar de tamano.
+  // No black strips: the minimum zoom is the level at which the world still
+  // covers the window, and panning is clamped to the world. It depends on the
+  // element's size, so it is recomputed on resize.
   //
-  // getBoundsZoom recorta su resultado por el minZoom vigente, asi que sin
-  // bajarlo antes solo podria subir: al encoger la ventana se quedaria
-  // atascado en el minimo de la ventana grande.
+  // getBoundsZoom clamps its result by the current minZoom, so without
+  // dropping that first it could only go up: on shrinking the window it would
+  // stay stuck at the large window's minimum.
   const clampZoom = () => {
     map.setMinZoom(0);
     map.setMinZoom(map.getBoundsZoom(WORLD, true));
@@ -196,8 +198,9 @@ function setBasemap(kind) {
   store.set('mapa', kind);
   document.getElementById('map').dataset.base = kind;
   if (streetLayer) { map.removeLayer(streetLayer); streetLayer = null; }
-  // Los casquetes solo tapan el negro que devuelve el WMS. Sin WMS no hay
-  // negro que tapar y taparlo esconderia la costa que si llega al polo.
+  // The caps only cover the black the WMS returns. With no WMS there is no
+  // black to cover, and covering would hide coastline that does reach the
+  // pole.
   caps.forEach(c => (kind === 'plain' ? map.removeLayer(c) : c.addTo(map)));
   if (kind === 'plain') { loadWorld(); return; }
   if (landLayer) map.removeLayer(landLayer);
@@ -261,30 +264,29 @@ function fallback(why) {
 
 const clearPaths = () => { pathLayers.forEach(l => map.removeLayer(l)); pathLayers = []; };
 
-// Los contornos cierran contra un marco que está fuera del mundo, y eso a un
-// relleno no se le ve pero a un trazo sí: saldría una línea de puntos pegada
-// al borde del mapa. Los tramos de fuera se cortan insertando un hueco, que
-// segments() convierte después en polilíneas separadas.
+// The contours close against a frame that sits outside the world, which a
+// fill hides and a stroke does not: it would come out as a dotted line pinned
+// to the edge of the map. The outside stretches are cut by inserting a gap,
+// which segments() then turns into separate polylines.
 const clipWorld = ring => ring.map(p =>
   (Math.abs(p[0]) <= 90 && Math.abs(p[1]) <= 180) ? p : null);
 const landStyle = () => ({ color: cssv('--land-line'), weight: 0.7 * (+cssv('--stroke') || 1),
                            fillColor: cssv('--land-fill'), fillOpacity: 1 });
 
-// Los casquetes polares.
+// The polar caps.
 //
-// El WMS no tiene nada por encima del limite de Mercator: su fuente es
-// Mercator, y Mercator se acaba ahi. Lo que devuelve en esa franja es negro,
-// que es exactamente la banda negra que no queremos. Se tapa con el propio
-// fondo del mapa, porque un casquete sin cartografia se lee como lo que es y
-// el negro se leia como un fallo de carga. La trayectoria y el raster se
-// dibujan encima: el mapa sigue llegando a los polos, que es para lo que se
-// eligio EPSG:4326.
+// The WMS has nothing above the Mercator limit: its source is Mercator, and
+// Mercator ends there. What it returns in that strip is black, which is
+// exactly the black band nobody wants. It gets covered with the map's own
+// background, because a cap without cartography reads as what it is while the
+// black read as a loading failure. The paths and the bands are drawn on top:
+// the map still reaches the poles, which is what EPSG:4326 was chosen for.
 //
-// 84 grados y no 85,0511. El limite exacto no vale: medido en pantalla, el
-// negro que devuelve el servidor baja hasta unos 84,3 grados en el nivel de
-// zoom mas alejado, porque su rejilla de teselas no cae donde la nuestra. Un
-// grado de margen lo cubre, y lo que se deja fuera es oceano Artico e interior
-// del casquete antartico, donde ese fondo no tiene nada que ensenar.
+// 84 degrees and not 85.0511. The exact limit does not do: measured on screen,
+// the black the server returns reaches down to about 84.3 degrees at the
+// widest zoom, because its tile grid does not fall where ours does. A degree
+// of margin covers it, and what gets left out is Arctic Ocean and Antarctic
+// interior, where that background has nothing to show anyway.
 const MERCATOR_LIMIT = 84;
 const capStyle = () => ({ pane: 'caps', stroke: false, fillColor: cssv('--map-bg'),
                           fillOpacity: 1, interactive: false });
@@ -316,8 +318,8 @@ function addCaps() {
 // alphas and the ten steps would stop being ten steps. Leaflet draws every
 // ring of a polygon into a single path with fill-rule evenodd, so the hole
 // works without any point-in-polygon bookkeeping.
-// Se guardan varios: ir y volver entre dos eclipses del catalogo con un solo
-// hueco de cache repagaba el segundo entero cada vez.
+// Several are kept: going back and forth between two eclipses of the
+// catalogue with a single cache slot paid the whole second again every time.
 const BAND_CACHE = 8;
 function bandsOf(e) {
   let hit = bandCache.get(e.id);
@@ -340,9 +342,10 @@ function drawBands(e) {
     const outer = C.rings[i];
     if (!outer.length) continue;
     const holes = C.rings[i + 1] || [];
-    // El color sale del punto medio de la banda, leido de los niveles, no de
-    // suponer que son diez: con once, i/10 + 0,05 se pasaba del final de la
-    // rampa y el dibujo moria con un TypeError.
+    // The colour comes from the middle of the band, read from the levels
+    // themselves and not from assuming there are ten: with eleven,
+    // i/10 + 0.05 ran off the end of the ramp and the drawing died with a
+    // TypeError.
     const v = (C.levels[i] + (i + 1 < C.levels.length ? C.levels[i + 1] : 1)) / 2;
     const f = v * (ramp.length - 1), k = Math.floor(f), w = f - k;
     const c = ramp[k].map((q, m) => Math.round(q * (1 - w) + ramp[k + 1][m] * w));
@@ -385,11 +388,11 @@ function drawEclipse(e) {
   const B = e.elements;
   drawBands(e);
   const thick = +cssv('--stroke') || 1;
-  // El límite de visibilidad: fuera de esta línea el Sol no llega a estar
-  // eclipsado en ningún momento. Antes se dibujaba aquí el borde de la
-  // penumbra EN EL INSTANTE del máximo, que es una circunferencia y no un
-  // límite: caía dentro de las bandas y las cruzaba, y la leyenda no decía
-  // cuál de las dos cosas era.
+  // The visibility limit: outside this line the Sun is never eclipsed at any
+  // instant. What used to be drawn here was the edge of the penumbra AT THE
+  // INSTANT of greatest eclipse, which is a circle and not a limit: it fell
+  // inside the bands and crossed them, and the legend did not say which of
+  // the two it was.
   for (const ring of bandsOf(e).visible)
     for (const seg of segments(clipWorld(ring)))
       if (seg.length > 1)
@@ -444,23 +447,24 @@ function contactRows(r) {
     </tr>`).join('');
 }
 
-// El horizonte real del punto marcado, cuando se ha pedido. Vive fuera de
-// renderPoint porque sobrevive a cambiar de eclipse: el relieve del sitio no
-// depende de qué eclipse se esté mirando, y volver a descargarlo sí costaría.
+// The real horizon of the marked point, once it has been asked for. It lives
+// outside renderPoint because it survives changing eclipse: the relief of a
+// place does not depend on which eclipse is being looked at, and downloading
+// it again would cost.
 let horizon = null;
 
 const azRange = r => {
   const az = ['C1', 'C2', 'MAX', 'C3', 'C4'].filter(k => r[k]).map(k => r[k].az);
   if (!az.length) return [0, 360];
-  // Desenrollado: un eclipse que empieza al 350 y acaba al 10 no abarca 340
-  // grados de cielo, abarca veinte.
+  // Unwrapped: an eclipse starting at 350 and ending at 10 does not span 340
+  // degrees of sky, it spans twenty.
   const u = az.map(a => a - az[0]).map(d => ((d + 540) % 360) - 180);
   return [az[0] + Math.min(...u) - 8, az[0] + Math.max(...u) + 8];
 };
 
-// Un obstáculo que el modelo del terreno no puede ver -- el edificio de
-// enfrente, la fila de árboles -- pero que quien está ahí sí ve. Se declara a
-// mano porque nadie lo tiene cartografiado y quien mira sí lo sabe.
+// An obstacle the terrain model cannot see -- the block across the street,
+// the tree line -- but which anyone standing there can. Declared by hand,
+// because nobody has it mapped and whoever is looking does know.
 const OBSTACLE = { h: 0, d: 0 };
 const obstacleAlt = () => (OBSTACLE.h > 0 && OBSTACLE.d > 0)
   ? Math.atan2(OBSTACLE.h, OBSTACLE.d) * 180 / Math.PI : 0;
@@ -586,18 +590,18 @@ function wireHorizon(e, lat, lon) {
     }
     renderPoint(e, lat, lon);
   };
-  // Los dos campos se leen juntos en cualquiera de los dos eventos: cada
-  // cambio vuelve a pintar el panel, y con un manejador por campo el segundo
-  // se quedaba escribiendo sobre un nodo que ya no estaba en el documento.
+  // Both fields are read together on either event: every change repaints, and
+  // with one handler per field the second was left writing into a node that
+  // was no longer in the document.
   const apply = () => {
     const h = document.getElementById('obs-h'), d = document.getElementById('obs-d');
     const tab = document.getElementById('hztab');
     if (!h || !d || !tab) return;
     OBSTACLE.h = +h.value || 0;
     OBSTACLE.d = +d.value || 0;
-    // Solo la tabla. Volver a pintar el panel entero destruiría el campo que
-    // se está escribiendo: al saltar de la altura a la distancia, el primer
-    // cambio se llevaba por delante el segundo campo a media escritura.
+    // The table only. Repainting the whole panel destroys the field being
+    // typed into: tabbing from height to distance, the first change took the
+    // second field away mid-entry.
     tab.innerHTML = horizonRows(Bess.local(e.elements, lat, lon, horizon.elevM));
   };
   ['obs-h', 'obs-d'].forEach(id => {
@@ -645,9 +649,9 @@ function renderPlace(lat, lon) {
 // --- wiring -------------------------------------------------------------
 
 function setPoint(lat, lon) {
-  // El relieve es del punto, no de la sesión: mover la marca lo invalida. Las
-  // teselas siguen en la caché del módulo, así que volver al mismo sitio no
-  // vuelve a descargar nada.
+  // The relief belongs to the point, not to the session: moving the marker
+  // invalidates it. The tiles stay in the module's cache, so coming back to
+  // the same place downloads nothing again.
   if (!lastPoint || Math.abs(lastPoint[0] - lat) > 1e-6 || Math.abs(lastPoint[1] - lon) > 1e-6) {
     horizon = null;
     OBSTACLE.h = OBSTACLE.d = 0;
@@ -770,7 +774,7 @@ const sci = v => v >= 0.01 ? Lang.pctRaw(v * 100, 2)
       .replace(/^([\d.]+)e/, (m, m1) => Lang.nf(parseFloat(m1), 1) + '·10^'));
 
 // ICNIRP's long-exposure branch is stated for t < 30 000 s and says nothing
-// beyond it. "Sin límite" would therefore be wrong twice over: it overreaches
+// beyond it. "No limit" would therefore be wrong twice over: it overreaches
 // the standard, and SAFETY.md forbids any answer that reads as permission.
 const ICNIRP_T_MAX = 30000;
 function secs(s) {

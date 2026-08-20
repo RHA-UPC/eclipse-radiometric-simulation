@@ -18,14 +18,15 @@
  *
  *   en  Oxford British spelling, -ize suffixes: metres, colour, centre,
  *       normalize. No space before the per-cent sign.
- *   es  Coma decimal y espacio ante el signo de porcentaje (RAE). Registro
- *       impersonal: esta página no tutea ni trata de usted a nadie.
- *   ca  Coma decimal i espai davant del percentatge. Terminologia TERMCAT:
- *       «configuració», no «ajustos»; «satel·litari», no «satel·lital».
- *   it  Virgola decimale e NESSUNO spazio prima del segno di percentuale.
- *       «prove», non «evidenze» (calco anglicizzante secondo la Crusca).
- *   fr  Virgule décimale, espace insécable avant : ; ! ? et avant le signe
- *       pour cent. « en périphérie » et non « edge ».
+ *   es  Decimal comma and a space before the per-cent sign (RAE). Impersonal
+ *       register: the page addresses nobody in the second person.
+ *   ca  Decimal comma and a space before the per-cent sign. TERMCAT
+ *       terminology: «configuració», not «ajustos»; «satel·litari», not the
+ *       rejected «satel·lital».
+ *   it  Decimal comma and NO space before the per-cent sign. «prove», not
+ *       «evidenze», which the Crusca calls an anglicizing calque.
+ *   fr  Decimal comma, a non-breaking space before : ; ! ? and before the
+ *       per-cent sign. «en périphérie», not «edge».
  *
  * Numbers never appear as literals in here. They arrive already formatted for
  * the active locale, because a decimal point in a Spanish sentence is a

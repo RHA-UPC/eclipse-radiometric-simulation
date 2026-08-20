@@ -38,11 +38,11 @@ for (const c of ['C1', 'C2', 'C3', 'C4', 'MAX']) {
   const want = (CIRC.contacts[c].tt_jd - B.t0_TT_jd) * 24;
   close(loc[c].t * 3600, want * 3600, 1.5, `${c} (s desde t0)`);
 }
-close(loc.duration_s, (CIRC.contacts.C3.tt_jd - CIRC.contacts.C2.tt_jd) * 86400, 1.0, 'duración');
+close(loc.duration_s, (CIRC.contacts.C3.tt_jd - CIRC.contacts.C2.tt_jd) * 86400, 1.0, 'duration');
 close(loc.magnitude, CIRC.contacts.MAX.magnitude, 2e-3, 'magnitud');
-close(loc.obscuration, 1.0, 1e-9, 'obscuración');
-close(loc.MAX.alt, CIRC.contacts.MAX.sun_alt_geometric_deg, 0.02, 'altura solar en el máximo');
-close(loc.MAX.az, CIRC.contacts.MAX.sun_az_deg, 0.05, 'acimut solar en el máximo');
+close(loc.obscuration, 1.0, 1e-9, 'obscuration');
+close(loc.MAX.alt, CIRC.contacts.MAX.sun_alt_geometric_deg, 0.02, 'solar altitude at maximum');
+close(loc.MAX.az, CIRC.contacts.MAX.sun_az_deg, 0.05, 'solar azimuth at maximum');
 ok(Math.abs(loc.C2.utc - new Date(CIRC.contacts.C2.utc)) < 1500,
    `C2 UTC ${loc.C2.utc.toISOString()} vs ${CIRC.contacts.C2.utc}`);
 
@@ -50,7 +50,7 @@ ok(Math.abs(loc.C2.utc - new Date(CIRC.contacts.C2.utc)) < 1500,
 // Both survived mutation before: sea level and 616 m differ by ~0.3 s of
 // totality, and swapping the equatorial radius for the polar one by ~1 s.
 ok(Math.abs(Bess.local(B, S.lat_deg, S.lon_deg, 0).duration_s - loc.duration_s) > 0.05,
-   'la altura del observador tiene que cambiar la duración');
+   'the observer elevation has to change the duration');
 
 // ---------------------------------------------------------------------------
 // 2. Contacts are named by how the curve crosses zero, not by root order.
@@ -100,15 +100,15 @@ for (const [id, la, lo, want] of [['2027-02-06', -31.30, -48.48, 471],
                                   ['2031-05-21', 8.93, 71.71, 326]]) {
   const r = Bess.local(of(id).elements, la, lo, 0);
   ok(r && r.central === 'annular', `${id} debe leerse como anular, no ${r && r.central}`);
-  ok(r && r.duration_s > 0, `${id}: anularidad de duración cero`);
-  close(r.duration_s, want, 12, `${id} duración de la anularidad`);
+  ok(r && r.duration_s > 0, `${id}: zero-length annularity`);
+  close(r.duration_s, want, 12, `${id} annularity duration`);
 }
 ok(loc.central === 'total', 'el eclipse de 2026 en el sitio es total, no anular');
 
 // ---------------------------------------------------------------------------
 // 4. A point outside the penumbra returns nothing rather than a small number.
 // ---------------------------------------------------------------------------
-ok(Bess.local(B, -33.87, 151.21, 0) === null, 'Sídney no ve nada del eclipse de 2026');
+ok(Bess.local(B, -33.87, 151.21, 0) === null, 'Sydney sees nothing of the 2026 eclipse');
 
 // ---------------------------------------------------------------------------
 // 5. The drawn band must agree with the solver that answers the clicks. This
@@ -146,7 +146,7 @@ for (const id of ['2026-08-12', '2027-08-02', '2045-08-12', '2027-02-06']) {
 const nearest = Bess.limits(B, 'l2').edges
   .flat().filter(Boolean).reduce((b, p) => Math.min(b, km([S.lat_deg, S.lon_deg], p)), 1e9);
 ok(nearest >= 41.0 && nearest <= 47.0,
-   `distancia del sitio al borde más cercano: ${nearest.toFixed(2)} km, se esperaba 42-47`);
+   `distance from the site to the nearest edge: ${nearest.toFixed(2)} km, expected 42-47`);
 
 // ---------------------------------------------------------------------------
 // 6. Non-central eclipses. Between gamma 0.9972 and about 1.03 the axis misses
@@ -161,17 +161,17 @@ const nc = Bess.local(E43.elements, 61.82, 164.78, 0);
 ok(nc && nc.obscuration > 0.999 && nc.duration_s > 0,
    `2043-04-09 en 61.82 N 164.78 E: obsc ${nc && nc.obscuration}, dur ${nc && nc.duration_s}`);
 ok(CAT.eclipses.filter(e => e.type !== 'partial' && !e.central).length >= 1,
-   'debe haber al menos un eclipse central no central en el catálogo');
+   'the catalogue must hold at least one non-central total eclipse');
 
 // ---------------------------------------------------------------------------
 // 7. Gamma carries a sign. Unsigned it matches no published catalogue and
 //    throws away which hemisphere the eclipse belongs to.
 // ---------------------------------------------------------------------------
-close(of('2026-02-17').gamma, -0.9743, 1e-3, 'gamma de 2026-02-17 (anular antártico)');
+close(of('2026-02-17').gamma, -0.9743, 1e-3, 'gamma of 2026-02-17 (Antarctic annular)');
 close(of('2026-08-12').gamma, +0.8977, 1e-3, 'gamma de 2026-08-12');
 close(of('2027-08-02').gamma, +0.1421, 1e-3, 'gamma de 2027-08-02');
 close(of('2028-07-22').gamma, -0.6056, 1e-3, 'gamma de 2028-07-22');
-ok(CAT.eclipses.some(e => e.gamma < 0), 'ningún gamma negativo: se ha perdido el signo');
+ok(CAT.eclipses.some(e => e.gamma < 0), 'no negative gamma: the sign has been lost');
 
 // ---------------------------------------------------------------------------
 // 8. The path curves. A sample that misses the Earth has to leave a null, or
@@ -179,8 +179,8 @@ ok(CAT.eclipses.some(e => e.gamma < 0), 'ningún gamma negativo: se ha perdido e
 //    gap the shadow never crossed.
 // ---------------------------------------------------------------------------
 const cl = Bess.centralLine(B);
-ok(cl.filter(Boolean).length > 60, `la línea central tiene ${cl.filter(Boolean).length} puntos`);
-ok(cl.includes(null), 'la línea central debe marcar el hueco donde el eje deja la Tierra');
+ok(cl.filter(Boolean).length > 60, `the central line has ${cl.filter(Boolean).length} points`);
+ok(cl.includes(null), 'the central line must mark the gap where the axis leaves the Earth');
 {
   let worst = 0, prev = null;
   for (const p of cl) {
@@ -188,7 +188,7 @@ ok(cl.includes(null), 'la línea central debe marcar el hueco donde el eje deja 
     if (prev) worst = Math.max(worst, km(prev, p));
     prev = p;
   }
-  ok(worst < 60, `salto máximo dentro de un tramo continuo: ${worst.toFixed(0)} km`);
+  ok(worst < 60, `largest jump inside a continuous run: ${worst.toFixed(0)} km`);
 }
 
 // The penumbra outline must exist and reach thousands of km from the axis.
@@ -204,14 +204,14 @@ ok(Math.max(...out.flat().map(p => km([E26.central_lat, E26.central_lon], p))) >
 const G = Bess.obscurationGrid(B, 144, 72, 61);
 let mx = 0, nz = 0;
 for (const v of G.grid) { if (v > mx) mx = v; if (v > 0) nz++; }
-close(mx, 1.0, 1e-3, 'obscuración máxima de la malla');
+close(mx, 1.0, 1e-3, 'greatest obscuration of the grid');
 ok(nz > 300 && nz < G.grid.length * 0.5, `la zona parcial cubre ${nz} de ${G.grid.length} celdas`);
 {
   // 2026-08-12 peaks over the Atlantic at 17:46 UT, so the Pacific antipode is
   // in darkness. A cell there carrying obscuration means the night-side test
   // has been dropped.
   const j = Math.floor((90 - (-20)) / 180 * 72), i = Math.floor((-170 + 180) / 360 * 144);
-  ok(G.grid[j * 144 + i] === 0, 'una celda en el hemisferio nocturno no puede tener obscuración');
+  ok(G.grid[j * 144 + i] === 0, 'a cell in the night hemisphere cannot carry obscuration');
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +222,7 @@ ok(nz > 300 && nz < G.grid.length * 0.5, `la zona parcial cubre ${nz} de ${G.gri
   const quad = Object.assign({}, B, { x: B.x.slice(0, 3), y: B.y.slice(0, 3) });
   const a = Bess.evaluate(B, 3.0), b = Bess.evaluate(quad, 3.0);
   ok(Math.abs(a.x - b.x) > 1e-5 || Math.abs(a.y - b.y) > 1e-5,
-     'el término cúbico de x/y no cambia nada a 3 h: el ajuste es sospechoso');
+     'the cubic term of x/y changes nothing at 3 h: the fit is suspect');
 }
 
 // ---------------------------------------------------------------------------
@@ -252,20 +252,20 @@ ok(nz > 300 && nz < G.grid.length * 0.5, `la zona parcial cubre ${nz} de ${G.gri
       }
     }
     ok(hit > 150, `${id}: la malla de referencia apenas tiene eclipse (${hit} celdas)`);
-    // 1e-6 y no cero: la malla se guarda en Float32Array y la referencia sale
-    // en doble, así que el suelo son los 6e-8 de la precisión simple.
-    ok(worst < 1e-6, `${id}: la malla no coincide con el cálculo punto a punto ` +
+    // 1e-6 and not zero: the grid is stored in a Float32Array and the
+    // reference comes out in double, so the floor is single precision's 6e-8.
+    ok(worst < 1e-6, `${id}: the grid disagrees with the point-by-point calculation ` +
        `(dif ${worst.toExponential(2)} en ${JSON.stringify(where)})`);
   }
 }
 
 // ---------------------------------------------------------------------------
-// 12. obsAt es evaluate + geom + obscuration, sin el objeto por medio.
+// 12. obsAt is evaluate + geom + obscuration, with no object in between.
 //
-//     Se escribió a mano para no asignar en el bucle caliente, así que es una
-//     copia de la aritmética de otras dos funciones y puede separarse de ellas
-//     en cualquier edición. Aquí se comparan sobre puntos y momentos variados,
-//     incluidos el hemisferio nocturno y los polos.
+//     It was written by hand to avoid allocating in the hot loop, so it is a
+//     copy of the arithmetic of two other functions and can drift from them in
+//     any edit. Compared here over assorted points and instants, night
+//     hemisphere and poles included.
 // ---------------------------------------------------------------------------
 {
   const Bx = of('2026-08-12').elements;
@@ -286,23 +286,23 @@ ok(nz > 300 && nz < G.grid.length * 0.5, `la zona parcial cubre ${nz} de ${G.gri
 }
 
 // ---------------------------------------------------------------------------
-// 13. Los contornos.
+// 13. The contours.
 //
-//     La malla decide la topología; la exactitud no la decide. Cada vértice se
-//     coloca bisecando la función real sobre la arista donde cae, y las
-//     cuerdas se subdividen hasta acercarse a la curva.
+//     The grid decides the topology; it does not decide the accuracy. Every
+//     vertex is placed by bisecting the real function on the edge it falls on,
+//     and the chords are subdivided until they approach the curve.
 //
-//     Con una excepción declarada: sobre el TERMINADOR la función salta de
-//     cero a un valor finito, porque el Sol se pone. Ahí el borde de la región
-//     no es una curva de nivel sino una discontinuidad, y |g − nivel| no
-//     significa nada. Esos vértices se identifican por la altura del Sol en el
-//     instante de su máximo y se cuentan aparte, no se ignoran en silencio.
+//     With one declared exception: above the TERMINATOR the function jumps
+//     from zero to a finite value, because the Sun sets. There the region
+//     boundary is a discontinuity and not a level curve, and |g - level| means
+//     nothing. Those vertices are identified by the Sun's altitude at the
+//     instant of their maximum and counted separately, not ignored in silence.
 //
-//     Lo que NO se filtra es el borde del mundo. La revisión adversarial de
-//     agosto de 2026 encontró que la banda dibujada era la equivocada hasta
-//     66 km dentro del mapa por el antimeridiano y 39 km por los polos, en los
-//     56 eclipses, y este archivo no podía verlo porque descartaba justamente
-//     esa franja como «el marco». Ver docs/REVIEWS.md.
+//     What is NOT filtered out is the world edge. The adversarial review of
+//     August 2026 found that the band drawn was the wrong one up to 66 km
+//     inside the map along the antimeridian and 39 km at the poles, across the
+//     56 eclipses, and this file could not see it because it discarded exactly
+//     that strip as "the frame". See docs/REVIEWS.md.
 // ---------------------------------------------------------------------------
 const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-17'];
 {
@@ -311,11 +311,12 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
     const Bx = of(id).elements;
     const C = Bess.contours(Bx);
     ok(C.fallbacks === 0,
-       `${id}: ${C.fallbacks} vértices sin cambio de signo que bisecar`);
+       `${id}: ${C.fallbacks} vertices with no sign change to bisect`);
     ok(C.vertices > 800 && C.vertices < 40000,
-       `${id}: ${C.vertices} vértices, fuera del presupuesto de dibujo`);
+       `${id}: ${C.vertices} vertices, outside the drawing budget`);
 
-    // altura del Sol en el instante del máximo: separa terminador de curva
+    // the Sun's altitude at the instant of the maximum: separates terminator
+    // from curve
     const onTerminator = (la, lo) => {
       const o = Bess.observer(Bx, la, lo, 0);
       let bz = 9, bo = -1;
@@ -339,37 +340,37 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
         const st = Math.max(1, Math.floor(ring.length / 40));
         for (let i = 0; i < ring.length; i += st) {
           const [la, lo] = ring[i];
-          // Un vértice puede caer FUERA del mundo, y debe: ahí es donde cierran
-          // los contornos contra el marco, fuera de lo que la vista alcanza.
-          // Lo que no puede es caer fuera del marco.
+          // A vertex may fall OUTSIDE the world, and must: that is where the
+          // contours close against the frame, beyond what the view reaches.
+          // What it may not do is fall outside the frame.
           if (Math.abs(la) > 91 || Math.abs(lo) > 181) fueraDelMundo++;
           if (Math.abs(la) >= 90 || Math.abs(lo) >= 180) continue;
           muestras++;
           const g = Bess.maxObscuration(Bx, la, lo);
           if (Math.abs(g - level) > 1e-3 && !onTerminator(la, lo)) malos++;
-          // anidamiento: un vértice de un nivel tiene que estar dentro de la
-          // región del anterior, o el relleno por paridad se invierte. Sobre el
-          // terminador todos los niveles comparten borde, así que no aplica.
+          // nesting: a vertex of one level has to sit inside the previous
+          // level's region, or the parity fill inverts. Above the terminator
+          // every level shares a boundary, so it does not apply.
           if (li > 0 && g < C.levels[li - 1] - 1e-6 && !onTerminator(la, lo)) fuera++;
         }
       }
     });
     ok(sinCerrar === 0, `${id}: ${sinCerrar} anillos no cierran`);
-    ok(fueraDelMundo === 0, `${id}: ${fueraDelMundo} vértices fuera del marco`);
-    ok(malos === 0, `${id}: ${malos} de ${muestras} vértices no están sobre su contorno ` +
+    ok(fueraDelMundo === 0, `${id}: ${fueraDelMundo} vertices outside the frame`);
+    ok(malos === 0, `${id}: ${malos} of ${muestras} vertices are not on their contour ` +
        `y tampoco sobre el terminador`);
-    ok(fuera === 0, `${id}: ${fuera} vértices de un nivel caen fuera del nivel inferior`);
+    ok(fuera === 0, `${id}: ${fuera} vertices of one level fall outside the level below`);
   }
 }
 
 // ---------------------------------------------------------------------------
-// 14. La banda dibujada contra la verdadera, en el borde del mundo.
+// 14. The band drawn against the true one, at the world edge.
 //
-//     Esto es lo que la revisión adversarial encontró y este archivo no veía.
-//     Se toma un punto, se calcula en qué banda cae según la función, y se
-//     mira en qué banda lo pinta el polígono contándole los cruces --- que es
-//     la misma regla de paridad que aplica `fill-rule: evenodd` en el
-//     navegador. Se recorre a propósito el antimeridiano y los dos polos.
+//     This is what the adversarial review found and this file could not see. A
+//     point is taken, the band it falls in is computed from the function, and
+//     the band the polygon paints it is read by counting crossings --- the
+//     same parity rule `fill-rule: evenodd` applies in the browser. The
+//     antimeridian and both poles are walked on purpose.
 // ---------------------------------------------------------------------------
 {
   const bandOf = (C, v) => { let b = -1; for (let i = 0; i < C.levels.length; i++) if (v >= C.levels[i]) b = i; return b; };
@@ -393,8 +394,8 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
     let mal = 0, n = 0, peor = null;
     const probe = (la, lo) => {
       const v = Bess.maxObscuration(Bx, la, lo);
-      // no se juzgan los puntos pegados a un umbral: ahí la banda correcta
-      // depende de un dígito y el desacuerdo no dice nada
+      // points hard against a threshold are not judged: there the correct band
+      // depends on one digit and a disagreement says nothing
       if (C.levels.some(l => Math.abs(v - l) < 0.02)) return;
       n++;
       const b0 = bandOf(C, v), b1 = bandDrawn(C, la, lo);
@@ -405,17 +406,17 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
     ok(n > 200, `${id}: solo ${n} puntos juzgados`);
     ok(mal === 0, `${id}: ${mal} de ${n} puntos con la banda equivocada` +
        (peor ? ` (p. ej. ${peor[0]} ${peor[1]}: vale ${peor[2].toFixed(4)}, ` +
-               `debería ser la banda ${peor[3]} y se pinta la ${peor[4]})` : ''));
+               `should be band ${peor[3]} and is painted as ${peor[4]})` : ''));
   }
 }
 
 // ---------------------------------------------------------------------------
-// 15. Ningún anillo se cruza consigo mismo.
+// 15. No ring crosses itself.
 //
-//     Con `fill-rule: evenodd` cada lazo invierte el relleno, así que un
-//     anillo que se cruza pinta la banda de al lado en la lengüeta que forma.
-//     La comprobación de anidamiento del apartado 13 no puede verlo, porque
-//     mira el valor en cada vértice y no la topología del polígono.
+//     With `fill-rule: evenodd` every loop inverts the fill, so a ring that
+//     crosses itself paints the neighbouring band in the tongue it forms. The
+//     nesting check in section 13 cannot see it, because it looks at the value
+//     at each vertex and not at the polygon's topology.
 // ---------------------------------------------------------------------------
 {
   const corta = (p1, p2, p3, p4) => {
@@ -442,11 +443,11 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
 }
 
 // ---------------------------------------------------------------------------
-// 16. La flecha de la cuerda. Es lo único que la bisección de los vértices no
-//     acota por construcción, así que se mide: desde el punto medio de cada
-//     cuerda se busca el contorno real a lo largo de la normal, y se busca
-//     LEJOS --- cinco cuerdas --- porque un radio corto descarta justo las
-//     peores y deja pasar el percentil que se quiere vigilar.
+// 16. The chord sagitta. The one thing vertex bisection does not bound by
+//     construction, so it gets measured: from the midpoint of each chord the
+//     real contour is searched for along the normal, and searched FAR --- five
+//     chords --- because a short radius discards exactly the worst ones and
+//     lets through the percentile being watched.
 // ---------------------------------------------------------------------------
 {
   const KM = 111.19, D2Rl = Math.PI / 180;
@@ -475,10 +476,11 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
     }
     return Math.abs((u0 + u1) / 2) * KM;
   };
-  // El terminador se aparta y se cuenta, no se disimula: ahí el borde de la
-  // región es un salto de la función, «la curva» de al lado está a kilómetros
-  // y la distancia medida no es el error del dibujo. Medido, TODAS las cuerdas
-  // peores de un kilómetro tienen el Sol a 0,00 grados en su máximo.
+  // The terminator is set aside and counted, not glossed over: there the
+  // region boundary is a jump in the function, "the curve" next door is
+  // kilometres away and the measured distance is not the drawing's error.
+  // Measured, EVERY chord worse than a kilometre has the Sun at 0.00 degrees
+  // at its maximum.
   const enTerminador = (la, lo) => {
     const o = Bess.observer(Bx, la, lo, 0);
     let alt = 9, bo = -1;
@@ -511,38 +513,37 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
   ok(q(1) < 2, `la peor flecha fuera del terminador es ${q(1).toFixed(2)} km`);
   ok(saltoTerm < vals.length / 10,
      `${saltoTerm} de ${vals.length + saltoTerm} cuerdas apartadas por el terminador: ` +
-     `son demasiadas para que la excepción siga siendo una excepción`);
+     `too many for the exception to remain an exception`);
 }
 
 // ---------------------------------------------------------------------------
-// 17. El límite de visibilidad.
+// 17. The visibility limit.
 //
-//     Se dibuja a trazos y dice una cosa concreta: fuera de esa línea el Sol
-//     no llega a estar eclipsado en ningún instante. Así que se comprueba
-//     contra local(), que es quien responde esa misma pregunta en el panel y
-//     lo hace con 4001 instantes y sin malla ninguna.
+//     Drawn dashed, and it says one concrete thing: outside that line the Sun
+//     is never eclipsed at any instant. So it is checked against local(),
+//     which answers that same question in the panel and does it with 4001
+//     instants and no grid at all.
 //
-//     No se contorneó la obscuración con un nivel diminuto, y por eso: cerca
-//     del borde el eclipse dura minutos y un barrido de 121 instantes lo lee
-//     como cero. El margen L1 - m es suave en el tiempo y no tiene ese
-//     problema.
+//     The obscuration was not contoured at a tiny level, and this is why: near
+//     the edge the eclipse lasts minutes and a 121-instant sweep reads it as
+//     zero. The margin L1 - m is smooth in time and has no such problem.
 // ---------------------------------------------------------------------------
 {
   const KM = 111.19;
   for (const id of SUITE) {
     const Bx = of(id).elements;
     const C = Bess.contours(Bx);
-    ok(C.visible.length > 0, `${id}: no hay límite de visibilidad`);
+    ok(C.visible.length > 0, `${id}: there is no visibility limit`);
     let dentroSinEclipse = 0, fueraConEclipse = 0, n = 0, ejemplo = null;
-    // 40 km a cada lado de la línea: más que el paso de la malla y mucho menos
-    // que el radio de la penumbra, así que el signo tiene que estar decidido.
+    // 40 km either side of the line: more than the grid step and far less than
+    // the penumbra's radius, so the sign has to be settled.
     const D = 40 / KM;
     for (const ring of C.visible) {
       const st = Math.max(1, Math.floor(ring.length / 120));
       for (let i = 0; i < ring.length; i += st) {
         const [la, lo] = ring[i];
         if (Math.abs(la) > 88 || Math.abs(lo) > 178) continue;
-        // la normal, por diferencias con el vecino
+        // the normal, by differencing against the neighbour
         const b = ring[(i + 1) % ring.length];
         const cs = Math.cos(la * Math.PI / 180);
         const dx = (b[1] - lo) * cs, dy = b[0] - la, L = Math.hypot(dx, dy);
@@ -566,24 +567,24 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
         }
       }
     }
-    ok(n > 25, `${id}: solo ${n} puntos del límite juzgados`);
+    ok(n > 25, `${id}: only ${n} points of the limit judged`);
     ok(dentroSinEclipse === 0,
-       `${id}: ${dentroSinEclipse} de ${n} puntos 40 km DENTRO del límite sin eclipse` +
+       `${id}: ${dentroSinEclipse} of ${n} points 40 km INSIDE the limit with no eclipse` +
        (ejemplo ? ` (p. ej. ${ejemplo[0]} ${ejemplo[1].map(v => v.toFixed(3)).join(' ')})` : ''));
     ok(fueraConEclipse === 0,
-       `${id}: ${fueraConEclipse} de ${n} puntos 40 km FUERA del límite con eclipse visible`);
+       `${id}: ${fueraConEclipse} of ${n} points 40 km OUTSIDE the limit with a visible eclipse`);
   }
 }
 
 // ---------------------------------------------------------------------------
-// 18. Ni un diente.
+// 18. Not one tooth.
 //
-//     Un pico es un vértice que se sale de la recta que une a sus dos vecinos
-//     más de lo que mide esa recta. Sobre una curva bien resuelta no existe;
-//     sobre el terminador aparecía a decenas de kilómetros, porque allí el
-//     borde de la región es un salto y la malla lo cruza en zigzag. Lo que
-//     sujeta esto es el suavizado de los vértices de salto, que corre cada uno
-//     por SU arista y no se sale de ella.
+//     A spike is a vertex that sticks out of the line joining its two
+//     neighbours by more than that line is long. On a well-resolved curve
+//     there is none; above the terminator they appeared at tens of kilometres,
+//     because there the region boundary is a jump and the grid crosses it in a
+//     zigzag. What holds this up is the smoothing of the jump vertices, each
+//     of which runs along ITS OWN edge and never leaves it.
 // ---------------------------------------------------------------------------
 {
   const KM = 111.19;
@@ -611,11 +612,12 @@ const SUITE = ['2026-08-12', '2027-08-02', '2043-04-09', '2039-12-15', '2026-02-
     });
     C.rings.forEach(scan);
     scan(C.visible);
-    ok(picos <= 8, `${id}: ${picos} picos de ${tot} vértices, el peor de ${peor.toFixed(1)} km` +
+    ok(picos <= 8, `${id}: ${picos} spikes of ${tot} vertices, worst ${peor.toFixed(1)} km` +
        (donde ? ` en ${donde.join(' ')}` : ''));
     ok(peor < 25, `${id}: el peor pico mide ${peor.toFixed(1)} km`);
   }
 }
 
-console.log(fails ? `${fails} FALLOS` : 'besselian.js OK — concuerda con eclipsecat.py, DE440s y la NASA');
+console.log(fails ? `${fails} FAILURES`
+                  : 'besselian.js OK — agrees with eclipsecat.py, DE440s and NASA');
 process.exit(fails ? 1 : 0);

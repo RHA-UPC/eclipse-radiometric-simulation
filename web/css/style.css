@@ -5,7 +5,7 @@
    the obscuration ramp all read these variables, so a theme is a palette and
    not a second copy of the page. */
 
-/* Claro. El tema de la casa: fondo claro, verde como color secundario. */
+/* Light. The house theme: light background, green as the secondary. */
 :root{
   --bg:#eef1ec; --panel:#ffffff; --line:#ccd6cd; --ink:#16211a; --dim:#566358;
   --accent:#1b7a45; --accent-ink:#ffffff; --tag-ink:#ffffff;
@@ -20,7 +20,7 @@
   --hair:1px; --stroke:1; --focus:#1b7a45;
 }
 
-/* Oscuro. La rampa naranja se queda: es la que se leía bien sobre negro. */
+/* Dark. The orange ramp stays: it is the one that read well on black. */
 :root[data-theme="dark"]{
   --bg:#0d1117; --panel:#141a22; --line:#232c38; --ink:#e6edf3; --dim:#8b98a8;
   --accent:#3faa6a; --accent-ink:#08130d; --tag-ink:#0d1117;
@@ -34,9 +34,9 @@
   --chart-base:#4b5c73; --chart-line:#ff6b4a;
 }
 
-/* Accesible. Contraste máximo, tipografía mayor, trazos gruesos, y la rampa
-   cividis, que un dicrómata y un tricrómata ven igual. Nada de la información
-   depende del canal del color: cada escalón del 10 % lleva contorno. */
+/* Accessible. Maximum contrast, larger type, thicker strokes, and the cividis
+   ramp, which a dichromat and a trichromat see alike. None of the information
+   depends on the colour channel: every 10 % step carries an outline. */
 :root[data-theme="a11y"]{
   --bg:#ffffff; --panel:#ffffff; --line:#000000; --ink:#000000; --dim:#26302a;
   --accent:#00532a; --accent-ink:#ffffff; --tag-ink:#ffffff;
@@ -86,19 +86,21 @@ header h1{font-size:1rem;font-weight:600;margin:0;letter-spacing:.02em}
 .mode.active{background:var(--accent);border-color:var(--accent);
   color:var(--accent-ink);font-weight:600}
 
-/* Los fondos de terceros vienen en un solo estilo, y el estilo manda sobre
-   el tema. Se corrige sobre la TESELA, y solo sobre la tesela: el filtro va
-   en la imagen y no en el panel, porque en ese mismo panel viven las costas
-   de Natural Earth, que ya se dibujan con los colores del tema.
+/* The third-party base maps come in one style each, and the style outranks
+   the theme. The correction goes on the TILE, and only on the tile: the
+   filter belongs to the image and not to the pane, because that same pane
+   holds the Natural Earth coastlines, which are already drawn in the theme's
+   colours.
 
-   El relieve llega en verdes y ocres saturados, y ahí el fondo compite con el
-   dato: las bandas de obscuración son una escala de grises translúcida y
-   sobre un verde intenso dejan de leerse como escala. Se desatura.
+   The relief map arrives in saturated greens and ochres, and there the
+   background competes with the data: the obscuration bands are a translucent
+   grey scale and over an intense green they stop reading as a scale. So it
+   gets desaturated.
 
-   En oscuro se atenúa, no se invierte. El truco habitual de invertir el mapa
-   está pensado para estilos de mar claro y tierra blanca; estos traen el mar
-   azul oscuro, e invertirlos los dejaba de un cian luminoso, con el océano
-   brillando más que el continente. */
+   In dark mode it is dimmed, not inverted. The usual inversion trick is meant
+   for styles with a light sea and white land; these bring a dark blue sea, and
+   inverting them left a luminous cyan, with the ocean brighter than the
+   continent. */
 #map[data-base="relief"] img.leaflet-tile{filter:saturate(.4) contrast(.92) brightness(1.05)}
 :root[data-theme="dark"] #map img.leaflet-tile{filter:brightness(.58) saturate(.85) contrast(1.06)}
 :root[data-theme="dark"] #map[data-base="relief"] img.leaflet-tile{
@@ -182,7 +184,7 @@ tr.clickable:hover td{background:var(--bg)}
   header{flex-wrap:wrap;gap:.5rem}
 }
 
-/* --- radiometría bajo demanda --- */
+/* --- radiometry on demand --- */
 #calc{width:100%;margin-top:.9rem;background:var(--accent);border:0;color:var(--accent-ink);
   font-weight:700;padding:.6rem;border-radius:6px;cursor:pointer;font-size:.85rem}
 #calc:disabled{opacity:.55;cursor:progress}
@@ -201,7 +203,7 @@ canvas.chart{width:100%;height:150px;display:block;margin:.7rem 0 .2rem;
 .kv.hot b{color:var(--hot)}
 h3.sec{margin:1.1rem 0 .3rem;font-size:.85rem}
 
-/* --- página del estabilizador --- */
+/* --- the stabiliser page --- */
 .page{max-width:860px;margin:0 auto;padding:1.2rem;overflow-y:auto;flex:1}
 .lead{line-height:1.7;margin:.8rem 0}
 .drop{border:2px dashed var(--line);border-radius:10px;padding:2.4rem 1rem;text-align:center;

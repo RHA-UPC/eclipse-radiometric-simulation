@@ -1,8 +1,6 @@
-
-
-# Resumen en una línea, imperativo, sin punto final.
+# One-line summary, imperative, no full stop.
 #
-# Cuerpo: qué cambia y por qué. Si tocas una cifra, di de dónde sale.
+# Body: what changes and why. If a figure moves, say where it comes from.
 #
-# Toda contribución exige la línea siguiente. Ver CLA.md.
-CLA-1.0-signed-by: Nombre Apellidos <correo@example.org>
+# Every contribution requires the line below. See CLA.md.
+CLA-1.0-signed-by: Given Family <someone@example.org>

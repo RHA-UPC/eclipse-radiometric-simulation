@@ -1,65 +1,63 @@
-# Qué licencia cubre qué
+# Which licence covers what
 
-El repositorio mezcla software, texto científico y datos, y cada cosa lleva la
-licencia que le corresponde.
+The repository mixes software, scientific text and data, and each part carries
+the licence that suits it.
 
-| Parte | Licencia | Archivo |
+| Part | Licence | File |
 |---|---|---|
-| Código de `src/` y `tools/` | **AGPL-3.0-only** | [`LICENSE`](LICENSE) |
-| Manuscrito, figuras y documentación: `paper/`, `figs/`, `out/`, `docs/`, `*.md` | **CC BY-SA 4.0** | [`LICENSE-DOCS`](LICENSE-DOCS) |
-| Datos derivados de `data/` producidos por este proyecto | **CC BY-SA 4.0** | [`LICENSE-DOCS`](LICENSE-DOCS) |
-| Datos de terceros | Los suyos propios, sin relicenciar | [`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) |
+| Code in `src/` and `tools/` | **AGPL-3.0-only** | [`LICENSE`](LICENSE) |
+| Manuscript, figures and documentation: `paper/`, `figs/`, `out/`, `docs/`, `*.md` | **CC BY-SA 4.0** | [`LICENSE-DOCS`](LICENSE-DOCS) |
+| Derived data in `data/` produced by this project | **CC BY-SA 4.0** | [`LICENSE-DOCS`](LICENSE-DOCS) |
+| Third-party data | Their own terms, not relicensed | [`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) |
 
-Cada módulo de `src/` lleva su cabecera con `SPDX-License-Identifier:
-AGPL-3.0-only`.
+Every module in `src/` carries a header with
+`SPDX-License-Identifier: AGPL-3.0-only`.
 
-## Por qué AGPL y no GPL
+## Why AGPL and not GPL
 
-El proyecto apunta a convertirse en una plataforma web donde cualquiera pueda
-simular la seguridad de un eclipse en su ubicación. La GPL-3.0 se activa al
-distribuir el software; quien lo monta como servicio en red nunca distribuye
-nada, así que no debe publicar sus cambios. La sección 13 de la AGPL cierra esa
-puerta: si alguien ofrece una versión modificada a través de la red, tiene que
-poner el código a disposición de sus usuarios.
+The project aims to become a web platform where anyone can simulate eclipse
+safety at their own location. GPL-3.0 triggers on distribution of the software;
+someone running it as a network service never distributes anything, so they owe
+no source. Section 13 of the AGPL closes that door: whoever offers a modified
+version over a network must make the source available to its users.
 
-Se ha elegido `AGPL-3.0-only` y no `or later`, para que las versiones futuras
-que publique la Free Software Foundation no se apliquen automáticamente.
+`AGPL-3.0-only` was chosen rather than "or later", so that future versions
+published by the Free Software Foundation do not apply automatically.
 
-## Por qué CC BY-SA y no CC BY-NC
+## Why CC BY-SA and not CC BY-NC
 
-El repositorio nació bajo CC BY-NC 4.0. La cláusula no comercial tenía tres
-problemas: dejaba el proyecto fuera de la definición de código abierto,
-impedía que GitHub mostrara siquiera la licencia, y ahuyentaba a cualquier
-contribuyente con un empleo. CC BY-SA 4.0 mantiene el copyleft sobre el texto,
-obliga a compartir las obras derivadas en los mismos términos y es compatible
-con un ecosistema de ciencia abierta.
+The repository launched under CC BY-NC 4.0. The non-commercial clause had three
+problems: it put the project outside the open-source definition, it stopped
+GitHub from displaying the licence at all, and it drove away any contributor
+with a job. CC BY-SA 4.0 keeps copyleft over the text, requires derivative works
+to be shared on the same terms, and fits an open-science ecosystem.
 
-## Qué significa en la práctica
+## What this means in practice
 
-**Puedes** usar, estudiar, modificar y redistribuir todo esto, también con fines
-comerciales.
+**You may** use, study, modify and redistribute all of this, including for
+commercial purposes.
 
-**Debes**, si distribuyes una versión modificada del código o la ofreces como
-servicio en red, publicar el código completo bajo AGPL-3.0. Si redistribuyes el
-texto o las figuras, modificados o no, atribuir la autoría y mantener CC BY-SA.
+**You must**, if you distribute a modified version of the code or offer it as a
+network service, publish the complete source under AGPL-3.0. If you redistribute
+the text or the figures, modified or not, attribute authorship and keep
+CC BY-SA.
 
-**No puedes** construir una capa cerrada encima y venderla sin publicar el
-código, ni relicenciar el trabajo bajo términos propietarios.
+**You may not** build a closed layer on top and sell it without publishing the
+source, nor relicense the work under proprietary terms.
 
-## Uso comercial bajo otras condiciones
+## Commercial use under other terms
 
-Si necesitas integrar este proyecto en un producto cerrado, el titular puede
-ofrecer una licencia distinta. Escríbele a través de una incidencia del
-repositorio.
+If you need to integrate this project into a closed product, the owner may be
+able to offer a different licence. Get in touch through a repository issue.
 
-Esa posibilidad depende de que el titular conserve los derechos sobre todo el
-código, y por eso cada contribución exige firmar [`CLA.md`](CLA.md).
+That possibility depends on the owner retaining the rights to the whole
+codebase, which is why every contribution requires signing
+[`CLA.md`](CLA.md).
 
-## Cambio de licencia del 14 de agosto de 2026
+## Licence change of 14 August 2026
 
-Las dos primeras publicaciones del repositorio salieron bajo CC BY-NC 4.0. El
-titular era la única persona con derechos sobre el código y no se había
-fusionado ninguna aportación externa, de modo que el cambio no requirió el
-consentimiento de nadie. Quien hubiese obtenido una copia bajo CC BY-NC 4.0
-conserva los derechos que aquella licencia le concedió sobre esa copia, porque
-las licencias de Creative Commons son irrevocables.
+The repository's first two publications went out under CC BY-NC 4.0. The owner
+was the only person holding rights to the code and no outside contribution had
+been merged, so the change required nobody's consent. Anyone who obtained a copy
+under CC BY-NC 4.0 keeps the rights that licence granted them over that copy,
+because Creative Commons licences are irrevocable.

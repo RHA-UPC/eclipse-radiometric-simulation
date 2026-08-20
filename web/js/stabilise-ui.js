@@ -83,9 +83,9 @@
             ? Math.hypot(res.cx - prev[0], res.cy - prev[1]) > Stab.K.JUMP_MAX * Math.max(1, gap * 25)
             : false;
           if (res && !jump) {
-            // El centro se guarda en píxeles del ORIGEN, que es donde se va a
-            // dibujar; el radio también, porque es lo que se enseña. Dentro
-            // del bucle todo sigue en píxeles de trabajo.
+            // The centre is stored in SOURCE pixels, which is where it will
+            // be drawn; the radius too, because that is what gets shown.
+            // Inside the loop everything stays in working pixels.
             samples.push({ t: meta.mediaTime, cx: res.cx / gr.scale, cy: res.cy / gr.scale,
                            r: res.r / gr.scale, regime: res.regime });
             prev = [res.cx, res.cy]; r = res.r; lastT = meta.mediaTime;

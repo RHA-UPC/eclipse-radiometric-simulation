@@ -1,91 +1,92 @@
-# Seguridad
+# Safety
 
-Lee esto antes de usar cualquier número de este repositorio para decidir qué
-hacer con tus ojos o con tu cámara.
+Read this before using any number from this repository to decide what to do with
+your eyes or your camera.
 
-## Lo esencial
+## The essentials
 
-**Mirar al Sol sin un filtro certificado ISO 12312-2 puede provocar daño
-retiniano permanente e indoloro.** No duele porque la retina no tiene receptores
-de dolor, así que no notarás nada mientras ocurre.
+**Looking at the Sun without a filter certified to ISO 12312-2 can cause
+permanent, painless retinal damage.** It is painless because the retina has no
+pain receptors, so you will feel nothing while it happens.
 
-**El único momento en que el filtro se retira es entre el segundo y el tercer
-contacto**, o sea durante la totalidad, y solo si estás dentro de la franja
-umbral. Fuera de ella no hay ningún momento seguro.
+**The only moment the filter comes off is between second and third contact**,
+that is, during totality, and only if you are inside the umbral path. Outside
+it, no moment is safe.
 
-**Una cámara sin filtro solar frontal concentra el Sol sobre piezas que no lo
-resisten.** Y un visor óptico entrega ese haz concentrado directamente a tu ojo.
+**A camera without a front solar filter concentrates the Sun onto parts that
+cannot take it.** And an optical viewfinder delivers that concentrated beam
+straight into your eye.
 
-## Por qué este proyecto insiste tanto
+## Why this project insists
 
-Sus propios resultados dicen que el Sol de aquella tarde, a menos de cinco
-grados de altura y con once masas de aire de atmósfera por delante, **seguía
-superando el límite térmico retiniano de ICNIRP en un 30 %** en el primer
-contacto. Con la pupila dilatada, la fijación admisible bajaba a doce segundos.
+Its own results say that the Sun that afternoon, below five degrees of altitude
+and with eleven air masses of atmosphere in the way, **still exceeded the ICNIRP
+retinal thermal limit by 30 %** at first contact. With a dilated pupil, the
+admissible fixation dropped to twelve seconds.
 
-Ese Sol bajo, rojo y aparentemente inofensivo no produce deslumbramiento, así
-que el reflejo de aversión que normalmente te obliga a apartar la vista
-desaparece. **El peligro sobrevive a la incomodidad.** Esa es la conclusión más
-importante de todo el trabajo y la más fácil de pasar por alto.
+That low, red, apparently harmless Sun produces no glare, so the aversion
+response that normally forces you to look away disappears. **The hazard outlives
+the discomfort.** That is the most important conclusion of the whole work and
+the easiest to miss.
 
-## Qué es y qué no es un resultado de este repositorio
+## What a result from this repository is, and is not
 
-Los tiempos de exposición que calcula el proyecto son **el resultado de aplicar
-las ecuaciones de ICNIRP 2013 bajo hipótesis declaradas**, no una recomendación
-de cuánto puedes mirar.
+The exposure times this project computes are **the result of applying the ICNIRP
+2013 equations under declared assumptions**, not a recommendation of how long
+you may look.
 
-En concreto, un tiempo de fijación calculado:
+Specifically, a computed fixation time:
 
-- corresponde a **un emplazamiento, una altura solar y un estado atmosférico
-  concretos**, y no se traslada a otras condiciones
-- supone un ojo sano, sin cirugía refractiva, sin afaquia y sin medicación
-  fotosensibilizante
-- supone un diámetro pupilar que el propio trabajo discute y que no puedes medir
-  en el campo
-- es **un límite de exposición, no un objetivo**. Los límites de ICNIRP marcan
-  dónde empieza el riesgo conocido, no hasta dónde es prudente llegar.
+- corresponds to **one site, one solar altitude and one atmospheric state**, and
+  does not transfer to other conditions
+- assumes a healthy eye, without refractive surgery, without aphakia and without
+  photosensitising medication
+- assumes a pupil diameter that the work itself discusses and that you cannot
+  measure in the field
+- is **an exposure limit, not a target**. ICNIRP limits mark where known risk
+  begins, not how far it is prudent to go.
 
-Ningún número de aquí autoriza a nadie a mirar al Sol.
+No number here authorises anyone to look at the Sun.
 
-## Si el proyecto llega a ser una plataforma web
+## If the project becomes a web platform
 
-Estas condiciones son vinculantes para cualquier interfaz que se construya sobre
-este código, y así lo recoge [`CONTRIBUTING.md`](CONTRIBUTING.md):
+These conditions bind any interface built on this code, as
+[`CONTRIBUTING.md`](CONTRIBUTING.md) records:
 
-1. Ningún resultado de exposición ocular se presenta como consejo. Se presenta
-   como cálculo, con sus hipótesis visibles junto al número.
-2. La exigencia de filtro certificado ISO 12312-2 aparece en la interfaz, no
-   enterrada en unos términos legales.
-3. Ninguna respuesta afirma que mirar sea seguro, en ninguna circunstancia y con
-   ningún redondeo.
-4. Las incertidumbres se muestran. A masa de aire 10,7 los tres modelos de cielo
-   claro que el trabajo compara difieren en un factor tres, y ocultarlo daría una
-   falsa sensación de precisión.
-5. La geometría se verifica antes de responder. Decirle a alguien que está en la
-   franja de totalidad cuando no lo está es el peor error posible, porque le
-   llevaría a quitarse el filtro con fotosfera a la vista.
+1. No ocular exposure result is presented as advice. It is presented as a
+   calculation, with its assumptions visible next to the number.
+2. The ISO 12312-2 certified filter requirement appears in the interface, not
+   buried in legal terms.
+3. No answer states that looking is safe, under any circumstances and at any
+   rounding.
+4. Uncertainties are shown. At air mass 10.7 the three clear-sky models the work
+   compares differ by a factor of three, and hiding that would convey false
+   precision.
+5. Geometry gets verified before answering. Telling someone they are inside the
+   path of totality when they are not is the worst possible failure, because it
+   would lead them to remove the filter with photosphere still visible.
 
-## Sobre el equipo fotográfico
+## About photographic equipment
 
-El trabajo concluye que **el sensor** de una réflex con un zoom lento no corría
-riesgo térmico apreciable con el Sol a esa altura. Esa conclusión **no se
-extiende al resto de la cámara**: la cortinilla del obturador y la pantalla de
-enfoque son piezas delgadas y sin disipación sobre las que la misma imagen solar
-cae mientras encuadras.
+The work concludes that **the sensor** of a DSLR with a slow zoom faced no
+appreciable thermal risk with the Sun at that altitude. That conclusion **does
+not extend to the rest of the camera**: the shutter curtain and the focusing
+screen are thin, unsunk parts onto which the same solar image falls while you
+frame the shot.
 
-Además, el margen calculado depende del diafragma. Un teleobjetivo de 300 mm a
-f/2,8 apuntado al Sol de mediodía se queda en un factor 1,9 contra el único
-umbral publicado. La advertencia general está justificada; lo que el trabajo
-acota es un caso concreto.
+The computed margin also depends on the aperture. A 300 mm telephoto at f/2.8
+pointed at the midday Sun comes down to a factor of 1.9 against the only
+published threshold. The general warning is justified; what the work bounds is
+one specific case.
 
-**Usa filtro solar frontal durante toda la fase parcial, encuadra en visión en
-directo y no por el visor óptico.**
+**Use a front solar filter throughout the partial phase, and frame in live view
+rather than through the optical viewfinder.**
 
-## Sin garantía
+## No warranty
 
-Este software y este documento se distribuyen sin garantía de ningún tipo, como
-recogen la AGPL-3.0 en sus secciones 15 y 16 y la CC BY-SA 4.0 en su sección 5.
-Quien los use asume la responsabilidad de sus decisiones.
+This software and this document are distributed without warranty of any kind, as
+stated in sections 15 and 16 of the AGPL-3.0 and section 5 of the CC BY-SA 4.0.
+Whoever uses them takes responsibility for their own decisions.
 
-Para orientación de referencia, consulta la
-[guía de seguridad ocular de la American Astronomical Society](https://eclipse.aas.org/eye-safety).
+For reference guidance, see the
+[American Astronomical Society eye safety guide](https://eclipse.aas.org/eye-safety).

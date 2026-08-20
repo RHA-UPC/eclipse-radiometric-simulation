@@ -1,462 +1,510 @@
-# Revisiones adversariales
+# Adversarial reviews
 
-Tres agentes independientes recibieron el encargo de refutar el trabajo, no de
-elogiarlo, con instrucción de escribir cada hallazgo a disco en cuanto lo
-establecieran. Esa instrucción salvó la segunda revisión: murió por límite de
-sesión con los hallazgos ya escritos. La tercera murió igual y se reanudó desde
-su propio contexto.
+Four independent agents were told to refute the work, not to praise it, with
+instructions to write every finding to disk the moment it was established. That
+instruction saved the second review: it died on a session limit with the
+findings already written. The third died the same way and resumed from its own
+context.
 
-Los volcados originales quedan en `data/damage_findings.md` y
+The original dumps remain in `data/damage_findings.md` and
 `data/review2_findings.md`.
 
-## Revisión 1: óptica y termodinámica
+## Review 1: optics and thermodynamics
 
-17 hallazgos.
+17 findings.
 
-### Sobrevivieron al ataque
+### What survived the attack
 
-La radiometría de plano focal cierra el balance de energía de forma exacta y
-respeta el límite termodinámico de concentración. La solución transitoria de
-Carslaw y Jaeger coincide con una derivación independiente por función de Green
-del semiespacio a 10⁻¹⁰ sobre ocho décadas de tiempo. La cuadratura de
-oscurecimiento de limbo reproduce el área exacta de lente círculo-círculo a
-10⁻⁵. El uso del valor central en vez del promediado en área es la elección
-conservadora y el trabajo la aplica de forma consistente.
+The focal-plane radiometry closes the energy balance exactly and respects the
+thermodynamic concentration limit. The Carslaw and Jaeger transient solution
+matches an independent half-space Green's function derivation to 10⁻¹⁰ over
+eight decades of time. The limb-darkening quadrature reproduces the exact
+circle-circle lens area to 10⁻⁵. Using the central value rather than the
+area-averaged one is the conservative choice and the work applies it
+consistently.
+
+### What fell
 
-### Cayeron
+**The supposed thermal bracket bracketed nothing.** The paper presented the
+one-dimensional case (0.37 K) and the semi-infinite one (1.71 K) as lower and
+upper bounds. The reviewer built the physically intermediate and worse case: a
+thin die with an adiabatic back face, where heat spreads sideways inside a
+0.3 mm plate. It gives 6.84 K, four times the reported value. The paper now
+gives all three regimes and quotes the worst.
 
-**El supuesto acotamiento térmico no acotaba nada.** El paper presentaba el caso
-unidimensional (0,37 K) y el semiinfinito (1,71 K) como cotas inferior y
-superior. El revisor construyó el caso físicamente intermedio y peor: dado
-delgado con cara trasera adiabática, donde el calor se expande lateralmente
-dentro de una placa de 0,3 mm. Da 6,84 K, cuatro veces el valor reportado. El
-paper ahora da los tres regímenes y cita el peor.
+**"Four orders of magnitude" appeared three times and was wrong all three
+times.** In one case the error was a thousandfold: a factor of four written as
+four orders of magnitude.
 
-**"Cuatro órdenes de magnitud" aparecía tres veces y las tres estaba mal.** En
-un caso el error era de mil: un factor cuatro escrito como cuatro órdenes de
-magnitud.
+**The Perseid bound contradicted the paper's own figure.** The abstract said
+0.32 % as a maximum; the sweep contained 0.71 % and figure 9 drew it. After
+correcting the duration of totality that maximum dropped to 0.67 %, which is
+the value the paper publishes now.
 
-**La cota de Perseidas contradecía la propia figura del paper.** El resumen decía
-0,32 % como máximo; el barrido contenía 0,71 % y la figura 9 lo dibujaba.
-Tras corregir la duración de la totalidad ese máximo bajó a 0,67 %, que es
-el valor que el paper publica ahora.
-
-**El denominador del margen de seguridad no estaba citado.** El paper afirmaba
-"dos órdenes de magnitud por debajo de cualquier umbral de daño plausible" sin
-citar ninguno, y callaba que la búsqueda había fracasado.
-
-**El alcance del modelo estaba mal declarado.** El análisis cubría el sensor, y
-la conclusión operativa decía "en ninguna combinación de focal y diafragma" sin
-aclarar que con el espejo bajado el Sol cae sobre la pantalla de enfoque y no
-sobre el sensor.
-
-**Siete cifras escritas a mano, cinco erróneas**, en un documento cuyo pie
-afirmaba que ninguna lo estaba.
-
-## Revisión 2: geometría, ojo y estadística
-
-Cuatro hallazgos críticos o mayores. Todos correctos.
-
-### El bug
-
-El paper declaraba una discrepancia de quince segundos entre su cálculo DE440s
-(74,1 s) y su reimplementación besseliana (59,2 s), y la atribuía a la
-sensibilidad extrema de una geometría rasante. Escribió dos párrafos de física
-para explicarla.
-
-Era una omisión de una línea. El ángulo horario μ que Espenak tabula está
-referido a TDT, y convertirlo al ángulo horario universal del observador exige
-restarle 1,002738·ΔT·15°/3600. Sin ese término la franja umbral entera se
-desplazaba 0,29825° de longitud, que a esa latitud son 25 km.
-
-Corregido, la reimplementación reproduce las cuatro duraciones centrales de la
-NASA con desviación máxima de 0,04 s, y en el emplazamiento da 68,86 s frente a
-70,27 s del DE440s. La horquilla real es de 1,4 s.
-
-El revisor añadió una observación incómoda: `validate.py` tenía criterio de
-aprobado en tres de sus cuatro comprobaciones, y ninguno en la que escondía el
-fallo.
-
-### La constante equivocada
-
-`geometry.py` usaba k = 0,2725076 para todos los contactos y atribuía esa
-elección a Espenak y Meeus. Los elementos besselianos de la NASA, transcritos en
-el propio `data/literature.json` del proyecto, declaran k1 = 0,272488 para los
-contactos penumbrales y k2 = 0,272281 para los umbrales. C2 y C3 son umbrales.
-La constante equivocada inflaba la totalidad 3,8 s.
-
-### El artefacto numérico
-
-Los "55 km hasta el límite norte", repetidos tres veces incluido en las
-conclusiones operativas, eran el extremo del intervalo de búsqueda de `brentq`.
-`totality_duration()` devuelve exactamente 0.0 fuera de la franja, así que
-`brentq` evaluaba el extremo, encontraba f(b) == 0 y lo devolvía sin iterar.
-Cambiar el `+ 5.0` del código por `+ 8.0` habría hecho que el paper dijera 58 km.
-
-El valor real: 47,8 km hacia el norte franco, 41,9 km perpendiculares. El
-revisor lo verificó por dos vías independientes, incluida una interpolación de
-la tabla de la NASA sin usar código del proyecto, con acuerdo de 220 m.
-
-### El ángulo equivocado y la radiancia que no se conserva
-
-Dos errores en el límite térmico retiniano, ambos en dirección insegura.
-
-El primero: α en L_R = 2,8·10⁴·α⁻¹ es el diámetro angular de la fuente. El
-código lo evaluaba en γ_ph = 11 mrad, que pertenece al límite fotoquímico.
-Corregido a 9,18 mrad, la irradiancia corneal equivalente pasa de 241,9 a
-201,9 W/m², y el cociente de peligro en C1 de 1,09 a 1,30.
-
-El segundo: el código escalaba la radiancia ponderada por la transmisión del
-eclipse, con lo que el peligro térmico tabulado se desvanecía según la
-obscuración se acercaba a la unidad. La Luna quita área, no radiancia. Un Sol
-cubierto al 99 % proyecta un creciente cuya irradiancia retiniana es la de la
-fotosfera completa, y por eso ICNIRP escribe ese límite en radiancia. El tratamiento correcto mantiene la radiancia fija y deja que
-responda α, tomado como la media de las dimensiones mayor y menor del creciente.
-
-### Sobrevivieron
-
-La conversión Ω = πγ²/4, que el revisor demostró que es la que ICNIRP usó para
-derivar su propia forma en irradiancia. El uso de la subtensa completa en vez
-del semiángulo. La corrección por pupila, que no duplica nada. Y la irradiancia
-de luz azul, que el revisor recalculó a mano desde el espectro extraterrestre y
-los espesores ópticos de Rayleigh y aerosol: 23 W/m² frente a los 24 del paper
-en C1.
-
-## El umbral de daño
-
-Cinco intentos de búsqueda murieron por límite de sesión antes de que el sexto,
-con instrucción de escribir a disco de forma incremental, lo cerrara.
-
-Schwarz, Ritt, Koerber y Eberle (2017), *Optical Engineering* 56(3) 034108,
-acceso abierto: 49 kW/cm² para un CMOS monocromo bajo láser continuo de 532 nm
-con 10 s de exposición y mancha efectiva de 9,08 µm de radio. La clase de daño
-es pérdida permanente de sensibilidad de al menos un 10 %, no píxeles muertos: el
-daño en línea en el mismo dispositivo exige 196 kW/cm².
-
-Es el único umbral en onda continua para un sensor de silicio publicado junto
-con su tamaño de mancha. Sin ese dato el número no sirve, porque el reescalado lo
-necesita. No existe segunda medida absoluta con la que contrastar: la que hay
-publica sus intensidades en valor relativo por motivos de seguridad.
-
-El agente también corrigió la dirección de una afirmación del paper. Las
-temperaturas de 150-250 °C que el manuscrito citaba como rango de degradación
-del filtro de color son temperaturas de horneado durante su fabricación, o sea
-una cota de supervivencia. Lo frágil del apilado es la microlente, que refluye
-entre 125 y 150 °C porque se fabrica fundiéndola.
-
-Y buscó evidencia sobre la cortinilla del obturador. No encontró ninguna fuente
-revisada por pares. Las guías que sí existen apuntan al sensor y al ojo: Nikon,
-firmando Espenak, dice que el filtro hace falta para no dañar el sensor de
-imagen, y la guía de la NASA no menciona daño interno a la cámara.
-
-## Revisión 3: la web (19 de agosto de 2026)
-
-Un tercer agente independiente recibió el encargo de refutar `web/`,
-`src/eclipsecat.py` y `src/webdata.py`, con la instrucción de verificar
-ejecutando y de no dar por bueno nada leído. Devolvió 17 hallazgos, todos fuera
-de lo que las autocomprobaciones cubrían, y una lista de lo que sí resistió.
-
-### El peor: contactos bautizados por orden de raíz
-
-`local()` tomaba la primera raíz como C1 y la última como C4. Eso supone que
-las dos caen dentro de la ventana de búsqueda, y con una ventana de ±3,2 h no
-siempre pasa: en el eclipse del 2 de julio de 2038, a 13° S 75° O, el primer
-contacto está a −3,26 h. Solo sobrevivía una raíz, la del **último** contacto,
-y se etiquetaba como primero. Todo lo que luego barría desde C1 hacia adelante
-encontraba un intervalo vacío, así que un punto tres grados al oeste, que ve el
-40 % del disco cubierto con el Sol alto, salía en pantalla como **«Sin eclipse
-visible»**. El censo del agente encontró 17 celdas así y 232 con el orden de
-contactos invertido.
-
-Arreglado por partida doble: los elementos se ajustan y se evalúan sobre ±4 h,
-y los contactos se nombran por **cómo cruza la curva el cero**, no por el orden
-en que salieron las raíces.
-
-### El que la revisión no encontró: ningún eclipse anular era anular
-
-Al tirar del hilo del hallazgo anterior apareció uno mayor. La condición de
-contacto interior estaba escrita `m + L2' = 0`, que es como la tabula Meeus
-para un eclipse total. `L2'` es negativo dentro de la umbra y **positivo**
-dentro de la antumbra, así que esa forma no tiene raíz en un eclipse anular:
-los 18 anulares del catálogo declaraban **cero segundos de anularidad**
-mientras seguían dando la magnitud correcta, que es exactamente el disfraz que
-hace falta para que nadie lo note. La forma correcta es `|m| = |L2'|`.
-
-Con el arreglo, las duraciones centrales reproducen las publicadas: 2027-02-06
-da 468 s frente a 471, 2028-01-26 da 624 frente a 627, 2031-05-21 da 322 frente
-a 326.
-
-La causa de fondo no es la fórmula: es que toda la batería de pruebas
-ejercitaba un único eclipse total.
-
-### Un mapa que se contradecía a sí mismo
-
-Entre γ = 0,9972 y γ ≈ 1,03 el eje de la sombra pasa fuera de la Tierra
-mientras el cono todavía roza el limbo. `classify()` miraba solo el eje, así
-que llamaba parciales a esos eclipses: el mapa no dibujaba franja alguna y, al
-marcar un punto dentro de ella, la ficha respondía «total». Es el caso que la
-regla 5 de [`SAFETY.md`](../SAFETY.md) nombra por su nombre. En el catálogo hay
-uno, el 9 de abril de 2043. Ahora se tipifica bien y la web declara que no
-puede dibujar su franja en vez de insinuar que no existe.
-
-### La franja dibujada era 5 km estrecha
-
-Los límites de la umbra se trazaban desplazando el eje perpendicularmente a la
-velocidad de la sombra en el plano fundamental, ignorando que el observador
-también se mueve: unos cientos de m/s de rotación terrestre contra una umbra
-que va a pocos km/s. La banda salía hasta 5,4 km estrecha por cada lado, un 4 %
-sobre una semianchura de 130 km, y el borde dibujado caía dentro de la región
-que el mismo código llamaba total. Ahora el desplazamiento va perpendicular a
-la velocidad **relativa**, y la prueba ya no compara distancias sino la
-invariante que importa: sobre el borde la duración es cero, tres kilómetros
-dentro no lo es, tres kilómetros fuera vuelve a serlo.
-
-### Norte y sur no eran norte y sur
-
-Las dos etiquetas eran en realidad el lado izquierdo y el derecho del
-movimiento, que coinciden con la latitud solo mientras la sombra viaja hacia el
-este; discrepaban en 174 de unas 6200 épocas muestreadas. Reetiquetarlas época
-a época arregla los nombres y destroza las curvas, porque cada polilínea pasa a
-zigzaguear entre los dos bordes. Se ha quitado el nombre: la función devuelve
-`edges`, dos curvas continuas sin bautizar.
-
-### Redacción que la seguridad no admite
-
-La ficha imprimía **«sin límite»** como tiempo de fijación admisible cuando la
-irradiancia azul quedaba por debajo de 1 W/m². Eso desborda la propia norma,
-que solo se pronuncia hasta 30 000 s, y desborda la regla 3 de `SAFETY.md`, que
-prohíbe cualquier respuesta que se lea como permiso. Con la atmósfera por
-defecto ocurría en 45 celdas de un barrido global. En los mismos casos la
-transmitancia exigida salía **mayor que 1**, que no significa nada físicamente
-y se lee como «no hace falta filtro».
-
-### Formulario sin validar
-
-La atmósfera aceptaba cualquier número finito. Con agua precipitable negativa
-la ficha imprimía `NaN W/m²` bajo una nota que decía «dentro del rango donde el
-modelo está ajustado»; con AOD −1, 4 638 520 W/m². Ahora hay rangos físicos,
-se acotan los valores y se avisa de que se han acotado.
-
-### Lo demás
-
-La subtensa del creciente devolvía cero para **cualquier** par de discos
-anidados, incluida la anularidad, o sea que declaraba peligro térmico nulo en
-el instante en que hay un anillo entero de fotosfera a la vista. Estaba también
-en `src/eye.py`; se ha corregido allí, y como este eclipse es total la rama no
-se dispara y **ninguna cifra publicada cambia**. La transmitancia térmica
-dividía por el haz eclipsado donde `eye.py` divide por el que no lo está. La
-frase de sensibilidad al aerosol citaba una irradiancia que dentro de la umbra
-vale exactamente cero, así que siempre leía «de 0,00 a 0,00 W/m²». γ se
-guardaba sin signo, de modo que no coincidía con ningún catálogo publicado y
-perdía el hemisferio. Las curvas se cerraban sobre los huecos donde la sombra
-deja el globo y los dibujaban como cuerdas rectas de hasta 252 km. Y las
-coordenadas inválidas se rechazaban en silencio, dejando en pantalla el
-resultado del punto anterior bajo las coordenadas nuevas.
-
-### Las pruebas no probaban
-
-El agente mató 20 de 37 mutaciones y documentó las 17 supervivientes. Entre
-ellas: invertir `total` por `anular`, quitar la comprobación del hemisferio
-nocturno, cambiar el radio ecuatorial por el polar, tirar el término cúbico del
-polinomio y sustituir la radiancia sin eclipsar por la eclipsada, que es
-justamente el error histórico que el módulo dice existir para evitar. Había
-además una aserción que comparaba una columna de un CSV contra un literal, sin
-ejecutar nada, y una «invariante de horquilla» que comparaba tres épocas
-distintas creyendo comparar una.
-
-Las dos baterías se reescribieron alrededor de eso. De las mutaciones que
-seguían vivas y son reales, ahora mueren todas; quedan dos equivalentes, en las
-que nombrar los contactos por orden da el mismo resultado que nombrarlos por
-dirección de cruce **porque la ventana es ancha**, y eso lo cubre la prueba de
-la ventana estrecha.
-
-### Procedencia y licencias
-
-`THIRD-PARTY-DATA.md` afirmaba conservar los avisos BSD de pvlib y de Leaflet.
-No los conservaba: había una cita bibliográfica y un `@preserve` con el
-copyright, pero el texto de la licencia y el descargo no estaban en ningún
-sitio del repositorio. Ahora viven en `web/vendor/LICENSE-pvlib.txt` y
-`web/vendor/LICENSE-leaflet.txt`, y el pie de la web enlaza a los dos.
-
-El exponente de Ångström y las condiciones de la ASTM G173 eran literales sin
-entrada en `data/literature.json`, contra la regla que gobierna el repositorio.
-El primero se lee ahora del propio `pvlib` en tiempo de exportación, así que no
-puede separarse de lo que `spectral.py` ejecuta; las segundas tienen entrada
-propia, con la advertencia de que la norma es de pago y no se consultó. Los
-límites de ICNIRP se comprueban contra la cita literal antes de escribirse.
-
-### Sobrevivieron
-
-`spectrl2` reproduce `pvlib.spectrum.spectrl2` **exactamente** en 160 casos
-(cuatro atmósferas × diez ángulos cenitales × cuatro días del año): diferencia
-relativa peor, 0,000000 %. Los puntos de eclipse máximo del catálogo coinciden
-con los publicados por la NASA. Las constantes de ICNIRP coinciden con las citas
-literales. El manejo de longitudes en ±180 y de los polos es correcto. Y las
-cinco condiciones de `SAFETY.md` se cumplen en lo que la página renderiza: la
-pantalla de entrada, el bloque rojo bajo cada resultado, las hipótesis pegadas a
-las cifras, el aviso de masa de aire y la verificación previa de la geometría.
-
-## Revisión 4: las bandas vectoriales (20 de agosto de 2026)
-
-Las bandas de obscuración pasaron de trama a polígonos, porque una trama tiene
-una resolución y un mapa tiene tantas como niveles de zoom. Un agente
-independiente recibió el encargo de romper el código nuevo, con la lista de
-afirmaciones que sostenía y la instrucción de refutarlas con código, no con
-lectura. Encontró once cosas. Estas son las que importaban.
-
-### El marco no estaba fuera del mapa
-
-El dominio de los contornos se enmarcaba con una fila y una columna de −1 una
-celda por fuera del mundo, y el comentario decía que el tramo de anillo que
-corre por ese marco cae fuera de lo que la vista alcanza. **Era falso.** Las
-aristas que tocan el marco no se afinaban, así que su corte salía de interpolar
-linealmente contra −1 sobre 1,35°; como el último nodo real estaba a 0,45° del
-borde del mundo, el corte caía **dentro** del mapa siempre que el valor fuera
-menor que (1+3·nivel)/2 — para el nivel 0,9, siempre.
-
-Medido: la banda dibujada era la equivocada hasta **66 km dentro del mapa** por
-el antimeridiano (2039-06-21, 46° N 179,15° E: valor real 0,724, pintada la
-banda del 0,6) y **39 km** por los polos (2039-12-15, 89,65° S: valor real
-0,941, pintadas dos bandas de menos). 3126 puntos mal en la franja del
-antimeridiano y 3114 en las polares, repartidos por los 56 eclipses. En el
-interior del mapa, cero errores de miles de puntos de control.
-
-Corregido metiendo **nodos reales en ±180 y ±90**, calculados y no
-interpolados: con ellos, todo cruce contra el marco cae en el borde del mundo o
-más allá, que es donde se pretendía que cayera. Vuelto a medir con el mismo
-procedimiento del revisor: **cero** puntos con la banda equivocada, en los 56.
-
-### 1434 anillos que se cruzaban consigo mismos
-
-Con `fill-rule: evenodd` cada lazo invierte el relleno, así que un anillo que se
-cruza pinta la banda de al lado en la lengüeta que forma. Había 1447 cruces, 233
-de ellos a más de un grado de cualquier borde, en 23 eclipses. El peor caso
-—2026-02-17, nivel 0,8— era un anillo de 62 vértices que se cruzaba **25 veces**
-consigo mismo, y con todos sus vértices correctos: `maxObscuration` valía
-0,800000 ± 10⁻⁶ en todos ellos. El defecto no era la posición sino la
-poligonalización.
-
-Dos causas. Los picos hasta el marco, que se fueron con la corrección anterior.
-Y la subdivisión adaptativa, que buscaba el contorno **una cuerda entera** a
-cada lado de su punto medio —el comentario decía media— y a esa distancia podía
-engancharse a otra rama del contorno que pasara cerca. Corregido a media cuerda.
-Vuelto a medir: **cero autocruces** en los 56 eclipses.
-
-### El mapa y la ficha usaban dos horizontes distintos
-
-El mapa cortaba con ζ > 0, el horizonte **geocéntrico**; la ficha del panel, con
-la altura **geodésica** sobre el horizonte local. Sobre un elipsoide no es lo
-mismo: los dos criterios discrepan hasta 0,091° de altura solar y, cerca del
-ocaso, esos minutos valen puntos de obscuración. En 2026-08-12 a 75° N 100° E la
-ficha respondía 57,9 % sobre una banda pintada entre el 30 y el 40 %. Un barrido
-de los 56 eclipses encontró 56 puntos con más de 0,01 de discrepancia, el peor
-de 0,19.
-
-Un mapa que contradice a su propia respuesta es peor que un mapa tosco, y
-`SAFETY.md` lo prohíbe explícitamente. Corregido usando el horizonte geodésico
-en todas partes. Vuelto a medir: **1 punto de 13 987**, y ese por otra causa —la
-siguiente.
-
-### La pista temporal cambiaba la función
-
-Para no barrer las seis horas en cada uno de los miles de vértices que hay que
-afinar, `maxObscuration` acepta como pista el instante del máximo de la celda
-más cercana y solo mira ±2 pasos alrededor. El revisor instrumentó las llamadas
-**reales** y encontró que la ventana fija erraba en 59 de 93 290 llamadas, una
-de ellas por **0,54 de obscuración**: el instante del máximo salta de una celda
-a la vecina justo al cruzar el terminador, y ahí ±2 pasos no lo alcanzan.
-Corregido ensanchando la ventana mientras el máximo siga cayendo en su borde.
-Vuelto a medir: **0 de 6157** llamadas difieren del barrido entero.
-
-De paso encontró que el respaldo que debía cubrir ese caso estaba escrito
-`if (bk < 0 && lo > 0)`, o sea desactivado exactamente cuando la pista valía 0,
-1 o 2. No se disparaba hoy —ninguna celda del catálogo tiene su máximo ahí— pero
-habría bastado con cambiar la ventana temporal.
-
-### El barrido de 121 instantes se pierde los eclipses rasantes
-
-Cerca del borde de la penumbra el eclipse dura minutos y el barrido no lo ve.
-Medido contra un barrido de 2001 instantes, la pérdida llega a **0,0165** de
-obscuración, y 32 de 2227 puntos de la orla con eclipse se leen como cero. El
-contorno del 0,1 % perseguía ahí una función que vale cero a trozos.
-
-No se ha corregido: se ha **retirado la afirmación**. La banda más exterior
-empieza ahora en el 5 %, tres veces por encima de esa pérdida. Lo que queda sin
-dibujar son unos 175 km de orla sobre una penumbra de 7000, y el límite de
-verdad ya estaba dibujado desde el principio: es el contorno de la penumbra, la
-línea de trazos. La leyenda dice «5 → 100 %».
-
-### Las pruebas no podían ver tres de los cinco
-
-El apartado de los contornos filtraba los vértices con `|lat| > 89,5` o
-`|lon| > 179,5` con el comentario «el marco» — justo la franja donde vivía el
-peor defecto. Quitando ese filtro y sin tocar nada más, 112 de 358 vértices de
-2026-08-12 salían mal. La medida de la flecha de cuerda descartaba en silencio
-toda cuerda sin cambio de signo en ±30 km, que es exactamente lo que les pasaba
-a las cuerdas malas, a 100 y 285 km de la curva. Y la comprobación de
-anidamiento miraba el valor en cada vértice, nunca la topología del polígono, así
-que los 1434 cruces eran invisibles para ella.
-
-Reescritas: ya no filtran el borde del mundo, buscan la curva a cinco cuerdas de
-distancia, cuentan aparte los vértices del terminador en vez de descartarlos, y
-hay dos apartados nuevos —uno que compara la banda dibujada por paridad contra
-la verdadera recorriendo a propósito el antimeridiano y los dos polos, y otro
-que busca autocruces.
-
-### Sobrevivieron
-
-Tres afirmaciones aguantaron todo lo que se les echó. Que `obsAt` —una copia a
-mano de `evaluate` + `geom` + `obscuration`, escrita para no asignar objetos en
-el bucle caliente— es idéntica a sus originales: **cero de diferencia** en
-291 951 muestras con el Sol sobre el horizonte, sobre 56 eclipses, incluidos los
-polos y el antimeridiano. Que marching squares no produce cadenas abiertas: 632
-cadenas sobre 56 eclipses × 10 niveles, **ninguna abierta**, ninguna arista con
-grado distinto de dos, y ninguna silla de montar mal resuelta —la media de las
-cuatro esquinas es el valor exacto del interpolante bilineal en el centro, así
-que dos celdas vecinas no pueden decidirla distinto. Y que el coste está
-acotado: ningún eclipse pasa de dos segundos ni de 40 000 vértices.
-
-También descartó dos sospechas propias tras medirlas: la ventana de ±3,2 h no
-trunca ningún máximo (diferencia exactamente cero contra ±4 h en 25 307 puntos),
-y en el interior del mapa la banda dibujada coincidía con la verdadera en todos
-los puntos de control.
-
-### Lo que queda dicho y no arreglado
-
-Sobre el terminador el borde de la región no es una curva de nivel sino un
-salto: la función pasa de cero a un valor finito porque el Sol se pone. La
-bisección converge ahí a la propia línea del ocaso, que es lo correcto, pero la
-distancia a «la curva» la fija la rama de al lado. Todas las cuerdas que quedan
-peores de un kilómetro están ahí —comprobado: el Sol a 0,00° en su máximo en
-todas—, y las pruebas las apartan contándolas, con un tope sobre cuántas puede
-haber. Fuera del terminador la flecha de cuerda queda en 64 m de mediana, 0,22
-km en el percentil 90 y menos de 2 km en el peor caso.
-
-Y una advertencia del propio revisor que no es un defecto del código: 600 ms de
-cálculo en esta máquina son varios segundos de interfaz congelada en un teléfono
-modesto.
-
-## Lección
-
-Las cuatro revisiones encontraron cosas distintas. La primera atacó la física y
-sobrevivió casi entera; lo que cayó fue la retórica del margen. La segunda atacó
-el código y encontró tres errores numéricos reales, dos de ellos en funciones que
-existían precisamente para validar.
-
-La tercera atacó una interfaz y encontró que el código era correcto justo donde
-había pruebas y frágil en todo lo demás: el caso que las pruebas ejercitaban era
-un eclipse total del hemisferio norte, y prácticamente todo lo que cayó estaba
-fuera de esa descripción. El hallazgo más grave no lo encontró ella, sino el
-hilo que dejó: los eclipses anulares no eran anulares.
-
-La cuarta atacó un algoritmo nuevo y encontró que lo correcto era casi todo
-—la aritmética, la topología, el coste— y que lo roto estaba en las **fronteras
-del dominio** y en las **optimizaciones**: el marco que se creía fuera del mapa
-y estaba dentro, la pista temporal que convertía la función en otra, la búsqueda
-que se enganchaba a la rama de al lado. Ninguna de las tres se veía leyendo el
-código, y las tres las tapaba una prueba que descartaba justo esa franja.
-
-El patrón común: los fallos se escondían donde no había criterio de aprobado. La
-comprobación V2 no tenía uno. `brentq` no tenía comprobación de que su intervalo
-contuviera un cambio de signo. Y el pie de reproducibilidad afirmaba que ninguna
-cifra estaba escrita a mano sin que nada lo verificara.
+**The denominator of the safety margin was not cited.** The paper claimed "two
+orders of magnitude below any plausible damage threshold" without citing one,
+and stayed quiet about the search having failed.
+
+**The model's scope was declared wrongly.** The analysis covered the sensor,
+and the operational conclusion said "in no combination of focal length and
+aperture" without making clear that with the mirror down the Sun falls on the
+focusing screen and not on the sensor.
+
+**Seven hand-written figures, five of them wrong**, in a document whose
+footnote claimed none were.
+
+## Review 2: geometry, eye and statistics
+
+Four critical or major findings. All correct.
+
+### The bug
+
+The paper declared a fifteen-second discrepancy between its DE440s calculation
+(74.1 s) and its Besselian reimplementation (59.2 s), and attributed it to the
+extreme sensitivity of a grazing geometry. It wrote two paragraphs of physics
+to explain it.
+
+It was a one-line omission. The hour angle μ Espenak tabulates is referred to
+TDT, and converting it to the observer's universal hour angle requires
+subtracting 1.002738·ΔT·15°/3600. Without that term the whole umbral path
+shifted by 0.29825° of longitude, which at that latitude is 25 km.
+
+Corrected, the reimplementation reproduces NASA's four central durations with a
+maximum deviation of 0.04 s, and at the site it gives 68.86 s against DE440s's
+70.27 s. The real spread is 1.4 s.
+
+The reviewer added an uncomfortable observation: `validate.py` had a pass
+criterion in three of its four checks, and none in the one that was hiding the
+failure.
+
+### The wrong constant
+
+`geometry.py` used k = 0.2725076 for every contact and attributed that choice
+to Espenak and Meeus. NASA's Besselian elements, transcribed in the project's
+own `data/literature.json`, declare k1 = 0.272488 for the penumbral contacts
+and k2 = 0.272281 for the umbral ones. C2 and C3 are umbral. The wrong constant
+inflated totality by 3.8 s.
+
+### The numerical artefact
+
+The "55 km to the northern limit", repeated three times including in the
+operational conclusions, was the end of `brentq`'s search bracket.
+`totality_duration()` returns exactly 0.0 outside the path, so `brentq`
+evaluated the end, found f(b) == 0 and returned it without iterating. Changing
+the `+ 5.0` in the code to `+ 8.0` would have made the paper say 58 km.
+
+The real value: 47.8 km due north, 41.9 km perpendicular. The reviewer verified
+it two independent ways, including an interpolation of NASA's table using none
+of the project's code, agreeing to 220 m.
+
+### The wrong angle, and a radiance that is not conserved
+
+Two errors in the retinal thermal limit, both in the unsafe direction.
+
+The first: α in L_R = 2.8·10⁴·α⁻¹ is the angular diameter of the source. The
+code evaluated it at γ_ph = 11 mrad, which belongs to the photochemical limit.
+Corrected to 9.18 mrad, the equivalent corneal irradiance goes from 241.9 to
+201.9 W/m², and the hazard ratio at C1 from 1.09 to 1.30.
+
+The second: the code scaled the weighted radiance by the eclipse transmission,
+so the tabulated thermal hazard vanished as obscuration approached unity. The
+Moon removes area, not radiance. A Sun 99 % covered projects a crescent whose
+retinal irradiance is that of the full photosphere, which is why ICNIRP writes
+that limit as a radiance. The correct treatment holds the radiance fixed and
+lets α respond, taken as the mean of the crescent's major and minor
+dimensions.
+
+### What survived
+
+The conversion Ω = πγ²/4, which the reviewer showed is the one ICNIRP used to
+derive its own irradiance form. Using the full subtense rather than the half
+angle. The pupil correction, which double-counts nothing. And the blue-light
+irradiance, which the reviewer recomputed by hand from the extraterrestrial
+spectrum and the Rayleigh and aerosol optical depths: 23 W/m² against the
+paper's 24 at C1.
+
+## The damage threshold
+
+Five search attempts died on session limits before the sixth, instructed to
+write to disk incrementally, closed it.
+
+Schwarz, Ritt, Koerber and Eberle (2017), *Optical Engineering* 56(3) 034108,
+open access: 49 kW/cm² for a monochrome CMOS under a continuous 532 nm laser
+with 10 s of exposure and an effective spot of 9.08 µm radius. The damage class
+is a permanent loss of at least 10 % sensitivity, not dead pixels: in-line
+damage on the same device requires 196 kW/cm².
+
+It is the only continuous-wave threshold for a silicon sensor published
+together with its spot size. Without that datum the number is useless, because
+the rescaling needs it. No second absolute measurement exists to compare
+against: the one that does publishes its intensities in relative terms for
+safety reasons.
+
+The agent also corrected the direction of one of the paper's claims. The
+150-250 °C the manuscript cited as the colour filter's degradation range are
+baking temperatures during manufacture, that is, a survival bound. The fragile
+part of the stack is the microlens, which reflows between 125 and 150 °C
+because it is made by melting it.
+
+And it searched for evidence about the shutter curtain. It found no
+peer-reviewed source. The guidance that does exist points at the sensor and at
+the eye: Nikon, with Espenak's byline, says the filter is needed to avoid
+damaging the image sensor, and NASA's guide does not mention internal damage to
+the camera.
+
+## Review 3: the web (19 August 2026)
+
+A third independent agent was told to refute `web/`, `src/eclipsecat.py` and
+`src/webdata.py`, with instructions to verify by running and to take nothing on
+reading. It returned 17 findings, all outside what the self-checks covered, and
+a list of what did hold.
+
+### The worst: contacts named by root order
+
+`local()` took the first root as C1 and the last as C4. That assumes both fall
+inside the search window, and with a ±3.2 h window they do not always: in the
+eclipse of 2 July 2038, at 13° S 75° W, first contact is at −3.26 h. Only one
+root survived, the **last** contact's, and it was labelled as the first.
+Everything that then swept forward from C1 found an empty interval, so a point
+three degrees west, which sees 40 % of the disk covered with the Sun high,
+appeared on screen as **"No eclipse visible"**. The agent's census found 17
+such cells and 232 with the contact order inverted.
+
+Fixed twice over: the elements are fitted and evaluated over ±4 h, and contacts
+are named by **how the curve crosses zero**, not by the order the roots came
+out in.
+
+### The one the review did not find: no annular eclipse was annular
+
+Pulling on the previous finding's thread turned up a bigger one. The interior
+contact condition was written `m + L2' = 0`, which is how Meeus tabulates it
+for a total eclipse. `L2'` is negative inside the umbra and **positive** inside
+the antumbra, so that form has no root in an annular eclipse: the catalogue's
+18 annulars declared **zero seconds of annularity** while still giving the
+correct magnitude, which is exactly the disguise needed for nobody to notice.
+The correct form is `|m| = |L2'|`.
+
+With the fix, the central durations reproduce the published ones: 2027-02-06
+gives 468 s against 471, 2028-01-26 gives 624 against 627, 2031-05-21 gives 322
+against 326.
+
+The underlying cause is not the formula: it is that the entire test suite
+exercised a single total eclipse.
+
+### A map that contradicted itself
+
+Between γ = 0.9972 and γ ≈ 1.03 the shadow axis passes outside the Earth while
+the cone still grazes the limb. `classify()` looked only at the axis, so it
+called those eclipses partial: the map drew no path and, on marking a point
+inside it, the panel answered "total". It is the case rule 5 of
+[`SAFETY.md`](../SAFETY.md) names explicitly. The catalogue has one, 9 April
+2043. It is now classified correctly and the page declares that it cannot draw
+its path rather than implying there is none.
+
+### The drawn path was 5 km narrow
+
+The umbral limits were traced by displacing the axis perpendicular to the
+shadow's velocity in the fundamental plane, ignoring that the observer moves
+too: a few hundred m/s of Earth rotation against an umbra travelling at a few
+km/s. The band came out up to 5.4 km narrow on each side, 4 % of a 130 km half
+width, and the drawn edge fell inside the region the same code called total.
+The displacement now runs perpendicular to the **relative** velocity, and the
+test no longer compares distances but the invariant that matters: on the edge
+the duration is zero, three kilometres inside it is not, three kilometres
+outside it is zero again.
+
+### North and south were not north and south
+
+The two labels were really the left and right sides of the motion, which
+coincide with latitude only while the shadow travels east; they disagreed in
+174 of some 6200 sampled epochs. Relabelling epoch by epoch fixes the names and
+wrecks the curves, because each polyline starts zigzagging between the two
+edges. The name has been removed: the function returns `edges`, two continuous
+unnamed curves.
+
+### Wording that safety does not allow
+
+The panel printed **"no limit"** as the admissible fixation time when the blue
+irradiance fell below 1 W/m². That overreaches the standard itself, which only
+speaks up to 30 000 s, and overreaches rule 3 of `SAFETY.md`, which forbids any
+answer that reads as permission. With the default atmosphere it happened in 45
+cells of a global sweep. In the same cases the required transmittance came out
+**greater than 1**, which means nothing physically and reads as "no filter
+needed".
+
+### An unvalidated form
+
+The atmosphere accepted any finite number. With negative precipitable water the
+panel printed `NaN W/m²` under a note saying "inside the range where the model
+is fitted"; with AOD −1, 4 638 520 W/m². There are physical ranges now, values
+are clamped, and the clamping is announced.
+
+### The rest
+
+The crescent's subtense returned zero for **any** pair of nested disks,
+annularity included, that is, it declared zero thermal hazard at the instant
+there is a whole ring of photosphere in view. It was also in `src/eye.py`; it
+has been fixed there, and since this eclipse is total the branch does not fire
+and **no published figure changes**. The thermal transmittance divided by the
+eclipsed beam where `eye.py` divides by the uneclipsed one. The aerosol
+sensitivity sentence cited an irradiance that inside the umbra is exactly zero,
+so it always read "from 0.00 to 0.00 W/m²". γ was stored unsigned, so it
+matched no published catalogue and lost the hemisphere. The curves closed over
+the gaps where the shadow leaves the globe and drew them as straight chords up
+to 252 km long. And invalid coordinates were rejected in silence, leaving the
+previous point's result on screen under the new coordinates.
+
+### The tests did not test
+
+The agent killed 20 of 37 mutations and documented the 17 survivors. Among
+them: swapping `total` for `annular`, removing the night-hemisphere check,
+changing the equatorial radius for the polar one, dropping the cubic term of
+the polynomial, and substituting the eclipsed radiance for the uneclipsed one —
+which is precisely the historical error the module says it exists to avoid.
+There was also an assertion comparing a CSV column against a literal without
+running anything, and a "bracket invariant" comparing three different epochs
+while believing it compared one.
+
+Both suites were rewritten around that. Of the mutations that were still alive
+and are real, all now die; two equivalent ones remain, in which naming contacts
+by order gives the same result as naming them by crossing direction **because
+the window is wide**, and the narrow-window test covers that.
+
+### Provenance and licences
+
+`THIRD-PARTY-DATA.md` claimed to preserve the BSD notices of pvlib and Leaflet.
+It did not: there was a bibliographic citation and a `@preserve` with the
+copyright, but the licence text and the disclaimer were nowhere in the
+repository. They now live in `web/vendor/LICENSE-pvlib.txt` and
+`web/vendor/LICENSE-leaflet.txt`, and the page footer links to both.
+
+The Ångström exponent and the ASTM G173 conditions were literals with no entry
+in `data/literature.json`, against the rule that governs the repository. The
+first is now read from `pvlib` itself at export time, so it cannot drift from
+what `spectral.py` runs; the second have an entry of their own, with the
+warning that the standard is paid and was not consulted. The ICNIRP limits are
+checked against the literal quote before being written.
+
+### What survived
+
+`spectrl2` reproduces `pvlib.spectrum.spectrl2` **exactly** in 160 cases (four
+atmospheres × ten zenith angles × four days of the year): worst relative
+difference, 0.000000 %. The catalogue's greatest-eclipse points match NASA's
+published ones. The ICNIRP constants match the literal quotes. Longitudes at
+±180 and the poles are handled correctly. And the five conditions of
+`SAFETY.md` hold in what the page renders: the entry screen, the red block
+under every result, the assumptions attached to the figures, the air-mass
+warning and the prior verification of the geometry.
+
+## Review 4: the vector bands (20 August 2026)
+
+The obscuration bands went from raster to polygons, because a raster has one
+resolution and a map has as many as it has zoom levels. An independent agent
+was told to break the new code, given the list of claims it rested on and
+instructed to refute them with code, not with reading. It found eleven things.
+These are the ones that mattered.
+
+### The frame was not outside the map
+
+The contour domain was framed with a row and a column of −1 one cell outside
+the world, and the comment said the stretch of ring running along that frame
+falls outside what the view can reach. **It was false.** The edges touching the
+frame were not refined, so their crossing came from linearly interpolating
+against −1 over 1.35°; since the last real node sat 0.45° from the world edge,
+the crossing fell **inside** the map whenever the value was less than
+(1+3·level)/2 — for level 0.9, always.
+
+Measured: the band drawn was the wrong one up to **66 km inside the map** along
+the antimeridian (2039-06-21, 46° N 179.15° E: real value 0.724, band 0.6
+painted) and **39 km** at the poles (2039-12-15, 89.65° S: real value 0.941,
+two bands short). 3126 wrong points in the antimeridian strip and 3114 in the
+polar ones, spread across the 56 eclipses. Inside the map, zero errors out of
+thousands of control points.
+
+Fixed by putting **real nodes at ±180 and ±90**, computed and not interpolated:
+with them, every crossing against the frame falls on the world edge or beyond,
+which is where it was meant to fall. Re-measured with the reviewer's own
+procedure: **zero** points with the wrong band, across all 56.
+
+### 1434 rings that crossed themselves
+
+With `fill-rule: evenodd` every loop inverts the fill, so a ring that crosses
+itself paints the neighbouring band in the tongue it forms. There were 1447
+crossings, 233 of them more than a degree from any edge, in 23 eclipses. The
+worst case — 2026-02-17, level 0.8 — was a 62-vertex ring that crossed itself
+**25 times**, with every one of its vertices correct: `maxObscuration` was
+0.800000 ± 10⁻⁶ at all of them. The defect was not the position but the
+polygonization.
+
+Two causes. The spikes out to the frame, which went with the previous fix. And
+the adaptive subdivision, which searched for the contour **a whole chord** to
+either side of its midpoint — the comment said half — and at that distance
+could latch onto another branch of the contour passing nearby. Corrected to
+half a chord. Re-measured: **zero self-crossings** across the 56 eclipses.
+
+### The map and the panel used two different horizons
+
+The map cut with ζ > 0, the **geocentric** horizon; the panel, with the
+**geodetic** altitude above the local horizon. On an ellipsoid they are not the
+same: the two criteria disagree by up to 0.091° of solar altitude and, near
+sunset, those minutes are worth points of obscuration. On 2026-08-12 at 75° N
+100° E the panel answered 57.9 % over a band painted between 30 and 40 %. A
+sweep of the 56 eclipses found 56 points with more than 0.01 of discrepancy,
+the worst 0.19.
+
+A map that contradicts its own answer is worse than a coarse map, and
+`SAFETY.md` forbids it explicitly. Fixed by using the geodetic horizon
+everywhere. Re-measured: **1 point out of 13 987**, and that one for a
+different reason — the next.
+
+### The time hint changed the function
+
+So as not to sweep six hours at every one of the thousands of vertices that
+need refining, `maxObscuration` accepts as a hint the instant of the nearest
+cell's maximum and looks only ±2 steps around it. The reviewer instrumented the
+**real** calls and found that the fixed window erred in 59 of 93 290 calls, one
+of them by **0.54 of obscuration**: the instant of the maximum jumps from one
+cell to its neighbour right at the terminator, and there ±2 steps do not reach
+it. Fixed by widening the window while the maximum keeps landing on its edge.
+Re-measured: **0 of 6157** calls differ from the full sweep.
+
+Along the way it found that the fallback meant to cover that case was written
+`if (bk < 0 && lo > 0)`, that is, disabled exactly when the hint was 0, 1 or 2.
+It did not fire today — no cell in the catalogue has its maximum there — but
+changing the time window would have been enough.
+
+### The 121-instant sweep misses grazing eclipses
+
+Near the edge of the penumbra the eclipse lasts minutes and the sweep does not
+see it. Measured against a 2001-instant sweep, the loss reaches **0.0165** of
+obscuration, and 32 of 2227 points of the fringe with an eclipse read as zero.
+A 0.1 % contour was chasing a function that is zero in patches there.
+
+It was not corrected: the claim was **withdrawn**. The outermost band now
+starts at 5 %, three times above that loss. What goes undrawn is some 175 km of
+fringe over a 7000 km penumbra.
+
+### The tests could not see three of the five
+
+The contour section filtered out vertices with `|lat| > 89.5` or
+`|lon| > 179.5` under the comment "the frame" — precisely the strip where the
+worst defect lived. Removing that filter and touching nothing else, 112 of 358
+vertices from 2026-08-12 came out wrong. The chord-sagitta measurement silently
+discarded every chord without a sign change within ±30 km, which is exactly
+what happened to the bad chords, 100 and 285 km from the curve. And the nesting
+check looked at the value at each vertex, never at the polygon's topology, so
+the 1434 crossings were invisible to it.
+
+Rewritten: they no longer filter the world edge, they search for the curve five
+chords away, they count terminator vertices separately instead of discarding
+them, and there are two new sections — one comparing the band drawn by parity
+against the true one, walking the antimeridian and both poles on purpose, and
+another that looks for self-crossings.
+
+### What survived
+
+Three claims held against everything thrown at them. That `obsAt` — a hand copy
+of `evaluate` + `geom` + `obscuration`, written to avoid allocating objects in
+the hot loop — is identical to its originals: **zero difference** over 291 951
+samples with the Sun above the horizon, across 56 eclipses, poles and
+antimeridian included. That marching squares produces no open chains: 632
+chains over 56 eclipses × 10 levels, **none open**, no edge with degree other
+than two, and no badly resolved saddle — the mean of the four corners is the
+exact value of the bilinear interpolant at the centre, so two neighbouring
+cells cannot decide it differently. And that the cost is bounded: no eclipse
+exceeds two seconds or 40 000 vertices.
+
+It also discarded two suspicions of its own after measuring them: the ±3.2 h
+window truncates no maximum (difference exactly zero against ±4 h over 25 307
+points), and inside the map the band drawn matched the true one at every
+control point.
+
+## The follow-up to review 4 (20 August 2026)
+
+Two of review 4's fixes turned out to be incomplete, and the second one was
+visible on screen as sawtooth edges at high latitude.
+
+**One time hint is not enough where there are two humps.** Widening the window
+fixes a maximum that has drifted; it does nothing when the visible obscuration
+has **two separate humps**, one for each spell the Sun spends above the
+horizon, and two neighbouring cells have their maximum in different ones. The
+window then stops growing because the maximum sits in the interior of its own
+hump. Measured on 2036-08-21 at 78° N: 0.207 where the full sweep gives 0.715,
+and the vertex came out pinned four kilometres from its curve, in a spike.
+
+Fixed three ways at once. The refinement now passes **every** hint the
+surrounding cells carry, not one; the window covers everything **between** the
+hints rather than a slice around each, because the instant of the maximum moves
+continuously along the edge being bisected; and a large residual at the end of
+the bisection forces the cut to be redone with the full sweep, which depends on
+no hint. Cost: a few dozen edges per eclipse pay for a full sweep, which does
+not show.
+
+**Where the boundary is a jump, it cannot be refined — it can be smoothed.**
+Bisection converges just as well to a discontinuity as to a root, and there the
+discontinuity is the right answer. But the grid is 0.56° and at high latitude
+that is twenty kilometres of longitude against sixty of latitude, so the chain
+of cuts comes out as a zigzag: teeth up to fifty kilometres, with the ten
+levels piled on the same jump drawn as a tangle. Vertices known to sit on a
+jump are now marked and smoothed, each sliding **along its own grid edge** and
+never off it — the direction in which nothing is known, and only that one.
+
+Measured over the 56 eclipses: spikes above 25 km, none; the worst falls from
+50.5 to 17.9 km, and vertices with a sharp turn from 436 to 39. A test section
+now watches both numbers.
+
+### Also, one claim retired and replaced
+
+Review 4 accepted that the outer limit could not be contoured because the
+121-instant sweep reads the fringe as zero. That is true of the obscuration and
+false of the geometry. The dashed line now contours the **penumbra margin**
+`L1 − m`, which is smooth in time and passes through zero exactly where the
+edge of the penumbra touches the ground. What used to be drawn there was the
+penumbra outline at the instant of greatest eclipse — a circle, not a limit,
+which crossed the bands and had no legend entry saying which of the two it was.
+
+The test that guards it does not measure the contour against itself: it takes
+points 40 km either side of the line and requires `local()`, which sweeps 4001
+instants with no grid at all, to find an eclipse on the inside and none on the
+outside.
+
+## What is left said and not fixed
+
+Above the terminator the region boundary is not a level curve but a jump: the
+function goes from zero to a finite value because the Sun sets. Bisection
+converges there to the sunset line itself, which is correct, but the distance
+to "the curve" is set by the branch next door. Every chord worse than a
+kilometre is there — checked: the Sun at 0.00° at its maximum in all of them —
+and the tests set them aside by counting them, with a cap on how many there may
+be. Away from the terminator the chord sagitta stays at 64 m median, 0.22 km at
+the 90th percentile and under 2 km at worst.
+
+And a warning from the reviewer itself that is not a defect in the code:
+600 ms of arithmetic on this machine is several seconds of frozen interface on
+a modest phone.
+
+## The lesson
+
+The four reviews found different things. The first attacked the physics and it
+survived almost whole; what fell was the rhetoric around the margin. The second
+attacked the code and found three real numerical errors, two of them in
+functions that existed precisely to validate.
+
+The third attacked an interface and found the code correct exactly where there
+were tests and fragile everywhere else: the case the tests exercised was a
+total eclipse in the northern hemisphere, and practically everything that fell
+was outside that description. The worst finding was not made by that review but
+by the thread it left behind: the annular eclipses were not annular.
+
+The fourth attacked a new algorithm and found that almost everything was right
+— the arithmetic, the topology, the cost — and that what was broken sat at the
+**domain boundaries** and in the **optimizations**: the frame believed to be
+outside the map and inside it, the time hint that turned the function into a
+different one, the search that latched onto the branch next door. None of the
+three was visible by reading the code, and a test that discarded exactly that
+strip covered all three.
+
+The common pattern: the failures hid where there was no pass criterion. Check
+V2 had none. `brentq` had no check that its bracket contained a sign change.
+And the reproducibility footnote claimed no figure was hand-written with
+nothing verifying it.

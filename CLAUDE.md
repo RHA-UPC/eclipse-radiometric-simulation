@@ -1,471 +1,548 @@
 # eclipse2026
 
-Estudio radiométrico del eclipse total del 12 de agosto de 2026 observado desde
-41.212878 N, 0.709488 E (observatorio republicano de la Batalla del Ebro, cerca
-de La Figuera, Priorat, Tarragona; 616 m sobre EGM2008).
+A solar-eclipse calculator that runs in the browser, and the radiometric study
+it grew out of.
 
-Responde a tres preguntas: si el Sol a 4,75° de altura dañaba el sensor de una
-Canon EOS 200D con un Tamron 16-300, cuánto tiempo se podía mirar sin filtro, y
-qué probabilidad había de captar una Perseida durante la totalidad.
+`web/` is the tool: 56 eclipses between 2026 and 2050, any point on Earth,
+local circumstances, obscuration bands, the real terrain horizon, spectral
+irradiance and the ICNIRP limits under a declared atmosphere, and a video
+stabiliser. Five languages, three themes, no server. Every calculation happens
+in the visiting browser.
 
-El eclipse ya ocurrió. El observador fotografió el evento y sus 23 archivos
-están en `fotografias/`, analizados en `docs/PHOTOS.md`. Ahí viven también dos
-vídeos y sus estabilizados, que produce `tools/stab_solar.py`:
+`src/` and `paper/` are the origin: a radiometric study of the total eclipse of
+12 August 2026 observed from 41.212878 N, 0.709488 E (a Republican observation
+post of the Battle of the Ebro, near La Figuera, Priorat, Tarragona; 616 m over
+EGM2008). It answers three questions: whether the Sun at 4.75° altitude damaged
+the sensor of a Canon EOS 200D with a Tamron 16-300, how long it could be
+looked at unfiltered, and the odds of catching a Perseid during totality.
 
-| Archivo | Duración | Contenido |
+The eclipse happened. The observer photographed it and their 23 files are in
+`fotografias/`, analysed in `docs/PHOTOS.md`. Two videos and their stabilised
+versions live there too:
+
+| File | Duration | Content |
 |---|---|---|
-| `MVI_2418.MP4` | 223 s | parcial profunda hasta totalidad, cielo negro |
-| `MVI_2427.MP4` | 55 s | reaparición tras la totalidad, cielo con bruma; a los 48 s hay un zoom hacia atrás al paisaje, así que son dos planos |
+| `MVI_2418.MP4` | 223 s | deep partial into totality, black sky |
+| `MVI_2427.MP4` | 55 s | reappearance after totality, hazy sky; at 48 s it zooms back out to the landscape, so it is two shots |
 
-**Esa carpeta no se publica**: ver las reglas de publicación más abajo.
+**That folder is not published**: see the publication rules below.
 
-Desde el 19 de agosto de 2026 hay además una **web estática** en `web/`, que
-lleva el trabajo a cualquier eclipse y a cualquier punto: catálogo de 56
-eclipses entre 2026 y 2050, franja de totalidad sobre el mapa y circunstancias
-locales al marcar un punto. Bajo demanda resuelve también la irradiancia
-espectral y los límites de ICNIRP con la atmósfera que el usuario declare. Todo
-el cálculo ocurre en el navegador: no hay servidor ni petición externa, y nada
-va precalculado más allá de los elementos besselianos y las tablas fijas.
+The repository is public on GitHub under AGPL-3.0-only for code and CC BY-SA
+4.0 for the manuscript, the figures, the derived data and the documentation.
+The exact split is in `LICENSES.md`.
 
-El repositorio es público en GitHub bajo AGPL-3.0-only para el código y
-CC BY-SA 4.0 para el manuscrito, las figuras, los datos derivados y la
-documentación. El reparto exacto está en `LICENSES.md`.
+**The project language is English.** Documentation, code comments and commit
+messages are written in English so that anyone can review them. The interface
+speaks five languages; the repository speaks one.
 
-## Reglas de publicación
+## Publication rules
 
-Son vinculantes y no se negocian en cada sesión.
+Binding, and not renegotiated each session.
 
-### 1. El paper no menciona la IA
+### 1. The paper does not mention AI
 
-El autor del trabajo es Ricardo Heredia Alessandrello, y firma solo él. Su
-profesorado le indicó no citar el uso de IA, así que **el manuscrito no lleva
-declaración de uso de IA, ni agradecimiento a un modelo, ni coautoría, ni
-mención alguna en ninguna sección, nota al pie o metadato del PDF.** Si
-reescribes el paper, no vuelvas a introducirla.
+The author of the work is Ricardo Heredia Alessandrello, and he signs alone.
+His teaching staff told him not to cite AI use, so **the manuscript carries no
+AI-use declaration, no acknowledgement of a model, no co-authorship, and no
+mention in any section, footnote or PDF metadata field.** Anyone rewriting the
+paper must not put it back.
 
-Lo mismo vale para el repositorio: nada de `Co-Authored-By: Claude`, nada de
-`Claude-Session`, nada de firmas en commits ni en mensajes de PR. **Todo push
-aparece hecho por la cuenta del autor.**
+The same holds for the repository: no `Co-Authored-By: Claude`, no
+`Claude-Session`, no signatures in commits or PR messages. **Every push appears
+as made by the author's account.**
 
-### 2. Nada que identifique al autor ni a sus dispositivos
+### 2. Nothing that identifies the author or their devices
 
-Comprobación obligatoria antes de cada push:
+Mandatory check before every push:
 
 ```bash
 bash tools/privacy_check.sh
 ```
 
-Falla si en el índice de git aparece el número de serie del cuerpo de la cámara,
-una ruta absoluta del directorio personal, un archivo de imagen o de vídeo, un
-kernel de terceros o una dirección de correo. El serial se retiró de
-`data/hardware.json` y en su lugar queda `_serial_note`; no lo repongas.
+It fails if the git index contains the camera body's serial number, an absolute
+path from a home directory, an image or video file, a third-party kernel or an
+email address. The serial was removed from `data/hardware.json` and
+`_serial_note` stands in its place; do not put it back.
 
-El vídeo compromete por partida doble: metadatos de cámara como las fotos, y
-además pista de audio, donde puede haber voces. `tools/stab_solar.py` recodifica
-desde fotogramas en crudo, así que su salida no arrastra ni una cosa ni la otra;
-aun así vive en `fotografias/` y tampoco se publica.
+Video compromises twice over: camera metadata like the photographs, plus an
+audio track, where there can be voices. `tools/stab_solar.py` re-encodes from
+raw frames, so its output carries neither; even so it lives in `fotografias/`
+and is not published either. The browser stabiliser has the same property for
+the same reason, and the page says so.
 
-Las coordenadas exactas sí se publican: es una decisión consciente del autor,
-porque el emplazamiento es un observatorio de la Guerra Civil documentado y la
-reproducibilidad del perfil de horizonte depende de ellas.
+The exact coordinates are published: a deliberate decision by the author,
+because the site is a documented Civil War observation post and the
+reproducibility of the horizon profile depends on them.
 
-### 3. Licencias
+### 3. Licences
 
-`LICENSE` es AGPL-3.0-only y cubre `src/` y `tools/`. `LICENSE-DOCS` es
-CC BY-SA 4.0 y cubre paper, figuras, datos derivados y documentación. El reparto
-está en `LICENSES.md`. Cada módulo de `src/` lleva cabecera SPDX: si creas uno
-nuevo, cópiala.
+`LICENSE` is AGPL-3.0-only and covers `src/`, `tools/` and `web/js/`.
+`LICENSE-DOCS` is CC BY-SA 4.0 and covers the paper, the figures, the derived
+data and the documentation. The split is in `LICENSES.md`. Every module in
+`src/` carries an SPDX header: copy it into any new one.
 
-`THIRD-PARTY-DATA.md` lista los datos de terceros, que conservan sus términos y
-no se relicencian. Si añades una fuente externa, añádela también ahí.
+`THIRD-PARTY-DATA.md` lists the third-party data, which keeps its own terms and
+is not relicensed. Adding an external source means adding it there too.
 
-El repositorio nació bajo CC BY-NC 4.0 y cambió el 14 de agosto de 2026, cuando
-el titular seguía siendo la única persona con derechos. **No vuelvas a esa
-licencia:** dejaba el proyecto fuera de la definición de código abierto e
-impedía que GitHub mostrara la licencia.
+The repository started under CC BY-NC 4.0 and changed on 14 August 2026, while
+the holder was still the only person with rights. **Do not go back to that
+licence:** it left the project outside the open-source definition and stopped
+GitHub from showing a licence at all.
 
-### 4. Contribuciones externas
+### 4. Outside contributions
 
-Toda aportación exige el CLA de `CLA.md` firmado por línea de commit. Es lo que
-mantiene viva la opción de licencia comercial. El borrador está **pendiente de
-revisión por un abogado**; no lo des por bueno.
+Every contribution requires the CLA in `CLA.md`, signed per commit line. That
+is what keeps the commercial-licence option alive. The draft is **pending
+review by a lawyer**; do not treat it as settled.
 
-Los textos legales existen en español y en inglés (`*.en.md`). Si tocas uno,
-toca los dos. La versión española es la auténtica.
+## The rule that governs the whole project
 
-## Regla que gobierna todo el proyecto
+**No figure without provenance.** Every number in the manuscript comes from a
+reproducible calculation in `src/` or from a source cited with a literal quote
+in `data/literature.json`. Anything that could not be verified is declared
+rather than filled in. This rule has already saved the work three times: two
+adversarial reviews found seven hand-written figures, five of them wrong.
 
-**Ninguna cifra sin procedencia.** Cada número del manuscrito sale de un cálculo
-reproducible en `src/` o de una fuente citada con quote literal en
-`data/literature.json`. Si algo no se pudo verificar, el paper lo declara en vez
-de rellenarlo. Esta regla ya salvó al trabajo tres veces: dos revisiones
-adversariales encontraron siete cifras escritas a mano, cinco de ellas erróneas.
+Operational corollaries:
 
-Corolarios operativos:
+- Before writing a number in the paper, check it exists as a macro in
+  `paper/keyvals.tex`, generated by `src/paperdata.py`.
+- Any external value must first be found and transcribed into
+  `data/literature.json` with its citation and its quote. Then used.
+- `src/paperdata.py::assert_no_provisional()` aborts the build if any block of
+  `data/hardware.json` is not in state `verified` or `verified-secondary`.
 
-- Antes de escribir un número en el paper, comprueba que existe como macro en
-  `paper/keyvals.tex`, generado por `src/paperdata.py`.
-- Si necesitas un valor externo, primero búscalo y transcríbelo a
-  `data/literature.json` con su cita y su quote. Después úsalo.
-- `src/paperdata.py::assert_no_provisional()` aborta la compilación si algún
-  bloque de `data/hardware.json` no está en estado `verified` o
-  `verified-secondary`.
-
-## Entorno
+## Environment
 
 ```bash
 ~/.venvs/eclipse2026/bin/python     # numpy scipy matplotlib skyfield pandas
-                                            # pvlib rasterio colour-science rawpy exifread pypdf
-                                            # opencv-python-headless imageio-ffmpeg (solo stab_solar)
+                                    # pvlib rasterio colour-science rawpy exifread pypdf
+                                    # opencv-python-headless imageio-ffmpeg (stab_solar only)
 ~/.local/bin/tectonic               # LaTeX
 ```
 
-El venv se creó con `uv`, no con `python -m venv` (el sistema no trae
+The venv was created with `uv`, not `python -m venv` (the system has no
 `ensurepip`).
 
-## Cómo reconstruir el PDF
+## Rebuilding the PDF
 
 ```bash
 cd src
-python geometry.py      # contactos C1-C4 -> data/circumstances.json
-python spectral.py      # SPECTRL2 + transmisión cromática -> data/spectral_timeseries.csv
-python eye.py           # límites ICNIRP -> data/eye_timeseries.csv
-python perseids.py      # tasas y Poisson -> data/perseids.csv
-python figures.py       # 11 figuras -> figs/
-python paperdata.py     # 12 tablas + ~90 keyvals -> paper/
+python geometry.py      # contacts C1-C4 -> data/circumstances.json
+python spectral.py      # SPECTRL2 + chromatic transmission -> data/spectral_timeseries.csv
+python eye.py           # ICNIRP limits -> data/eye_timeseries.csv
+python perseids.py      # rates and Poisson -> data/perseids.csv
+python figures.py       # 11 figures -> figs/
+python paperdata.py     # 12 tables + ~90 keyvals -> paper/
 cd ../paper && tectonic -X compile paper.tex --outdir ../out
 ```
 
-`pathgeom.py` tarda entre treinta y sesenta minutos. Lánzalo en segundo plano y
-solo cuando cambie la geometría.
+`pathgeom.py` takes thirty to sixty minutes. Run it in the background and only
+when the geometry changes.
 
-`validate.py` corre las comprobaciones cruzadas. V1 y V2 tienen criterio de
-aprobado; si alguna falla, el paper no puede citar los números que dependen de
-ella.
+`validate.py` runs the cross-checks. V1 and V2 have pass criteria; if either
+fails, the paper cannot cite the numbers that depend on it.
 
-## Autotests
+## Self-tests
 
-Los siete módulos con física dentro traen `_selftest()` que falla de forma
-ruidosa:
+The seven modules with physics inside carry a `_selftest()` that fails loudly:
 
 ```bash
 cd src && for m in limbdark radiometry optics thermal eye spectral perseids; do
-  python $m.py >/dev/null 2>&1 && echo "$m OK" || echo "$m FALLA"; done
+  python $m.py >/dev/null 2>&1 && echo "$m OK" || echo "$m FAILS"; done
 ```
 
-Los siete deben pasar antes de compilar. Comprueban identidades, no valores:
-conservación de energía en la óptica, el límite termodinámico de concentración,
-los límites asintóticos de Carslaw y Jaeger, la continuidad de las dos ramas del
-límite ICNIRP y el área exacta de lente círculo-círculo.
+All seven must pass before building. They check identities, not values: energy
+conservation in the optics, the thermodynamic concentration limit, the
+asymptotic limits of Carslaw and Jaeger, the continuity of the two branches of
+the ICNIRP limit, and the exact circle-circle lens area.
 
-`src/eclipsecat.py --selftest` también va aparte. Tarda poco más de un segundo
-y comprueba seis cosas: los elementos ajustados contra los publicados por la NASA,
-que el polinomio se sostenga **entre** sus nodos de ajuste, las circunstancias
-locales contra la cadena DE440s de `geometry.py`, la línea central contra la
-tabla de trayectoria de la NASA, que un punto fuera de la penumbra devuelva
-nada en vez de una magnitud pequeña, y que el catálogo tipifique bien los dos
-eclipses de 2026.
+`src/eclipsecat.py --selftest` runs separately. It takes a little over a second
+and checks six things: the fitted elements against NASA's published ones, that
+the polynomial holds **between** its fitting nodes, local circumstances against
+the DE440s chain in `geometry.py`, the central line against NASA's path table,
+that a point outside the penumbra returns nothing rather than a small
+magnitude, and that the catalogue classifies the two 2026 eclipses correctly.
 
-`src/webdata.py --selftest` comprueba que las tablas exportadas al navegador
-siguen siendo las tablas: 122 longitudes de onda crecientes, B(λ) con su pico
-entre 435 y 445 nm y cero por encima de 700, R(λ) igual a 1 en 500 nm y a 0,02
-en 1200, y V(λ) con su pico en 555. Un error de remuestreo aquí es mudo, porque
-el espectro sigue pareciendo un espectro.
+`src/webdata.py --selftest` checks that the tables exported to the browser are
+still the tables: 122 increasing wavelengths, B(λ) peaking between 435 and
+445 nm and zero above 700, R(λ) equal to 1 at 500 nm and 0.02 at 1200, and V(λ)
+peaking at 555. A resampling error here is silent, because the spectrum still
+looks like a spectrum.
 
-`node web/js/radiometry.test.js` contrasta el port radiométrico contra
-`data/spectral_timeseries.csv` y `data/eye_timeseries.csv`, es decir contra la
-cadena que produjo el manuscrito, y exige además dos invariantes de física que
-no se ven en una gráfica: que el déficit de flujo **cruce** al de área (por
-detrás mientras la Luna come limbo, por delante cuando alcanza el centro) y que
-el signo cromático se invierta con la fase.
+`node web/js/radiometry.test.js` compares the radiometric port against
+`data/spectral_timeseries.csv` and `data/eye_timeseries.csv`, that is, against
+the chain that produced the manuscript, and additionally requires two physical
+invariants that do not show on a plot: that the flux deficit **crosses** the
+area deficit (behind it while the Moon eats limb, ahead once it reaches the
+centre) and that the chromatic sign inverts with phase.
 
-`node web/js/besselian.test.js` contrasta el port a JavaScript contra las tres
-referencias anteriores y añade lo que la tercera revisión adversarial demostró
-que faltaba: duraciones de anularidad contra las publicadas, orden de contactos
-barrido sobre todo el catálogo y una malla global, tipificación de un eclipse
-total no central, signo de γ, marcas de hueco en las curvas, hemisferio nocturno
-en la trama, y sobre todo la invariante que ata el dibujo al cálculo — sobre el
-borde de la franja la duración es cero, tres kilómetros dentro no lo es, tres
-kilómetros fuera vuelve a serlo. Un port que se desvíe dibuja una franja creíble
-en el sitio equivocado, que es el peor fallo posible aquí.
+`node web/js/besselian.test.js` compares the JavaScript port against the three
+previous references and adds what the third adversarial review showed was
+missing: annularity durations against the published ones, contact ordering
+swept over the whole catalogue and a global grid, classification of a
+non-central total eclipse, the sign of γ, gap markers in the curves, the night
+hemisphere in the bands, and above all the invariant that ties the drawing to
+the calculation — on the edge of the path the duration is zero, three
+kilometres inside it is not, three kilometres outside it is zero again. A port
+that drifts draws a believable path in the wrong place, which is the worst
+failure possible here.
 
-`tools/stab_solar.py --selftest` va aparte, porque no entra en la cadena del
-paper. Cubre las cuatro cosas que pueden romperse en silencio:
+It also guards the two things the fourth review and its follow-up exposed: the
+visibility limit against `local()` at points 40 km either side of it, and the
+absence of spikes — a vertex sticking out of the line joining its neighbours by
+more than that line is long.
 
-1. Ocluye un disco sintético y exige que el ajuste al limbo conserve el centro
-   con menos de 1 px de error mientras el centroide de brillo se va 40 px, que
-   es justamente la razón de que el módulo exista.
-2. Un anillo de corona alrededor de una Luna oscura tiene que leerse como
-   totalidad, y un creciente jamás.
-3. Con cielo iluminado, la Luna tiene que ganarle a un borde de halo de
-   polaridad contraria y fuerza parecida. Es el caso que un Hough sin signo
-   resuelve al revés.
-4. Las dos invariantes del recorte `--fit`: que el Sol quede en el centro
-   geométrico, y que ningún píxel de salida caiga fuera del original en ningún
-   fotograma.
+`node web/js/stabilise.test.js` runs the browser tracker against the same
+synthetic cases as `tools/stab_solar.py --selftest`, with the same tolerances.
+A port that agrees on prose and disagrees on numbers is worse than no port.
 
-## Documentación
+`node web/js/lang.test.js` checks the five dictionaries: key parity, no sixth
+language, the same interpolation placeholders everywhere, balanced HTML tags,
+and each language's own typography — decimal comma, the space before the
+per-cent sign, typographic apostrophes, and no second-person address.
 
-| Archivo | Contenido |
+`tools/stab_solar.py --selftest` runs separately, because it is not part of the
+paper chain. It covers the four things that can break silently:
+
+1. It occludes a synthetic disk and requires the limb fit to hold the centre to
+   under 1 px while the brightness centroid drifts 40 px, which is precisely
+   why the module exists.
+2. A corona ring around a dark Moon has to read as totality, and a crescent
+   never.
+3. Against a lit sky, the Moon has to beat a flare edge of opposite polarity
+   and comparable strength. That is the case an unsigned Hough gets backwards.
+4. The two invariants of the `--fit` crop: the Sun at the geometric centre, and
+   no output pixel falling outside the original in any frame.
+
+## Documentation
+
+| File | Content |
 |---|---|
-| `README.md` | portada del repositorio: resultados en una tabla y cómo reproducir |
-| `THIRD-PARTY-DATA.md` | datos de terceros, sus términos y la atribución obligatoria |
-| `docs/ARCHITECTURE.md` | qué hace cada módulo y cómo fluyen los datos |
-| `docs/FINDINGS.md` | los resultados científicos, con sus números |
-| `docs/REVIEWS.md` | qué encontraron las revisiones adversariales y qué cambió |
-| `docs/SOURCES.md` | procedencia de cada entrada del modelo |
-| `docs/PHOTOS.md` | análisis de las 23 fotografías del observador |
-| `PROGRESS.md` | bitácora cronológica de la sesión original |
-| `LICENSES.md` | qué licencia cubre cada parte, y por qué esas y no otras |
-| `CONTRIBUTING.md` | cómo se aporta, y qué se rechaza sin discusión |
-| `CLA.md` | cesión de derechos del contribuyente. Borrador sin revisar |
-| `SAFETY.md` | qué es y qué no es una cifra de exposición ocular de aquí |
-| `ROADMAP.md` | lo que falta para que esto sea una plataforma, y lo que no se hará |
-| `docs/ARCHITECTURE.md` §La web | qué hay dentro de `web/` y por qué es estático |
+| `README.md` | the repository's front page: what the tool does and how to reproduce the paper |
+| `THIRD-PARTY-DATA.md` | third-party data, its terms and the required attribution |
+| `docs/ARCHITECTURE.md` | what each module does and how the data flows |
+| `docs/FINDINGS.md` | the scientific results, with their numbers |
+| `docs/REVIEWS.md` | what the adversarial reviews found and what changed |
+| `docs/SOURCES.md` | provenance of every model input |
+| `docs/PHOTOS.md` | analysis of the observer's 23 photographs |
+| `PROGRESS.md` | chronological log of the original session |
+| `LICENSES.md` | which licence covers what, and why those and not others |
+| `CONTRIBUTING.md` | how to contribute, and what is rejected without discussion |
+| `CLA.md` | contributor rights assignment. Unreviewed draft |
+| `SAFETY.md` | what an ocular exposure figure from here is and is not |
+| `ROADMAP.md` | what is missing for this to be a platform, and what will not be done |
 
-`LICENSES`, `CONTRIBUTING`, `CLA` y `SAFETY` existen también en inglés
-(`*.en.md`). La versión española manda; si tocas una, toca las dos. `ROADMAP.md`
-no está traducido, y no hace falta que lo esté: no es un texto legal.
+## Picking the work back up
 
-## Si retomas el trabajo
+Read `docs/FINDINGS.md` first. It is written so the claims and their backing
+are clear without reading the whole paper.
 
-Lee `docs/FINDINGS.md` primero. Está escrito para que sepas qué se afirma y con
-qué respaldo, sin tener que leer el paper entero.
+What is still open:
 
-Lo que sigue abierto:
+1. No damage-threshold measurement exists for a modern consumer CMOS. The
+   paper's only citation, Schwarz et al. 2017, measured a 2010 Aptina MT9V024.
+2. The damage mode Schwarz describes is a sensitivity loss visible in a flat
+   field, not hot pixels. The observer's photographs cannot establish it
+   because there is no flat field.
+3. The claim that the shutter curtain and the focusing screen are what burns
+   rests only on this work's thin-plate calculation. There is no peer-reviewed
+   literature.
 
-1. Ninguna medida de umbral de daño existe para un CMOS de consumo moderno. La
-   única cita del paper, Schwarz et al. 2017, midió un Aptina MT9V024 de 2010.
-2. El modo de daño que describe Schwarz es pérdida de sensibilidad visible en
-   campo plano, no píxeles calientes. Las fotografías del observador no permiten
-   comprobarlo porque no hay campo plano.
-3. La afirmación de que la cortinilla y la pantalla de enfoque son lo que se
-   quema descansa solo en el cálculo de placa delgada de este trabajo. No existe
-   literatura revisada por pares.
+## Known traps
 
-## Trampas conocidas
+### LaTeX and the paper
 
-- Las macros de LaTeX no admiten dígitos. `paperdata.py` convierte `dniC1` en
-  `dniCOne` al escribir `keyvals.tex`. Usa la forma alfabética en el manuscrito.
-- No metas `\input` dentro de un `tabular`: el escáner de `array` no sobrevive.
-  `write_table()` emite el entorno `table` completo desde Python.
-- `kv()` localiza el separador decimal a coma. Si añades una macro sin pasar por
-  `kv()`, saldrá con punto en un documento configurado con coma.
-- `figures.py` define `F` como el directorio de figuras. No lo sombrees con una
-  variable local.
-- La escala logarítmica de matplotlib dibuja etiquetas en los ticks menores
-  aunque fijes los mayores. Usa `logticks()`.
-- Las rutas ya no son absolutas. `siteconf.ROOT` se resuelve desde el propio
-  archivo y los demás módulos hacen `from siteconf import ROOT`. No vuelvas a
-  escribir una ruta absoluta del directorio personal: `tools/privacy_check.sh` la caza.
-- En `stab_solar.py`, el centroide de brillo **nunca** sirve para centrar un
-  eclipse: el de un creciente se mete en la parte iluminada y avanza hacia el
-  limbo descubierto conforme la Luna tapa, así que arrastra el Sol casi un radio
-  a lo largo de la fase parcial. Lo invariante es el limbo.
-- Con cielo iluminado hay que seguir la Luna, y el Hough circular tiene que
-  llevar signo. Sin signo puntúa igual el limbo lunar y el borde del halo solar,
-  que tienen polaridad opuesta, y se queda con el más brillante, que es el
-  equivocado. `cv2.HoughCircles` tampoco engancha nada en este material.
-- Al enmascarar una búsqueda local, centinela finito y no `-inf`: el refinado
-  parabólico da `NaN` si un vecino es infinito, y `NaN` pasa cualquier guarda
-  escrita como `if den else ...`, porque `NaN` es verdadero.
-- Los elementos besselianos de `eclipsecat.py` **no** coinciden con los de la
-  NASA al último dígito, y no deben. Son dos convenciones declaradas: radio
-  solar IAU 2015 nominal (695 700 km) frente a los 696 000 km que implican los
-  `tan f` de la NASA, y ΔT de Skyfield (69,10 s) frente a los 71,4 s de Espenak.
-  La primera mueve los límites unos 700 m; la segunda no mueve nada sobre el
-  terreno, porque cada lado es coherente consigo mismo. Para contrastar contra
-  la NASA hay que usar **su** ΔT en los dos lados, o se mide la diferencia entre
-  dos predicciones de la rotación terrestre en vez de la geometría.
-- La longitud va **positiva al este** en todo el proyecto. Meeus la tabula
-  positiva al oeste. Mezclarlas no rompe nada: espeja todas las trayectorias
-  respecto a Greenwich y el mapa sigue pareciendo un mapa.
-- Al enmascarar la búsqueda del eje sobre el elipsoide, centinela finito otra
-  vez no: ahí el problema es distinto, el `q <= 0` significa que el eje no toca
-  la Tierra y hay que devolver `null`, no un punto del limbo. Un `clamp` a cero
-  fabrica trayectorias que rodean el planeta.
-- La línea central se muestrea cada **seis segundos**, no cada minuto. Al final
-  de una trayectoria con incidencia rasante la umbra corre a unos 3 km/s, así
-  que un minuto deja huecos de 180 km y la línea dibujada deja de estar donde
-  está la sombra.
-- **Web Mercator no tiene polos.** Se corta en 85,05° porque la proyección manda
-  el 90 al infinito, y las trayectorias de eclipse llegan más al norte: la de
-  2026 empieza a 87° N. Por eso el mapa va en `L.CRS.EPSG4326` y el fondo de
-  calles es un WMS en esa misma proyección, no la pirámide de teselas de
-  OpenStreetMap. Cambiar la CRS del mapa para poner teselas obliga además a
-  reconstruir el mapa entero, porque Leaflet la fija al construir. Se probó y se
-  descartó. (Antes había un segundo motivo, que las bandas eran una imagen y en
-  Mercator habría que remuestrearla fila a fila; ya no lo son, y ese motivo se
-  ha caído. El de los polos, no.)
-- El fondo de calles es el **predeterminado** y no hay conmutador: esto se
-  despliega en la web, donde hay conexión, y ofrecer la elección obligaba al
-  visitante a decidir algo que no puede juzgar. Lo que sí hay que mantener
-  escrito es que ese fondo sale a la red y que las peticiones llevan el recuadro
-  mirado en la URL. `THIRD-PARTY-DATA.md` lo dice sin rodeos porque durante un
-  tiempo la web no contactaba con nadie y la documentación lo presumía.
-- El mapa de respaldo se descarga **solo si el servidor de calles falla**, y por
-  eso puede permitirse pesar 0,66 MB. Caer requiere pruebas, no una petición
-  fallida: cuatro errores sin que haya cargado ninguna imagen, o nueve segundos
-  sin ninguna. Ese segundo criterio es el que cubre el caso que se cuelga en vez
-  de fallar, que un manejador de `tileerror` no ve nunca.
-- **No uses el renderizador de lienzo de Leaflet para el mapa de respaldo.** Es
-  la herramienta correcta sobre el papel y mata el proceso de renderizado en
-  Chromium headless al hacer `setView`, incluso con el fichero antiguo de 10 600
-  vértices. Se probó en los dos paneles y con dos tamaños de datos. Queda SVG,
-  y con SVG el coste crece con los vértices: medido, un zoom cuesta lo mismo a
-  22 000 que a 34 000 y claramente más a 54 000. Por eso
-  `tools/make_worldmap.py` simplifica a 34 000 y no a los 190 000 que salen de
-  Natural Earth 1:10 m con una tolerancia fina.
-- En Leaflet, un `imageOverlay` y un renderizador SVG son hermanos dentro del
-  mismo panel: `bringToBack()` sobre uno no lo mueve respecto al otro. El orden
-  se fija creando paneles con su `zIndex`, no reordenando capas.
-- **El WMS devuelve negro por encima del límite de Mercator.** Sirve los datos
-  en EPSG:4326, pero su fuente sigue siendo Mercator, así que de 85,05° a 90°
-  no tiene nada que dibujar y rellena de negro. Se tapa con dos rectángulos del
-  color de fondo del mapa, en un panel propio entre las teselas y la trama. El
-  corte va a **84°**, no a 85,0511: medido en pantalla, el negro baja hasta unos
-  84,3° en el nivel de zoom más alejado, porque la rejilla de teselas del
-  servidor no cae donde la nuestra. Lo que se pierde es océano Ártico e interior
-  del casquete antártico.
-- `map.getBoundsZoom(bounds, true)` **recorta su resultado por el `minZoom`
-  vigente**. Si lo usas para calcular ese mismo `minZoom`, solo podrá subir: al
-  encoger la ventana se queda atascado en el mínimo de la ventana grande. Hay
-  que bajarlo a cero antes de preguntar.
-- **No inviertas el fondo de calles para el modo oscuro.** El truco habitual
-  (`invert(1) hue-rotate(180deg)`) está pensado para estilos de mar claro y
-  tierra blanca; este estilo ya trae el mar azul oscuro, así que invertirlo deja
-  el océano en cian luminoso, brillando más que el continente. Se probó y se ve
-  en las capturas. Lo que funciona es atenuar la tesela, y el filtro va sobre la
-  **imagen**, no sobre el panel: en ese panel viven también las costas de
-  respaldo, que ya se dibujan con los colores del tema.
-- Las bandas de obscuración son **polígonos, no una trama**, y volver a una
-  trama es volver al problema: una imagen tiene una resolución y un mapa tiene
-  tantas como niveles de zoom. Un lienzo de 1920 × 960 sobre el mundo es un
-  píxel cada 21 km, o sea 34 píxeles de pantalla al zoom 7, y los contornos de
-  2 píxeles del modo accesible salían como escalones de 68. Ningún tamaño de
-  lienzo lo arregla, porque el mapa llega al zoom 15.
-- **La malla y el afinado tienen que ser la misma función.** El barrido de 121
-  instantes se queda corto respecto al máximo verdadero, y se queda corto en
-  cantidades distintas en cada punto: medido, 4·10⁻⁴ en la mediana y 1,4·10⁻² en
-  la cola. Con la malla sobre el barrido y el afinado sobre el valor exacto, son
-  conjuntos de nivel de dos funciones distintas y el 13 % de los vértices sale
-  sin cambio de signo que bisecar. Por eso `obscurationGrid` hace una segunda
-  pasada de sección áurea sobre las celdas con `0 < o < 1`, y por eso
-  `maxObscuration` corre exactamente ese mismo afinado. Si tocas uno, toca el
-  otro.
-- **Sobre el terminador no hay curva de nivel, hay un salto.** Lo que se dibuja
-  es la obscuración máxima *con el Sol sobre el horizonte*, así que en la línea
-  del ocaso la función salta de cero a un valor finito. Ahí el borde de la
-  región es una discontinuidad: la bisección converge a la propia línea del
-  ocaso, que es lo correcto, y comprobar `|g − nivel| ≈ 0` no significa nada.
-  Cerca de la mitad de los vértices de un contorno están ahí. Los tests los
-  identifican por la altura del Sol en el instante de su máximo y los cuentan
-  aparte; no los descartes en silencio.
-- El dominio de los contornos se enmarca con una fila y una columna de **−1 una
-  celda por fuera del mundo**. Eso es lo que hace que todo contorno cierre sin
-  ningún caso especial en los polos ni en el antimeridiano. Quitar el marco
-  obliga a escribir el recorrido del borde del dominio, que es donde vive la
-  mitad de los errores de marching squares.
-- **El marco no basta: hacen falta nodos reales en ±180 y ±90.** Sin ellos, la
-  arista que une el último centro de celda con el marco se corta interpolando
-  contra −1 sobre 1,35°, y ese corte cae **dentro** del mapa siempre que el
-  valor sea menor que (1+3·nivel)/2 — para el nivel 0,9, siempre. Medido, la
-  banda dibujada era la equivocada hasta 66 km adentro por el antimeridiano y 39
-  por los polos, en los 56 eclipses. Los nodos del borde del mundo se calculan,
-  no se interpolan.
-- **El horizonte es el geodésico en todas partes.** `local()` decide con la
-  altura sobre el horizonte local y el mapa hacía lo propio con ζ > 0, que es el
-  geocéntrico. Sobre un elipsoide no es lo mismo: discrepan hasta 0,091° de
-  altura solar, y cerca del ocaso el mapa pintaba una banda del 30-40 % en un
-  punto cuya ficha respondía 57,9 %. `SAFETY.md` prohíbe que el mapa contradiga
-  a su propia respuesta.
-- La pista temporal de `maxObscuration` **tiene que poder ensancharse**. El
-  instante del máximo salta de una celda a la vecina al cruzar el terminador,
-  y con la ventana fija en k±2 la función devolvía otra cosa que el barrido
-  entero en 59 de 93 290 llamadas, una por 0,54 de obscuración. La ventana se
-  ensancha mientras el máximo siga cayendo en su borde.
-- La subdivisión adaptativa busca la curva a **media cuerda** de distancia, no a
-  una cuerda. Con una cuerda entera la bisección se engancha a otra rama del
-  contorno que pase cerca, y el anillo se cruza consigo mismo: había 1447
-  autocruces, y con `fill-rule: evenodd` cada lazo invierte el relleno.
-- La banda más exterior empieza en el **5 %** y eso no es estético. Cerca del
-  borde de la penumbra el eclipse dura minutos y el barrido de 121 instantes se
-  lo pierde: hasta 0,0165 de obscuración, y 32 de 2227 puntos de la orla se leen
-  como cero. El límite de verdad lo dibuja el contorno de la penumbra, que es
-  geométrico y no muestrea el tiempo.
-- La normal a una cuerda se traza en distancia de arco y se devuelve a longitud
-  **dividiendo por el coseno de la latitud**. Cerca del polo ese coseno es
-  diminuto y medio grado de arco se convierte en cien de longitud: salían
-  vértices a 185°, fuera del dominio. De ahí las dos guardas de `onCurve`, radio
-  de búsqueda acotado y resultado descartado si se sale del marco.
-- Cada banda lleva como **agujero** el contorno del nivel superior, y no se
-  apilan rellenos. Dos rellenos translúcidos superpuestos multiplican sus alfas
-  y los diez escalones dejan de ser diez. Leaflet dibuja todos los anillos de un
-  polígono en un solo trazado con `fill-rule: evenodd`, así que el agujero sale
-  por paridad sin averiguar qué anillo está dentro de cuál. Y recorta el trazado
-  a la vista, que es por lo que 13 000 vértices salen a 774 en el DOM y mover el
-  mapa cuesta cero.
-- `obsAt` es una **copia a mano** de `evaluate` + `geom` + `obscuration`, escrita
-  así porque esas dos asignan un objeto cada una y el afinado de los contornos
-  las llama millones de veces. Puede separarse de sus originales en cualquier
-  edición; `besselian.test.js` las contrasta y esa comprobación no es opcional.
-- La poda de la malla es exacta, no una heurística: las dos condiciones que
-  descartan una celda —Sol bajo el horizonte y penumbra fuera de alcance en η—
-  son monótonas en `cos H`, así que su intersección es un intervalo y basta con
-  recorrer dos arcos de columnas. `besselian.test.js` exige que el resultado sea
-  **idéntico**, no parecido, al barrido sin podar sobre cuatro geometrías.
-- Los tres temas viven enteros en `web/css/style.css` como variables, y `app.js`
-  las lee con `cssv()`. No escribas un color a mano en JavaScript: las líneas
-  del mapa, el marcador, la gráfica y los casquetes salen todos de ahí, y un
-  color literal se queda congelado al cambiar de tema.
-- El oscurecimiento del limbo no va siempre en el mismo sentido. Mientras la
-  Luna cubre el limbo, que es tenue, el déficit de flujo va **por detrás** del
-  de área; en cuanto alcanza el centro lo **adelanta**. Un port con el peso
-  invertido sigue dando una curva monótona creíble, y solo el cruce lo caza.
-- En `fluxObscuration`, `Math.pow(cos(theta), alpha)` da `NaN` si el coseno sale
-  negativo por redondeo en el último nodo de Simpson. Hay que acotarlo a cero.
-- El contacto interior es `|m| = |L2'|`, **nunca** `m + L2' = 0`. Esa segunda
-  forma es la que tabula Meeus para un eclipse total y no tiene raíz en uno
-  anular, porque `L2'` es negativo dentro de la umbra y positivo dentro de la
-  antumbra. Escrita así, los dieciocho anulares del catálogo daban cero segundos
-  de anularidad mientras seguían dando bien la magnitud.
-- Los contactos se nombran por **la dirección en que la curva cruza el cero**,
-  no por el orden de las raíces. Tomar la primera como C1 supone que las dos
-  caen dentro de la ventana; cuando no, un último contacto se etiqueta como
-  primero y todo lo que barre desde C1 hacia adelante concluye que no hay
-  eclipse. Por eso también la ventana es de ±4 h y los elementos se ajustan
-  sobre ese mismo rango.
-- Un eclipse puede ser total sin ser central. Entre γ = 0,9972 y γ ≈ 1,03 el eje
-  pasa fuera de la Tierra y el cono todavía roza el limbo. Clasificar mirando
-  solo el eje llama parciales a esos, y entonces el mapa no dibuja franja
-  mientras la ficha del punto responde «total».
-- El desplazamiento de los límites va perpendicular a la velocidad **relativa**
-  al suelo, no a la de la sombra en el plano fundamental. El observador aporta
-  unos cientos de m/s y omitirlo estrecha la banda hasta 5 km por lado.
-- `limits()` no devuelve norte y sur, devuelve `edges`. Esos nombres son el lado
-  izquierdo y derecho del movimiento y coinciden con la latitud solo mientras la
-  sombra va hacia el este. Reetiquetar época a época arregla el nombre y rompe
-  la curva, porque la polilínea empieza a zigzaguear entre los dos bordes.
-- γ lleva signo. Sin él no coincide con ningún catálogo publicado y se pierde el
-  hemisferio.
-- La radiancia retiniana sale del haz **sin eclipsar** dividido por la subtensa
-  solar entera, no del eclipsado. La radiancia es invariante bajo ocultación: la
-  Luna quita área, no brillo. Lo que el eclipse mueve es el **límite**, a través
-  de la subtensa del creciente. Dividir la irradiancia eclipsada por un ángulo
-  sólido lleva el peligro a cero justo cuando no está bajando; ese error vivió
-  en `eye.py` y por eso el módulo lleva la advertencia escrita.
-- Dos discos anidados son **dos** casos. Luna mayor es totalidad y la subtensa
-  es cero. Sol mayor es anularidad y queda un anillo entero de fotosfera: ahí
-  devolver cero declara peligro térmico nulo con todo el limbo a la vista.
-- La ficha nunca escribe «sin límite». ICNIRP solo se pronuncia hasta 30 000 s,
-  y la regla 3 de `SAFETY.md` prohíbe cualquier respuesta que se lea como
-  permiso. Una transmitancia exigida mayor que 1 tampoco se imprime como cifra.
-- Las dos ramas de la transmitancia se devuelven por separado, no solo su
-  mínimo. La que no manda es invisible dentro del mínimo, y un fallo ahí no se
-  puede ver: así estuvo la rama térmica dividiendo por el haz equivocado.
-- El paso fijo no muestrea bien una trayectoria de sombra: al final del recorrido
-  la umbra se dispara y seis segundos pasan de 2 km a 110 km de separación. Se
-  densifica por bisección solo donde hace falta.
-- El recorte de `--fit` centra el astro y no negocia. Lo tentador es agrandar la
-  ventana dejándolo descentrado, y sale mucho más encuadre, pero incumple lo que
-  se pide y se nota a simple vista. La ventana va simétrica respecto al Sol.
+- LaTeX macros do not take digits. `paperdata.py` turns `dniC1` into `dniCOne`
+  when writing `keyvals.tex`. Use the alphabetic form in the manuscript.
+- Do not put `\input` inside a `tabular`: the `array` scanner does not survive
+  it. `write_table()` emits the whole `table` environment from Python.
+- `kv()` localizes the decimal separator to a comma. A macro added without
+  going through `kv()` comes out with a point in a document configured for a
+  comma.
+- `figures.py` defines `F` as the figures directory. Do not shadow it with a
+  local variable.
+- Matplotlib's log scale draws labels on the minor ticks even with the major
+  ones fixed. Use `logticks()`.
+- Paths are no longer absolute. `siteconf.ROOT` resolves from the file itself
+  and the other modules do `from siteconf import ROOT`. Never write an absolute
+  home-directory path again: `tools/privacy_check.sh` catches it.
+
+### The stabiliser
+
+- The brightness centroid is **never** the way to centre an eclipse: a
+  crescent's centroid moves into the lit part and marches towards the uncovered
+  limb as the Moon covers, dragging the Sun by nearly a radius over the partial
+  phase. What is invariant is the limb.
+- Against a lit sky the Moon is what to track, and the circular Hough has to
+  carry a sign. Unsigned it scores the lunar limb and the solar flare edge
+  alike, which have opposite polarity, and settles on the brighter, which is
+  the wrong one. `cv2.HoughCircles` does not latch onto anything in this
+  material either.
+- When masking a local search, use a finite sentinel and not `-inf`: the
+  parabolic refinement gives `NaN` if a neighbour is infinite, and `NaN` passes
+  any guard written as `if den else ...`, because `NaN` is truthy.
+- The `--fit` crop centres the body and does not negotiate. The tempting move
+  is to enlarge the window leaving it off-centre, which yields far more frame,
+  but it breaks what was asked for and it shows. The window stays symmetric
+  about the Sun.
+- In the browser, both passes **play** the video rather than seeking frame by
+  frame. Seeking is exact and costs tens of milliseconds per frame, and a
+  recorder fed at that rate stamps the result in wall-clock time and produces a
+  video that plays three times too slow.
+- The browser port cannot assume the scale. The Python original hard-codes a
+  110 px solar radius for one camera; in a browser the footage can be anything,
+  so the radius is measured from the first frame with a usable Sun and refined
+  from there.
+
+### Geometry and the catalogue
+
+- `eclipsecat.py`'s Besselian elements do **not** match NASA's to the last
+  digit, and must not. They are two declared conventions: the nominal IAU 2015
+  solar radius (695 700 km) against the 696 000 km NASA's `tan f` imply, and
+  Skyfield's ΔT (69.10 s) against Espenak's 71.4 s. The first moves the limits
+  by about 700 m; the second moves nothing on the ground, because each side is
+  self-consistent. Comparing against NASA requires using **their** ΔT on both
+  sides, or what gets measured is the difference between two predictions of the
+  Earth's rotation instead of the geometry.
+- Longitude is **positive east** throughout the project. Meeus tabulates it
+  positive west. Mixing them breaks nothing visibly: it mirrors every path
+  about Greenwich and the map still looks like a map.
+- When masking the axis search on the ellipsoid, a finite sentinel is *not* the
+  answer: the problem there is different. `q <= 0` means the axis misses the
+  Earth and the function must return `null`, not a point on the limb. Clamping
+  to zero manufactures paths that wrap around the planet.
+- The central line is sampled every **six seconds**, not every minute. At the
+  end of a grazing path the umbra runs at some 3 km/s, so a minute leaves
+  180 km gaps and the drawn line stops being where the shadow is.
+- The interior contact is `|m| = |L2'|`, **never** `m + L2' = 0`. That second
+  form is what Meeus tabulates for a total eclipse and has no root in an
+  annular one, because `L2'` is negative inside the umbra and positive inside
+  the antumbra. Written that way, the catalogue's eighteen annulars gave zero
+  seconds of annularity while still giving the magnitude correctly.
+- Contacts are named by **the direction in which the curve crosses zero**, not
+  by root order. Taking the first as C1 assumes both fall inside the window;
+  when they do not, a last contact gets labelled as a first and everything that
+  sweeps forward from C1 concludes there is no eclipse. That is also why the
+  window is ±4 h and the elements are fitted over that same range.
+- An eclipse can be total without being central. Between γ = 0.9972 and
+  γ ≈ 1.03 the axis passes outside the Earth and the cone still grazes the
+  limb. Classifying by the axis alone calls those partial, and then the map
+  draws no path while the point's panel answers "total".
+- The limits are displaced perpendicular to the velocity **relative to the
+  ground**, not to the shadow's velocity in the fundamental plane. The observer
+  contributes a few hundred m/s and omitting it narrows the band by up to 5 km
+  a side.
+- `limits()` does not return north and south, it returns `edges`. Those names
+  are the left and right sides of the motion and coincide with latitude only
+  while the shadow travels east. Relabelling epoch by epoch fixes the name and
+  breaks the curve, because the polyline starts zigzagging between the two
+  edges.
+- γ carries a sign. Without it, it matches no published catalogue and the
+  hemisphere is lost.
+- A fixed step does not sample a shadow path evenly: at the end of the run the
+  umbra accelerates and six seconds go from 2 km to 110 km of separation. It is
+  densified by bisection only where needed.
+
+### The map
+
+- **Web Mercator has no poles.** It stops at 85.05° because the projection
+  sends 90 to infinity, and eclipse paths go further north: the 2026 one starts
+  at 87° N. That is why the map is `L.CRS.EPSG4326` and the tiled backgrounds
+  are WMS in that same projection, not the OpenStreetMap tile pyramid. Changing
+  the map's CRS to use tiles also forces rebuilding the whole map, because
+  Leaflet fixes it at construction. Tried and discarded.
+- **The WMS returns black above the Mercator limit.** It serves the data in
+  EPSG:4326, but its source is still Mercator, so from 85.05° to 90° it has
+  nothing to draw and fills with black. Two rectangles in the map's background
+  colour, in a pane of their own between the tiles and the bands, cover it. The
+  cut is at **84°**, not 85.0511: measured on screen, the black reaches down to
+  about 84.3° at the widest zoom, because the server's tile grid does not fall
+  where ours does. What gets lost is Arctic Ocean and Antarctic interior. The
+  rectangles come off with the coastline base map, which does reach the pole.
+- **The free tile services stamp an advertisement onto part of their tiles.** A
+  panel with a QR code, baked into the image. Nothing in the browser can remove
+  it and removing it would breach their terms. The answer is the third base
+  map, the Natural Earth coastlines that ship inside the page, which is also
+  the one that makes no third-party requests at all.
+- `map.getBoundsZoom(bounds, true)` **clamps its result by the current
+  `minZoom`**. Using it to compute that same `minZoom` means it can only go up:
+  on shrinking the window it stays stuck at the large window's minimum. It has
+  to be dropped to zero before asking.
+- **Do not invert the tiled background for dark mode.** The usual trick
+  (`invert(1) hue-rotate(180deg)`) is meant for styles with a light sea and
+  white land; these already bring a dark blue sea, so inverting leaves the
+  ocean a luminous cyan brighter than the continent. Tried, and it shows in the
+  screenshots. What works is dimming the tile, and the filter goes on the
+  **image**, not on the pane: that pane also holds the Natural Earth
+  coastlines, which are already drawn in the theme's colours.
+- The offline map downloads **only if the tile server fails**, which is why it
+  can afford 0.66 MB. Falling back needs evidence, not one failed request: four
+  errors with no image loaded, or nine seconds with none. That second criterion
+  is what covers the case that hangs instead of failing, which a `tileerror`
+  handler never sees.
+- **Do not use Leaflet's canvas renderer for the offline map.** It is the right
+  tool on paper and it kills the renderer process in headless Chromium on
+  `setView`, even with the old 10 600-vertex file. Tried in both panes and with
+  two data sizes. SVG stays, and with SVG the cost grows with the vertices:
+  measured, a zoom costs the same at 22 000 as at 34 000 and clearly more at
+  54 000. Which is why `tools/make_worldmap.py` simplifies to 34 000 and not to
+  the 190 000 Natural Earth 1:10 m gives at a fine tolerance.
+- In Leaflet, an `imageOverlay` and an SVG renderer are siblings inside the
+  same pane: `bringToBack()` on one does not move it relative to the other.
+  Order is fixed by creating panes with their `zIndex`, not by reordering
+  layers.
+
+### The obscuration bands
+
+- They are **polygons, not a raster**, and going back to a raster is going back
+  to the problem: an image has one resolution and a map has as many as it has
+  zoom levels. A 1920 × 960 canvas over the world is a pixel every 21 km, that
+  is 34 screen pixels at zoom 7, and the accessible mode's 2-pixel outlines
+  came out as 68-pixel steps. No canvas size fixes it, because the map goes to
+  zoom 15.
+- **The grid and the refinement have to be the same function.** The 121-instant
+  sweep falls short of the true maximum, and by different amounts at different
+  points: measured, 4·10⁻⁴ in the median and 1.4·10⁻² in the tail. With the
+  grid on the sweep and the refinement on the exact value they are level sets
+  of two different functions and 13 % of vertices come out with no sign change
+  to bisect. That is why `obscurationGrid` makes a second golden-section pass
+  over cells with `0 < o < 1`, and why `maxObscuration` runs exactly that same
+  refinement. Touch one, touch the other.
+- **Above the terminator there is no level curve, there is a jump.** What is
+  drawn is the greatest obscuration *with the Sun above the horizon*, so on the
+  sunset line the function jumps from zero to a finite value. There the region
+  boundary is a discontinuity: bisection converges to the sunset line itself,
+  which is correct, and checking `|g − level| ≈ 0` means nothing. Nearly half
+  the vertices of a contour are there. The tests identify them by the Sun's
+  altitude at the instant of their maximum and count them separately; do not
+  discard them in silence.
+- **A jump cannot be refined, but it can be smoothed.** The grid is 0.56° and
+  at high latitude that is twenty kilometres of longitude against sixty of
+  latitude, so the chain of cuts along a jump comes out as a zigzag: teeth up
+  to fifty kilometres. Vertices known to sit on a jump are marked and smoothed,
+  each sliding **along its own grid edge** and never off it. That the jump
+  crosses that edge is certain; where along it is not known better than the
+  grid knows.
+- The time hint of `maxObscuration` **must accept several hints and cover
+  everything between them**. Near the terminator the visible obscuration has
+  two humps, one per spell the Sun spends above the horizon, and two
+  neighbouring cells can have their maximum in different ones. Widening the
+  window does not help there, because the maximum sits in the interior of the
+  wrong hump: measured on 2036-08-21 at 78° N, 0.207 where the full sweep gives
+  0.715. A large residual at the end of the bisection forces the cut to be
+  redone with no hint at all.
+- The contour domain is framed with a row and a column of **−1 one cell outside
+  the world**. That is what makes every contour close with no special case at
+  the poles or the antimeridian. Removing the frame means writing the traversal
+  of the domain boundary, which is where half of marching squares' bugs live.
+- **The frame is not enough: real nodes at ±180 and ±90 are needed.** Without
+  them the edge joining the last cell centre to the frame is cut by
+  interpolating against −1 over 1.35°, and that cut falls **inside** the map
+  whenever the value is under (1+3·level)/2 — for level 0.9, always. Measured,
+  the band drawn was the wrong one up to 66 km in along the antimeridian and 39
+  at the poles, across the 56 eclipses. The world-edge nodes are computed, not
+  interpolated.
+- **The horizon is the geodetic one everywhere.** `local()` decides by altitude
+  above the local horizon and the map used to do it with ζ > 0, the geocentric
+  one. On an ellipsoid they differ by up to 0.091° of solar altitude, and near
+  sunset the map painted a 30-40 % band at a point whose panel answered 57.9 %.
+  `SAFETY.md` forbids the map contradicting its own answer.
+- The adaptive subdivision searches for the curve **half a chord** away, not a
+  whole one. With a whole chord the bisection latches onto another branch of
+  the contour passing nearby and the ring crosses itself: there were 1447
+  self-crossings, and with `fill-rule: evenodd` every loop inverts the fill.
+- The outermost band starts at **5 %** and that is not an aesthetic choice.
+  Near the edge of the penumbra the eclipse lasts minutes and the 121-instant
+  sweep misses it: up to 0.0165 of obscuration, and 32 of 2227 fringe points
+  read as zero. The real limit is drawn by the visibility contour.
+- The **visibility limit** contours `L1 − m`, the penumbra margin, and not a
+  small obscuration level. The margin is smooth in time, so it does not depend
+  on the sampling landing inside the eclipse. It is computed in the same grid
+  pass, and its fringe cells are recomputed with a full sweep when their sign
+  disagrees with a neighbour's, because a cell right on the shore can be inside
+  the penumbra only between two sampled instants.
+- The normal to a chord is traced in arc distance and converted back to
+  longitude by **dividing by the cosine of the latitude**. Near the pole that
+  cosine is tiny and half a degree of arc becomes a hundred of longitude:
+  vertices came out at 185°, outside the domain. Hence `onCurve`'s two guards,
+  a bounded search radius and a result discarded if it leaves the frame.
+- Each band carries the contour above it as a **hole**, and fills are not
+  stacked. Two translucent fills on top of each other multiply their alphas and
+  the ten steps stop being ten. Leaflet draws every ring of a polygon into a
+  single path with `fill-rule: evenodd`, so the hole comes out by parity
+  without working out which ring is inside which. And it clips the path to the
+  view, which is why 13 000 vertices become 774 in the DOM and panning costs
+  nothing.
+- `obsAt` is a **hand copy** of `evaluate` + `geom` + `obscuration`, written
+  that way because those two allocate an object each and the contour refinement
+  calls them millions of times. It can drift from its originals in any edit;
+  `besselian.test.js` compares them and that check is not optional.
+- The grid pruning is exact, not a heuristic: the two conditions that rule a
+  cell out — Sun below the horizon and penumbra out of reach in η — are
+  monotone in `cos H`, so their intersection is an interval and two arcs of
+  columns suffice. `besselian.test.js` requires the result to be **identical**,
+  not similar, to the unpruned sweep over four geometries.
+
+### Radiometry
+
+- Limb darkening does not always run the same way. While the Moon covers the
+  limb, which is faint, the flux deficit runs **behind** the area deficit; once
+  it reaches the centre it runs **ahead**. A port with the weighting inverted
+  still gives a believable monotone curve, and only the crossing catches it.
+- In `fluxObscuration`, `Math.pow(cos(theta), alpha)` gives `NaN` if the cosine
+  comes out negative from rounding at the last Simpson node. It has to be
+  clamped at zero.
+- Retinal radiance comes from the **uneclipsed** beam divided by the whole
+  solar subtense, not from the eclipsed one. Radiance is invariant under
+  occultation: the Moon removes area, not brightness. What the eclipse moves is
+  the **limit**, through the crescent's subtense. Dividing the eclipsed
+  irradiance by a solid angle takes the hazard to zero exactly when it is not
+  falling; that error lived in `eye.py` and that is why the module carries the
+  warning in writing.
+- Two nested disks are **two** cases. Moon larger is totality and the subtense
+  is zero. Sun larger is annularity and a whole ring of photosphere remains:
+  returning zero there declares zero thermal hazard with the entire limb in
+  view.
+- The panel never writes "no limit". ICNIRP only speaks up to 30 000 s, and
+  rule 3 of `SAFETY.md` forbids any answer that reads as permission. A required
+  transmittance greater than 1 is not printed as a figure either.
+- The two transmittance branches are returned separately, not just their
+  minimum. The one that does not govern is invisible inside the minimum, and a
+  failure there cannot be seen: that is how the thermal branch spent time
+  dividing by the wrong beam.
+
+### The terrain horizon
+
+- The skyline search starts **below** anything, not at zero. From a summit the
+  skyline is below the horizontal — the dip of the horizon — and clamping at
+  zero calls a Sun at −1° hidden when it is in plain view. The dip that can be
+  reported is capped by the search radius, which is why the radius is stated
+  with the answer.
+- The elevation tiles are Mercator and shrink with the cosine of the latitude,
+  so the zoom level is chosen per query to keep the fetch at three tiles
+  across. A fixed zoom fetches nine at the equator and thirty-six in Lapland.
+- Building heights are a coverage story, not a feature. Measured in August
+  2026, of the buildings within 400 m, Manhattan declared a height for 86 % of
+  them, Zaragoza for 0.2 %, Nairobi for 3 %. The panel says how many declared
+  one and how many did not; anything else would be inventing a skyline.
+- These are the only requests the calculator makes that say anything about the
+  visitor. They happen on an explicit button, never on their own, and the page
+  says so at the button.
+
+### Interface and languages
+
+- The three themes live whole in `web/css/style.css` as variables, and `app.js`
+  reads them with `cssv()`. Do not write a colour by hand in JavaScript: the
+  map lines, the marker, the chart and the caps all come from there, and a
+  literal colour freezes when the theme changes.
+- No user-facing string is written in JavaScript either. They live in
+  `web/js/lang.js`, five languages per key, and `lang.test.js` fails on a
+  missing one.
+- Numbers never appear as literals in the dictionary. They arrive already
+  formatted for the active locale through `Intl`: a decimal point in a Spanish
+  sentence is a mistake and a decimal comma in an English one is a different
+  mistake. The per-cent sign takes a space in Spanish, Catalan and French and
+  none in Italian and English.
+- The page addresses nobody in the second person, in any of the five
+  languages. A test enforces it.

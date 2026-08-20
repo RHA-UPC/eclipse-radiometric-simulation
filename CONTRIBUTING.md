@@ -1,100 +1,99 @@
-# Cómo contribuir
+# How to contribute
 
-Este proyecto calcula riesgos de seguridad. Un error aquí no rompe una
-compilación: puede acabar diciéndole a alguien que mire al Sol más tiempo del
-que debe. Por eso las reglas de abajo son más estrictas de lo habitual.
+This project computes safety risks. A mistake here does not break a build: it
+can end up telling someone they may look at the Sun for longer than they should.
+That is why the rules below are stricter than usual.
 
-## La regla que gobierna todo
+## The rule that governs everything
 
-**Ninguna cifra sin procedencia.**
+**No figure without provenance.**
 
-Cada número que llega al manuscrito o a un resultado sale de un cálculo
-reproducible en `src/` o de una fuente citada literalmente en
-`data/literature.json`. Si algo no se puede verificar, se declara como no
-verificado en lugar de rellenarse con una estimación.
+Every number that reaches the manuscript or a result comes from a reproducible
+calculation in `src/` or from a source quoted verbatim in
+`data/literature.json`. If something cannot be verified, it gets declared as
+unverified rather than filled in with an estimate.
 
-Un pull request que introduzca una constante sin cita se rechaza, por buena que
-sea la constante.
+A pull request introducing a constant without a citation gets rejected, however
+good the constant is.
 
-## Antes de abrir un pull request
+## Before opening a pull request
 
-1. **Corre las autocomprobaciones.** Siete módulos traen `_selftest()` y
-   comprueban identidades físicas, no valores tabulados: conservación de energía
-   en la óptica, el límite termodinámico de concentración, los límites
-   asintóticos de Carslaw y Jaeger, la continuidad de las dos ramas del límite
-   ICNIRP y el área exacta de lente círculo-círculo.
+1. **Run the self-checks.** Seven modules carry a `_selftest()` and verify
+   physical identities rather than tabulated values: energy conservation in the
+   optics, the thermodynamic concentration limit, the asymptotic limits of the
+   Carslaw and Jaeger solution, continuity across the two branches of the ICNIRP
+   limit, and the exact circle-circle lens area.
 
    ```bash
    cd src && for m in limbdark radiometry optics thermal eye spectral perseids; do
-     python $m.py >/dev/null 2>&1 && echo "$m OK" || echo "$m FALLA"; done
+     python $m.py >/dev/null 2>&1 && echo "$m OK" || echo "$m FAILS"; done
    ```
 
-   `limbdark.py` tarda varios minutos. Los demás son rápidos salvo los que
-   cargan efemérides.
+   `limbdark.py` takes several minutes. The rest are fast except those that load
+   ephemerides.
 
    `src/eclipsecat.py --selftest`, `src/webdata.py --selftest`,
-   `node web/js/besselian.test.js` y `node web/js/radiometry.test.js` cubren la
-   web. El primero tarda unos veinte segundos; el segundo es instantáneo. Solo
-   hacen falta si tocas el catálogo o el mapa, y entonces son obligatorios: un
-   error ahí dibuja una franja de totalidad creíble en el sitio equivocado, y
-   eso llevaría a alguien a quitarse el filtro con fotosfera a la vista.
+   `node web/js/besselian.test.js` and `node web/js/radiometry.test.js` cover
+   the web front end. The first takes about twenty seconds, the second is instant.
+   You only need them if you touch the catalogue or the map, and then they are
+   mandatory: an error there draws a credible totality path in the wrong place,
+   which would lead someone to remove a filter with the photosphere in view.
 
-   `tools/stab_solar.py --selftest` va aparte y es instantáneo. No entra en la
-   cadena del manuscrito, así que solo hace falta si tocas esa herramienta.
-   Comprueba sus cuatro modos de fallo: el ajuste al limbo frente al centroide
-   de brillo, la lectura de la totalidad, la Luna contra un borde de halo con
-   cielo iluminado, y que el recorte nunca se salga del fotograma original.
+   `tools/stab_solar.py --selftest` stands apart and is instant. It is outside
+   the manuscript chain, so you only need it if you touch that tool. It covers
+   its four failure modes: the limb fit against the brightness centroid, reading
+   totality, the Moon against a bloom edge under a lit sky, and the crop never
+   running off the source frame.
 
-2. **Corre `validate.py`.** Contrasta SPECTRL2 contra el espectro de referencia
-   ASTM G173 y la reimplementación besseliana contra las duraciones centrales
-   publicadas por la NASA. V1 y V2 tienen criterio de aprobado.
+2. **Run `validate.py`.** It checks SPECTRL2 against the ASTM G173 reference
+   spectrum and the Besselian re-implementation against NASA's published
+   central-line durations. V1 and V2 carry pass criteria.
 
-3. **Corre la comprobación de privacidad.**
+3. **Run the privacy check.**
 
    ```bash
    bash tools/privacy_check.sh
    ```
 
-   Falla si en el índice de git aparecen rutas absolutas, imágenes, vídeo,
-   kernels de terceros o direcciones de correo.
+   It fails if absolute paths, images, video, third-party kernels or e-mail
+   addresses reach the git index.
 
-4. **Si tocas física, deja una comprobación que falle si la rompes.** Una
-   identidad, un límite asintótico o un caso con solución analítica. No hace
-   falta framework: un `assert` dentro de `_selftest()` basta.
+4. **If you touch physics, leave behind a check that fails when you break it.**
+   An identity, an asymptotic limit, or a case with an analytic solution. No
+   framework needed: one `assert` inside `_selftest()` is enough.
 
-## Qué se acepta con gusto
+## Welcome contributions
 
-- Correcciones de errores numéricos, sobre todo si vienen con el caso que las
-  destapa.
-- Fuentes primarias mejores que las actuales, en particular un umbral de daño
-  medido en un sensor CMOS de consumo moderno, que hoy no existe en la
-  literatura y es el hueco más grande del trabajo.
-- Generalización del emplazamiento. Hoy `src/siteconf.py` es la única fuente de
-  las coordenadas, y la intención a medio plazo es parametrizarlo. Ver
+- Fixes to numerical errors, especially with the case that exposes them.
+- Primary sources better than the current ones, in particular a damage threshold
+  measured on a modern consumer CMOS sensor, which does not exist in the
+  literature today and is the largest gap in the work.
+- Generalising the observing site. Today `src/siteconf.py` is the single source
+  of the coordinates, and parameterising it is the medium-term intention. See
   [`ROADMAP.md`](ROADMAP.md).
-- Traducciones del manuscrito.
+- Translations of the manuscript.
 
-## Qué no se acepta
+## What will not be accepted
 
-- Números sin fuente.
-- Consejo médico o de seguridad redactado como recomendación. Los resultados de
-  exposición ocular se publican como cálculo bajo hipótesis declaradas, nunca
-  como permiso para mirar al Sol. Ver [`SAFETY.md`](SAFETY.md).
-- Dependencias nuevas para lo que resuelven veinte líneas.
-- Cambios que rompan la reproducibilidad: borrar `data/` salvo los tres archivos
-  fuente y volver a correr la cadena tiene que seguir reproduciendo el PDF.
+- Numbers without a source.
+- Medical or safety guidance phrased as a recommendation. Ocular exposure
+  results are published as calculations under declared assumptions, never as
+  permission to look at the Sun. See [`SAFETY.md`](SAFETY.md).
+- New dependencies for something twenty lines can solve.
+- Changes that break reproducibility: deleting `data/` except the three source
+  files and rerunning the chain must keep reproducing the PDF.
 
-## Licencias y cesión de derechos
+## Licences and assignment of rights
 
-El código está bajo **AGPL-3.0-only** y el material escrito bajo
-**CC BY-SA 4.0**. Ver [`LICENSES.md`](LICENSES.md).
+The code is under **AGPL-3.0-only** and the written material under
+**CC BY-SA 4.0**. See [`LICENSES.md`](LICENSES.md).
 
-**Toda contribución exige firmar el acuerdo de [`CLA.md`](CLA.md) antes de que
-se fusione.** El acuerdo cede al titular del proyecto los derechos necesarios
-para poder ofrecer el conjunto bajo otras licencias, incluida una comercial. Sin
-esa cesión el proyecto perdería esa posibilidad en cuanto entrara la primera
-aportación externa.
+**Every contribution requires signing the agreement in [`CLA.md`](CLA.md)
+before it is merged.** It assigns to the project owner the rights needed to
+offer the whole under other licences, including a commercial one. Without that
+assignment the project would lose the option permanently as soon as the first
+outside contribution arrived.
 
-Léelo entero antes de contribuir. Si no estás conforme con cederlos, abre una
-incidencia describiendo el problema y el arreglo en vez de un pull request: una
-descripción no es código y no requiere cesión.
+Read it in full before contributing. If you are not comfortable assigning those
+rights, open an issue describing the problem and the fix instead of a pull
+request: a description is not code and requires no assignment.

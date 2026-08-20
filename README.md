@@ -1,317 +1,316 @@
-# Riesgo radiométrico de un eclipse total con el Sol a 4,75° de altura
+# Solar eclipses, computed in the browser
 
-Estudio del eclipse total de Sol del 12 de agosto de 2026 observado desde un
-observatorio republicano de la Batalla del Ebro, cerca de La Figuera (Priorat,
-Tarragona), en 41,212878 N · 0,709488 E, 616,1 m.
+Circumstances of every solar eclipse from 2026 to 2050, at any point on Earth,
+worked out where the page is open and nowhere else. Fifty-six eclipses: 16
+total, 18 annular, 3 hybrid, 19 partial.
 
-La totalidad ocurrió con el Sol a menos de cinco grados sobre el horizonte y
-media hora antes del ocaso. Esa geometría es rara en la península y cambia el
-balance de riesgos en dos direcciones opuestas: hunde el riesgo térmico para el
-sensor de una cámara y deja intacto el riesgo fotoquímico para la retina, que
-además pierde el reflejo de aversión porque el Sol bajo ya no deslumbra.
-
-El manuscrito está en **[`out/paper.pdf`](out/paper.pdf)** (22 páginas, español).
-
-## Qué contiene
-
-| Pregunta | Respuesta corta |
-|---|---|
-| ¿Estaba el punto dentro de la franja? | Sí, a 41,9 km del límite norte medidos perpendicularmente. 70,27 s de totalidad. |
-| ¿Lo tapaba el terreno? | No. El horizonte hacia poniente está deprimido 0,42° y el Sol lo salvaba por 5,17°. |
-| ¿Cuánto oscurece el atardecer frente al eclipse? | La irradiancia directa cae de 490 a 186 W/m² por el mero descenso del Sol. La atmósfera se lleva el 62 % antes de que la Luna aporte nada. |
-| ¿Se daña el sensor de la réflex? | No. Peor caso honesto 6,84 K de calentamiento local, y 18× de margen contra el único umbral en onda continua publicado con su tamaño de mancha. |
-| ¿Y el ojo? | Ahí se invierte. El límite térmico retiniano de ICNIRP se supera un 30 % en el primer contacto. |
-| ¿Probabilidad de cazar una Perseida durante la totalidad? | 0,67 % en la configuración más favorable del barrido: 16 mm, magnitud límite 4. |
-
-## Cómo está hecho
-
-Efemérides JPL DE440s vía Skyfield, modelo digital del terreno Copernicus
-GLO-30 para el horizonte real, estado atmosférico operativo del día del evento,
-SPECTRL2 por longitud de onda y límites de exposición ICNIRP 2013.
-
-La regla que gobierna el repositorio: **ninguna cifra sin procedencia**. Cada
-entrada externa vive en `data/literature.json`, `data/atmosphere.json` o
-`data/hardware.json` con su cita. El manuscrito no contiene ni un número escrito
-a mano: `src/paperdata.py` los emite todos, y aborta la compilación si algún
-bloque de hardware sigue marcado como provisional.
-
-Tres agentes independientes recibieron el encargo de refutar el trabajo. Lo que
-encontraron, incluidos varios errores numéricos reales, está en
-[`docs/REVIEWS.md`](docs/REVIEWS.md) sin recortar.
-
-## Reproducir
+The site is static and there is no back end. The catalogue, the tables and
+Leaflet are self-hosted, and every number on the screen is produced by the
+visiting browser, so a marked coordinate is never sent anywhere.
 
 ```bash
-uv venv --python 3.12 .venv && . .venv/bin/activate
-uv pip install numpy scipy matplotlib pandas skyfield pvlib rasterio
+cd web && python -m http.server 8000     # then open http://localhost:8000
+```
 
+## What it answers
+
+**By eclipse.** Pick one and the map draws the central line, both umbral
+limits, the outer limit of visibility and the greatest obscuration in bands.
+Mark a point and it gives the local circumstances: what fraction of the disk
+gets covered, how long the central phase lasts, the four contacts in UTC, and
+the Sun's altitude and azimuth at each of them.
+
+**By place.** Mark the point and get the eclipses visible from there between
+2026 and 2050, in order.
+
+**Real horizon.** On request, the page downloads the elevation model for the
+surrounding 25 km and works out the skyline azimuth by azimuth. Out of that
+come two things the geometry needed and was doing without: the observer's own
+elevation, and whether the Sun is actually in view at each contact or sitting
+behind a ridge. OpenStreetMap building heights can be folded in where anyone
+has recorded them, and there is a field for declaring the obstacle nobody has
+mapped — the block across the street, the tree line.
+
+**Irradiance and ocular exposure.** A button under each point solves SPECTRL2
+over 122 wavelengths, the chromatic transmission of the eclipse with limb
+darkening, and both ICNIRP 2013 limits. Around two tenths of a second per
+point, on the visitor's machine.
+
+None of it comes precomputed, and that is not a disk-space decision. Irradiance
+depends on the atmospheric state of the point and the day, which this project
+has measured only over the Ebro; precomputing the planet would mean inventing
+an atmosphere and presenting it as data. The page does the opposite: it asks
+for the hypothesis and shows it next to the result. The ASTM G173-03 reference
+conditions are the default, the measured Ebro atmosphere is the second preset,
+and any atmosphere can be typed in.
+
+**Video stabiliser.** `web/stabilise.html` pins the eclipsed Sun to a fixed
+point of the frame, decoding and re-encoding the video in the browser. The file
+is opened from disk with the File API and never uploaded.
+
+## Five languages, three themes
+
+The interface ships in English, Spanish, Catalan, Italian and French. Each one
+follows its own typographic norms rather than the source language's: decimal
+comma in the four Romance languages, a space before the per-cent sign in
+Spanish, Catalan and French and none in Italian and English. Numbers are
+formatted for the active locale, not translated after the fact.
+`web/js/lang.test.js` fails the build on a missing key, a mismatched
+placeholder, or an unbalanced HTML tag inside a string.
+
+Three themes: light, dark, and one built for colour blindness and low vision —
+maximum contrast, larger type, thicker strokes, a ramp with no red/green pair
+anywhere, and every 10 % step outlined so that nothing depends on the colour
+channel. With no choice stored, the operating system decides.
+
+## Where the numbers come from
+
+`src/eclipsecat.py` walks the new Moons over JPL DE440s, keeps the ones that
+produce an eclipse, and **fits its own Besselian elements** instead of copying
+a published table. Some forty numbers per eclipse reproduce the shadow to under
+a kilometre for the hours it lasts, and they are the only way a browser answers
+without loading a 32 MB ephemeris and a root finder.
+
+Two differences against NASA remain, declared, and neither is an error: this
+project adopts the nominal IAU 2015 solar radius (695 700 km) where Espenak's
+elements imply 696 000, and uses Skyfield's ΔT (69.10 s) where NASA adopted
+71.4 s. The first moves the limits by about 700 m. The second moves nothing on
+the ground, because each side is self-consistent.
+
+The checks are the part that matters:
+
+```bash
+python src/eclipsecat.py --selftest      # elements, central line, catalogue
+python src/webdata.py --selftest         # exported tables and their provenance
+node web/js/besselian.test.js            # geometry: the port against all three
+node web/js/radiometry.test.js           # radiometry: the port against the paper
+node web/js/stabilise.test.js            # the tracker against the Python original
+node web/js/lang.test.js                 # five dictionaries, key by key
+```
+
+Between them they require that local circumstances reproduce the DE440s chain
+in `geometry.py` to under 1.5 s at every contact, that the central line falls
+within 3 km of NASA's published one, and that annularity durations reproduce
+the published values for 2027, 2028 and 2031.
+
+The invariant that matters most ties the drawing to the calculation: **on the
+edge of the path the central phase lasts zero seconds, three kilometres inside
+it does not, and three kilometres outside it is zero again.** Without it the
+map can draw a perfectly convincing path in the wrong place, which is the worst
+failure this page can commit.
+
+Four adversarial reviews have attacked all of this. What they found, and what
+one of them missed and turned up later by pulling on its own thread, is in
+[`docs/REVIEWS.md`](docs/REVIEWS.md), uncut.
+
+## The obscuration bands
+
+Vector polygons, not an image, so they stay clean at zoom 2 and at zoom 15. The
+computing grid only decides which way each contour runs; every vertex is then
+placed by bisecting the real function, and the chords are subdivided until they
+sit within half a kilometre of the curve. Around half a second per eclipse,
+once, after which panning and zooming cost nothing.
+
+The outermost band starts at 5 %, not at the edge of the penumbra. Near that
+edge the eclipse lasts minutes and a 121-instant sweep of the obscuration
+misses it. The true limit is the dashed line, which contours a different
+quantity — the penumbra margin `L1 − m`, smooth in time — and therefore passes
+exactly where the edge of the penumbra touches the ground.
+
+## The base map
+
+Three choices, because none of them wins outright.
+
+Streets and relief come from a third party, free of charge, and in exchange it
+stamps its mark on the tiles: a small panel with a QR code every few hundred
+pixels. Nothing in the browser can remove it, and removing it would breach the
+terms of the service that gives the tiles away. Over a city it goes unnoticed;
+over desert or open sea, which is where an eclipse path spends most of its run,
+it is left alone on the screen.
+
+The third choice, Natural Earth coastlines, ships inside the page: no mark, no
+requests to anybody, and therefore no record of the visit anywhere. It is what
+eclipse maps have always drawn.
+
+The tiles arrive from a WMS in EPSG:4326 rather than from the usual
+OpenStreetMap pyramid, for geometry and not for taste: the standard pyramid is
+Web Mercator, which stops at 85.05° because the projection sends the pole to
+infinity, and eclipse paths go further north — the 2026 track starts at 87° N.
+That server carries the same ceiling internally, so above 85° there is nothing
+to draw and the polar caps get no street background. The map itself reaches
+90°, and the path and the bands are drawn there all the same.
+
+If the tile server does not answer, the page notices within a second and falls
+back to the built-in coastlines. The calculations do not depend on the
+background: they are the same with a map and without one.
+
+## What the web still does not compute
+
+The corona. During totality the direct beam is exactly zero, which is what the
+page says; the light that remains then is coronal, of order a million times
+fainter, and calls for different physics.
+
+Vegetation and anything beyond 25 km, in the terrain horizon. Refraction is a
+mean value, and near the ground at sunset the real value swings enough to move
+a distant skyline by a few arcminutes.
+
+## Where this came from
+
+The tool grew out of a study of one eclipse: the total solar eclipse of 12
+August 2026 observed from a Republican observation post of the Battle of the
+Ebro, near La Figuera (Priorat, Tarragona), at 41.212878 N · 0.709488 E,
+616.1 m. The manuscript is **[`out/paper.pdf`](out/paper.pdf)** (22 pages,
+Spanish).
+
+Totality happened with the Sun under five degrees above the horizon and half an
+hour before sunset. That geometry is rare in the Iberian Peninsula and it moves
+the risk balance in two opposite directions: it sinks the thermal risk to a
+camera sensor and leaves the photochemical risk to the retina intact, which
+additionally loses the aversion reflex because a low Sun no longer dazzles.
+
+| Question | Short answer |
+|---|---|
+| Was the site inside the path? | Yes, 41.9 km from the northern limit measured perpendicularly. 70.27 s of totality. |
+| Did terrain block it? | No. The horizon towards the west is depressed by 0.42° and the Sun cleared it by 5.17°. |
+| How much does dusk darken things compared with the eclipse? | Direct irradiance falls from 490 to 186 W/m² from the Sun's descent alone. The atmosphere takes 62 % before the Moon contributes anything. |
+| Does the SLR sensor get damaged? | No. Honest worst case 6.84 K of local heating, and 18× margin against the only published continuous-wave threshold quoted with its spot size. |
+| And the eye? | There it inverts. The ICNIRP retinal thermal limit is exceeded by 30 % at first contact. |
+| Odds of catching a Perseid during totality? | 0.67 % in the most favourable configuration of the sweep: 16 mm, limiting magnitude 4. |
+
+`node web/js/radiometry.test.js` requires the browser port to reproduce
+`data/spectral_timeseries.csv` and `data/eye_timeseries.csv`, which is the
+chain that produced the manuscript. With the measured Ebro atmosphere it
+returns 187 W/m² at maximum, air mass 10.7 and the thermal limit exceeded 1.34
+times: the paper's numbers.
+
+### Reproducing the paper
+
+```bash
 cd src
-python geometry.py      # contactos C1-C4      -> data/circumstances.json
-python terrain.py       # horizonte GLO-30     -> data/horizon.json
-python pathgeom.py      # posición en la franja-> data/pathgeom.json
-python spectral.py      # SPECTRL2             -> data/spectral_timeseries.csv
-python eye.py           # límites ICNIRP       -> data/eye_timeseries.csv
-python perseids.py      # tasas y Poisson      -> data/perseids.csv
-python validate.py      # comprobaciones cruzadas
-python figures.py       # 11 figuras           -> figs/
-python paperdata.py     # 12 tablas + keyvals  -> paper/
+python geometry.py      # DE440s + Besselian  -> data/geometry.json
+python terrain.py       # GLO-30 horizon      -> data/horizon.json
+python pathgeom.py      # position in the path-> data/pathgeom.json
+python spectral.py      # SPECTRL2            -> data/spectral_timeseries.csv
+python eye.py           # ICNIRP limits       -> data/eye_timeseries.csv
+python perseids.py      # rates and Poisson   -> data/perseids.csv
+python validate.py      # cross-checks
+python figures.py       # 11 figures          -> figs/
+python paperdata.py     # 12 tables + keyvals -> paper/
 
 cd ../paper && tectonic paper.tex && mv paper.pdf ../out/
 ```
 
-Skyfield descarga `de440s.bsp` y `finals2000A.all` en la primera ejecución.
-Borrar `data/` salvo los tres archivos fuente y volver a correr la cadena
-reproduce el PDF.
+Skyfield downloads `de440s.bsp` and `finals2000A.all` on the first run. Delete
+`data/` except for the three source files, run the chain again, and the PDF
+comes back.
 
-## Estabilizar un vídeo del eclipse
+### The stabiliser on the command line
 
-`tools/stab_solar.py` deja el Sol quieto y centrado en el plano, para ver a la
-Luna moverse sobre un disco que no se mueve.
+`tools/stab_solar.py` is the original of the browser tool, and still the one to
+use for a long clip or a batch:
 
 ```bash
 uv pip install opencv-python-headless imageio-ffmpeg
-python tools/stab_solar.py entrada.MP4 salida.mp4 [--fit] [--end 1209] [--crop 1080]
+python tools/stab_solar.py input.MP4 output.mp4 [--fit] [--end 1209] [--crop 1080]
 python tools/stab_solar.py --selftest
 ```
 
-Ajusta una circunferencia al limbo solar, no al centroide de brillo. El
-centroide de un creciente no es el centro del Sol: se mete dentro de la parte
-iluminada y avanza hacia el limbo descubierto conforme la Luna tapa, así que
-seguirlo desplazaría el Sol casi un radio a lo largo de la fase parcial, al
-compás del eclipse que se pretende inmovilizar. El limbo, en cambio, es un arco
-de radio constante alrededor del centro solar sea cual sea la ocultación.
+It fits a circle to the solar limb rather than to the brightness centroid. The
+centroid of a crescent is not the centre of the Sun: it sits inside the lit
+part and marches towards the uncovered limb as the Moon advances, so following
+it would shift the Sun by most of a radius over the partial phase, in step with
+the eclipse it is meant to hold still. The limb is an arc of constant radius
+about the solar centre whatever the coverage.
 
-En totalidad no hay fotosfera que ajustar: si la cámara ya ha abierto lo bastante
-para exponer la corona, la Luna aparece como un disco oscuro cerrado dentro de
-ella y sirve su centroide. Mientras la totalidad siga expuesta para la fotosfera
-el fotograma no tiene señal alguna, y esos fotogramas van interpolados.
+During totality there is no photosphere to fit. If the camera has opened up
+enough to expose the corona, the Moon appears as a dark disk closed inside it
+and its centroid serves. While totality is still exposed for the photosphere
+the frame carries no signal at all, and those frames are interpolated.
 
-Con cielo iluminado, en cambio, no vale ningún umbral: la fotosfera florece muy
-por fuera de su propio limbo y lo que se mide es el halo. Ahí la referencia es
-la Luna, que no florece, y se localiza por Hough circular **con signo**. La
-polaridad es lo que la distingue: hacia fuera, el limbo lunar pasa de oscuro a
-claro y el borde del halo al revés, así que puntuar el gradiente radial con su
-signo se queda con uno y descarta el otro. Un Hough sin signo puntúa ambos igual
-y se va con el más brillante.
+Against a lit sky no threshold works: the photosphere blooms far past its own
+limb and what gets measured is the flare. There the reference is the Moon,
+which does not bloom, located by a **signed** circular Hough. Polarity is what
+separates them: going outward, the lunar limb steps dark to bright and the
+flare boundary the other way, so scoring the radial gradient with its sign
+keeps one and discards the other. An unsigned Hough scores both alike and goes
+with whichever is brighter.
 
-`--fit` recorta a la mayor ventana 16:9 que ningún fotograma se sale, porque
-sobre cielo claro las franjas vacías del desplazamiento sí se ven.
+`--fit` crops to the largest 16:9 window no frame runs off, because against a
+lit sky the blank strips left by the shift are visible. What limits that crop
+is not how far the tripod moved but the centring: the window has to sit
+symmetric about the Sun in every frame, so its half-width cannot exceed the
+Sun's closest approach to any edge. A body framed low costs height however much
+unused sky sits above it — in the reappearance take, with the Sun 200 px from
+the bottom edge, 1920×1080 comes out as 708×398.
 
-Lo que limita ese recorte no es cuánto se movió el trípode, sino el centrado. La
-ventana tiene que quedar simétrica respecto al Sol en todos los fotogramas, así
-que su semianchura no puede pasar de lo que el Sol se acerque al borde más
-próximo. Un astro encuadrado bajo cuesta altura por mucho cielo desaprovechado
-que quede encima: en la toma de la reaparición, con el Sol a 200 px del borde
-inferior, 1920×1080 se queda en 708×398.
+`--end` cuts where the shot stops being the same one, for instance if it gets
+reframed halfway.
 
-`--end` corta donde el plano deja de ser el mismo, por ejemplo si se reencuadra
-a mitad de toma.
-
-## La web: cualquier eclipse, cualquier punto
-
-`web/` es un sitio estático que lleva la geometría fuera de este emplazamiento y
-de esta fecha. Ábrelo con cualquier servidor de archivos:
-
-```bash
-cd web && python -m http.server 8000     # y abre http://localhost:8000
-```
-
-Funciona de dos maneras. **Por eclipse:** eliges uno de los 56 que hay entre
-2026 y 2050 —16 totales, 18 anulares, 3 híbridos y 19 parciales—, el mapa dibuja
-la línea central, los dos bordes de la umbra, el contorno de la penumbra y la
-obscuración máxima en bandas, y al marcar un punto salen sus circunstancias: qué
-fracción del disco se cubre, cuánto dura la fase central, los cuatro contactos en
-UTC y la altura y el acimut del Sol en cada uno.
-**Por lugar:** marcas el punto y sale la lista de los eclipses que se verán desde
-ahí, ordenados en el tiempo.
-
-No hay servidor propio: el catálogo, las tablas y Leaflet van autoalojados y
-**todo el cálculo ocurre en tu navegador**, así que las coordenadas que marques
-no se envían a ninguna parte.
-
-El fondo sí viene de fuera. Es OpenStreetMap con detalle hasta nivel de calle,
-y conviene saber lo que eso implica: las peticiones de imágenes llevan en la URL
-el recuadro que estás mirando, de modo que ese servidor ve qué zona te interesa.
-
-Viene de un WMS en EPSG:4326 y no de las teselas habituales de OpenStreetMap,
-por geometría y no por gusto: la pirámide estándar es Web Mercator, que se corta
-en 85,05° porque manda el polo al infinito, y las trayectorias de eclipse llegan
-más al norte — la de 2026 empieza a 87° N. Ese servidor arrastra el mismo techo
-por dentro: por encima de 85° no tiene nada que dibujar, así que los casquetes
-polares quedan sin fondo de calles. El mapa sí llega hasta 90°, y la trayectoria
-y las bandas se dibujan ahí igual.
-
-Las bandas de obscuración son **polígonos vectoriales**, no una imagen, así que
-se ven igual de limpias al zoom 2 que al 15. La malla de cálculo solo decide por
-dónde pasa cada contorno; la posición de cada vértice se busca bisecando la
-función real, y las cuerdas se subdividen hasta quedarse a menos de medio
-kilómetro de la curva. Cuesta medio segundo por eclipse, una vez, y a partir de
-ahí mover el mapa no cuesta nada.
-
-Hay **tres temas**: claro, que es el de la casa; oscuro; y uno pensado para
-daltonismo y baja visión, con el contraste al máximo, más cuerpo de letra,
-trazos más gruesos, una rampa sin ningún par rojo/verde y el contorno de cada
-escalón del 10 % trazado, para que la información no dependa del canal del
-color. Sin elegir nada se sigue la preferencia del sistema operativo.
-
-Si ese servidor no responde, la página lo detecta en un segundo y dibuja las
-costas de Natural Earth 1:10 m, que van con ella. El fichero solo se descarga
-en ese caso. Los cálculos no dependen del fondo: son los mismos con mapa y sin
-él.
-
-### De dónde salen esos números
-
-`src/eclipsecat.py` recorre las lunas nuevas sobre DE440s, se queda con las que
-producen eclipse y **ajusta sus propios elementos besselianos** en vez de copiar
-una tabla publicada. Son unos cuarenta números por eclipse que reproducen la
-sombra a menos de un kilómetro durante las horas que dura, y son la única forma
-de que un navegador conteste sin cargar una efeméride de 32 MB ni un buscador de
-raíces.
-
-Quedan dos diferencias declaradas frente a la NASA, y ninguna es un error: este
-proyecto adopta el radio solar nominal IAU 2015 (695 700 km) donde los elementos
-de Espenak implican 696 000, y usa el ΔT de Skyfield (69,10 s) donde la NASA
-adoptó 71,4 s. La primera mueve los límites unos 700 m. La segunda no mueve nada
-sobre el terreno, porque cada lado es coherente consigo mismo.
-
-Las comprobaciones son la parte que importa:
-
-```bash
-python src/eclipsecat.py --selftest      # elementos, línea central, catálogo
-python src/webdata.py --selftest         # tablas exportadas y su procedencia
-node web/js/besselian.test.js            # geometría: el port contra los tres
-node web/js/radiometry.test.js           # radiometría: el port contra el paper
-```
-
-Entre las dos exigen que las circunstancias locales reproduzcan la cadena DE440s
-de `geometry.py` con menos de 1,5 s en cada contacto, que la línea central caiga
-a menos de 3 km de la que publica la NASA, y que las duraciones de anularidad
-reproduzcan las publicadas para 2027, 2028 y 2031.
-
-La invariante que más importa ata el dibujo al cálculo: **sobre el borde de la
-franja la duración de la fase central es cero, tres kilómetros dentro no lo es,
-y tres kilómetros fuera vuelve a serlo.** Sin ella el mapa puede dibujar una
-franja perfectamente creíble en el sitio equivocado, que es el peor fallo que
-esta página puede cometer.
-
-Una tercera revisión adversarial atacó todo esto el 19 de agosto de 2026 y
-devolvió 17 hallazgos; lo que encontró, y el que se le escapó y salió tirando de
-uno de sus hilos, está sin recortar en [`docs/REVIEWS.md`](docs/REVIEWS.md).
-
-### Irradiancia y exposición ocular, a petición
-
-Debajo de la ficha de cada punto hay un botón que resuelve la parte
-radiométrica **en el ordenador de quien visita la página**: SPECTRL2 sobre 122
-longitudes de onda, la transmisión cromática del eclipse con oscurecimiento del
-limbo, y los dos límites de ICNIRP 2013. Unas dos décimas de segundo por punto.
-
-No viene precalculado a propósito, y no por ahorrar disco. La irradiancia
-depende del estado atmosférico del punto y del día, que este proyecto solo tiene
-medido sobre el Ebro; precalcular el planeta obligaría a inventar una atmósfera
-y a presentarla como si fuera un dato. Lo que hace la página es al revés:
-**pide la hipótesis y la enseña junto al resultado.** Por defecto usa las
-condiciones de referencia de la ASTM G173-03, ofrece la atmósfera medida del
-Ebro como segundo preajuste, y deja escribir la propia.
-
-Sale de ahí la irradiancia del haz directo antes y durante el eclipse, la
-iluminancia, la razón entre la radiancia de la fotosfera y el límite térmico
-retiniano, el tiempo de fijación que admite el límite fotoquímico con pupila de
-3 y de 7 mm, y la transmitancia que tendría que tener un filtro. Con sus
-hipótesis pegadas, la masa de aire a la vista, y un aviso explícito cuando esa
-masa de aire deja el modelo extrapolando.
-
-`node web/js/radiometry.test.js` exige que ese port reproduzca
-`data/spectral_timeseries.csv` y `data/eye_timeseries.csv`, o sea la cadena que
-produjo el manuscrito. Con la atmósfera medida del Ebro devuelve 187 W/m² al
-máximo, masa de aire 10,7 y el límite térmico superado 1,34 veces: los números
-del paper.
-
-### Lo que la web sigue sin calcular
-
-El relieve. El horizonte es el astronómico y la altura del terreno es cero, así
-que un Sol bajo puede quedar tras una montaña que el cálculo no ve.
-
-La corona. Durante la totalidad el haz directo es exactamente cero, y eso es lo
-que la página dice; la luz que queda entonces es coronal, del orden de un millón
-de veces más débil, y pide otra física.
-
-## Estructura
+## Layout
 
 ```
-src/        14 módulos, cada uno con autocomprobaciones que fallan ruidosamente
-data/       tres archivos fuente con procedencia, el resto son productos
-docs/       arquitectura, resultados, revisiones adversariales, fuentes, fotos
-paper/      manuscrito LaTeX, tablas y macros generadas
-figs/       11 figuras, paleta validada para daltonismo
-tools/      comprobación de privacidad previa al push, estabilizador de vídeo
-web/        sitio estático: mapa de eclipses 2026-2050, cálculo en el navegador
+src/        14 modules, each with self-checks that fail loudly
+data/       three source files with provenance, the rest are products
+docs/       architecture, results, adversarial reviews, sources, photographs
+paper/      LaTeX manuscript, generated tables and macros
+figs/       11 figures, palette validated for colour blindness
+tools/      pre-push privacy check, command-line video stabiliser
+web/        static site: eclipse map 2026-2050, calculation in the browser
 ```
 
-Empieza por [`CLAUDE.md`](CLAUDE.md) si vas a tocar el código, y por
-[`docs/FINDINGS.md`](docs/FINDINGS.md) si solo quieres los resultados.
+Start at [`CLAUDE.md`](CLAUDE.md) to touch the code, and at
+[`docs/FINDINGS.md`](docs/FINDINGS.md) for the results alone.
 
-## Lo que no está aquí
+## What is not here
 
-Las 23 fotografías de la observación. Llevan el número de serie del cuerpo en el
-MakerNote de Canon, que identifica un dispositivo físico. El análisis que se hizo
-con ellas sobrevive entero en [`docs/PHOTOS.md`](docs/PHOTOS.md) y en los JSON
-derivados, que solo guardan modelo, óptica, tiempo de exposición, diafragma e
-ISO.
+The 23 photographs of the observation. They carry the camera body's serial
+number in the Canon MakerNote, which identifies a physical device. The analysis
+done with them survives whole in [`docs/PHOTOS.md`](docs/PHOTOS.md) and in the
+derived JSON, which keep only model, optics, exposure time, aperture and ISO.
 
-## Límites declarados
+## Declared limits
 
-Tres cosas quedan abiertas y el manuscrito lo dice:
+Three things stay open, and the manuscript says so:
 
-- No existe umbral de daño publicado para un sensor CMOS de consumo moderno. El
-  contraste usa un Aptina MT9V024 de 2010 con píxeles de 6 µm.
-- El modo de daño relevante es una pérdida permanente de sensibilidad, que solo
-  se ve en campo plano. Las fotografías no lo permiten comprobar.
-- La afirmación de que la cortinilla del obturador corre más peligro que el
-  sensor no tiene respaldo revisado por pares. La búsqueda se hizo y falló.
+- No published damage threshold exists for a modern consumer CMOS sensor. The
+  comparison uses a 2010 Aptina MT9V024 with 6 µm pixels.
+- The relevant damage mode is a permanent loss of sensitivity, visible only in
+  a flat field. The photographs cannot establish it.
+- The claim that the shutter curtain runs more risk than the sensor has no
+  peer-reviewed backing. The search was made and it failed.
 
-## Hacia dónde va
+## Where this is going
 
-Hoy calcula un eclipse en un punto. La intención es que calcule cualquier
-eclipse en cualquier punto, y que acabe siendo una plataforma donde alguien
-introduzca sus coordenadas y su equipo y obtenga su propio análisis.
+The geometric half of the jump is done: `web/` computes any of the 56 eclipses
+between 2026 and 2050 at any point, with no server. What remains blocked is the
+radiometric half, broken down in [`ROADMAP.md`](ROADMAP.md): `pathgeom.py`
+takes thirty to sixty minutes, `terrain.py` reads the DEM over HTTP on every
+query, and the site lives written into `siteconf.py`.
 
-La parte geométrica de ese salto ya está dada: `web/` calcula cualquiera de los
-56 eclipses de 2026 a 2050 en cualquier punto, y lo hace sin servidor. Lo que
-sigue bloqueado es la parte radiométrica, y está desglosado en
-[`ROADMAP.md`](ROADMAP.md): `pathgeom.py` tarda entre treinta y sesenta minutos,
-`terrain.py` lee el DEM por HTTP en cada consulta, y el emplazamiento vive
-escrito en `siteconf.py`.
+## Contributing
 
-## Contribuir
+Corrections are welcome, especially the ones that arrive with the case that
+exposed them. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) first: one rule applies
+without exception, and it is that no figure enters without provenance.
 
-Bienvenidas las correcciones, sobre todo si traen el caso que las destapa. Lee
-[`CONTRIBUTING.md`](CONTRIBUTING.md) primero: hay una regla que se aplica sin
-excepción, y es que ninguna cifra entra sin procedencia.
+Every contribution requires signing [`CLA.md`](CLA.md), which assigns the
+holder the rights needed to offer the project under other licences.
 
-Toda contribución exige firmar [`CLA.md`](CLA.md), que cede al titular los
-derechos necesarios para poder ofrecer el proyecto bajo otras licencias.
+## Safety
 
-## Seguridad
+[`SAFETY.md`](SAFETY.md) is required reading before using any number from here
+to decide what to do with an eye or a camera. The exposure times this project
+computes are the result of applying the ICNIRP equations under declared
+hypotheses, not a recommendation.
 
-[`SAFETY.md`](SAFETY.md) es de lectura obligada antes de usar cualquier número
-de aquí para decidir qué hacer con tus ojos o con tu cámara. Los tiempos de
-exposición que calcula este proyecto son el resultado de aplicar las ecuaciones
-de ICNIRP bajo hipótesis declaradas, no una recomendación.
+## Licence
 
-## Licencia
+Code under **AGPL-3.0-only**, text and figures under **CC BY-SA 4.0**. Which
+covers what is set out in [`LICENSES.md`](LICENSES.md).
 
-Código bajo **AGPL-3.0-only**, texto y figuras bajo **CC BY-SA 4.0**. El detalle
-de qué cubre qué está en [`LICENSES.md`](LICENSES.md).
+AGPL was chosen because the project aims to be a web platform: its section 13
+requires anyone offering a modified version over a network to publish the
+source, which the GPL does not.
 
-La AGPL se eligió porque el proyecto apunta a ser una plataforma web: su sección
-13 obliga a publicar el código a quien ofrezca una versión modificada por red,
-cosa que la GPL no hace.
-
-Los datos de terceros conservan sus propios términos y no se relicencian: **lee
-[`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) antes de reutilizar nada.**
-
-## Legal texts in English
-
-`CLA.en.md`, `CONTRIBUTING.en.md`, `LICENSES.en.md` and `SAFETY.en.md` are
-English translations, provided so contributors anywhere can read what they are
-agreeing to. The Spanish versions remain authoritative.
+Third-party data keeps its own terms and is not relicensed: **read
+[`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) before reusing anything.**

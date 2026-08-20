@@ -139,7 +139,7 @@ def build(tol=0.08, min_area=0.004, nd=4):
         for p in ([cs] if f['geometry']['type'] == 'Polygon' else cs):
             for r in p:
                 verts += len(r)
-    print(f'{len(feats)} países, {rings} anillos, {verts} vértices, '
+    print(f'{len(feats)} countries, {rings} rings, {verts} vertices, '
           f'tolerancia {tol} grados, area minima {min_area} -> {OUT} '
           f'({os.path.getsize(OUT) / 1e6:.2f} MB)')
 

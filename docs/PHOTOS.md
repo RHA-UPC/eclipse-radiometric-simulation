@@ -1,127 +1,127 @@
-# Las fotografías del observador
+# The observer's photographs
 
-23 archivos en `fotografias/`: 12 JPEG y 11 CR2. Analizados sin cargar ninguna
-imagen en el contexto del modelo, solo con EXIF, numpy y rawpy.
+23 files in `fotografias/`: 12 JPEG and 11 CR2. Analysed without loading any
+image into the model's context, using only EXIF, numpy and rawpy.
 
-Esa carpeta guarda además dos vídeos, `MVI_2418.MP4` y `MVI_2427.MP4`, que no
-entran en este análisis ni en ninguna cifra del manuscrito. Los trata
-`tools/stab_solar.py` y solo sirven para verlos. Con ellos no se sostuvo la
-regla anterior: para ajustar el detector hubo que mirar fotogramas sueltos.
+That folder also holds two videos, `MVI_2418.MP4` and `MVI_2427.MP4`, which
+enter neither this analysis nor any figure in the manuscript.
+`tools/stab_solar.py` handles them and they exist only to be watched. With them
+the rule above did not hold: tuning the detector required looking at individual
+frames.
 
-Productos: `data/photos_exif.json`, `data/photometry.json`, `data/raw_stats.json`,
-`data/raw_luminance.json`, `data/hotpixels.json`, `data/photo_analysis.json`.
+Products: `data/photos_exif.json`, `data/photometry.json`,
+`data/raw_stats.json`, `data/raw_luminance.json`, `data/hotpixels.json`,
+`data/photo_analysis.json`.
 
-## Qué hay
+## What is there
 
-Canon EOS 200D con Tamron 16-300mm F/3.5-6.3 Di II VC PZD B016 en los 23
-archivos. El hardware modelado y el usado son el mismo.
+Canon EOS 200D with a Tamron 16-300mm F/3.5-6.3 Di II VC PZD B016 in all 23
+files. The modelled hardware and the used hardware are the same.
 
-Las fases parciales se dispararon a **300 mm, f/40, 1/4000 s, ISO 100**. f/40 es
-el diafragma mínimo del objetivo a esa focal. Dos fotogramas a 16 mm y f/22, que
-también es el mínimo a esa focal. El observador cerró el diafragma tanto como el
-objetivo permitía.
+The partial phases were shot at **300 mm, f/40, 1/4000 s, ISO 100**. f/40 is
+the lens's minimum aperture at that focal length. Two frames at 16 mm and f/22,
+which is also the minimum there. The observer stopped down as far as the lens
+allowed.
 
-Eso importa para las conclusiones de seguridad: el trabajo modeló el peor caso a
-f/6,3, y la irradiancia en el plano focal cae con el cuadrado del número f. A
-f/40 la concentración es 40 veces menor que a f/6,3.
+That matters for the safety conclusions: the work modelled the worst case at
+f/6.3, and focal-plane irradiance falls with the square of the f-number. At
+f/40 the concentration is 40 times lower than at f/6.3.
 
-## El reloj de la cámara iba adelantado
+## The camera clock ran fast
 
-Los EXIF sitúan la última fotografía de fase parcial a las 20:27:57 y la
-siguiente ráfaga a las 20:32:45, ya con ISO 12800 y 1/50 s. Con las horas
-predichas (C2 a las 20:29:25,6, C3 a las 20:30:35,9) esa ráfaga caería más de dos
-minutos después del tercer contacto, donde nadie dispara a ISO 12800.
+The EXIF puts the last partial-phase photograph at 20:27:57 and the next burst
+at 20:32:45, already at ISO 12800 and 1/50 s. With the predicted times (C2 at
+20:29:25.6, C3 at 20:30:35.9) that burst would fall more than two minutes after
+third contact, where nobody shoots at ISO 12800.
 
-Los archivos RAW resuelven la contradicción. Normalizando la señal cruda por
-ISO, tiempo de exposición y número f se obtiene una luminancia de escena
-comparable entre tomas:
+The RAW files resolve the contradiction. Normalizing the raw signal by ISO,
+exposure time and f-number gives a scene luminance comparable across frames:
 
-| Archivo | Reloj | Luminancia relativa |
+| File | Clock | Relative luminance |
 |---|---|---|
-| _MG_2419 | 20:32:45 | 7,0 × 10⁻⁴ |
-| _MG_2423 | 20:33:06 | 3,4 × 10⁻⁴ |
-| _MG_2426 | 20:33:26 | 6,1 × 10⁻³ |
-| _MG_2428 | 20:36:04 | 1,9 × 10⁻¹ |
-| _MG_2429 | 20:36:16 | 1 (referencia) |
+| _MG_2419 | 20:32:45 | 7.0 × 10⁻⁴ |
+| _MG_2423 | 20:33:06 | 3.4 × 10⁻⁴ |
+| _MG_2426 | 20:33:26 | 6.1 × 10⁻³ |
+| _MG_2428 | 20:36:04 | 1.9 × 10⁻¹ |
+| _MG_2429 | 20:36:16 | 1 (reference) |
 
-Entre `_MG_2426` y `_MG_2428` la escena se vuelve 32 veces más brillante **con
-exposición idéntica**: f/20, 1/250 s, ISO 800 en ambas. Eso es la fotosfera
-reapareciendo.
+Between `_MG_2426` and `_MG_2428` the scene becomes 32 times brighter **with
+identical exposure**: f/20, 1/250 s, ISO 800 in both. That is the photosphere
+reappearing.
 
-La secuencia de 20:32:45 a 20:33:26 abarca 41 s y tiene que caer dentro de la
-totalidad. De ahí sale el desfase por puro ordenamiento, sin modelo fotométrico:
+The sequence from 20:32:45 to 20:33:26 spans 41 s and has to fall inside
+totality. The offset comes out of pure ordering, with no photometric model:
 
     Δt ≥ 20:33:26 − C3 = +171 s
     Δt ≤ 20:32:45 − C2 = +200 s
 
-**El reloj de la cámara iba unos 3 minutos adelantado.** Con ese desfase la
-ráfaga de corona empieza 29 s después del segundo contacto y termina justo en el
-tercero, que es lo que hace un fotógrafo que retira el filtro, ajusta y vuelve a
-ponerlo cuando ve reaparecer el Sol.
+**The camera clock ran about 3 minutes fast.** With that offset the corona
+burst starts 29 s after second contact and ends right at third, which is what a
+photographer does when they remove the filter, adjust, and put it back on
+seeing the Sun return.
 
-## Lo que falló: la fotometría de área
+## What failed: area photometry
 
-El primer intento midió el área del creciente en los JPEG y la comparó con la
-curva de obscuración predicha para despejar el desfase. Dio valores que iban de
-+833 s a +316 s, decreciendo de forma monótona a lo largo de la secuencia.
+The first attempt measured the crescent's area in the JPEGs and compared it
+with the predicted obscuration curve to solve for the offset. It gave values
+running from +833 s to +316 s, decreasing monotonically along the sequence.
 
-La deriva delata el problema: el *blooming* de saturación infla el área medida, y
-el efecto encoge según el Sol se apaga y el creciente adelgaza. Un ajuste de dos
-parámetros con un término de blooming constante tampoco funciona, porque el
-blooming escala con el brillo de superficie y no es constante.
+The drift gives the problem away: saturation blooming inflates the measured
+area, and the effect shrinks as the Sun dims and the crescent thins. A
+two-parameter fit with a constant blooming term does not work either, because
+blooming scales with surface brightness and is not constant.
 
-La conclusión metodológica: en fotogramas saturados, el área es un observable
-sesgado y el ordenamiento temporal no lo es.
+The methodological conclusion: in saturated frames, area is a biased observable
+and temporal ordering is not.
 
-## Lo que sí validó: la escala de placa
+## What did validate: the plate scale
 
-De la hoja de Canon salen 3,717 µm de paso de píxel; del EXIF, 300 mm de focal;
-de DE440s, 946,66″ de radio solar aparente. Esos tres números predicen un radio
-solar de **86,4 px** en las miniaturas usadas.
+Canon's sheet gives 3.717 µm of pixel pitch; the EXIF, 300 mm of focal length;
+DE440s, 946.66″ of apparent solar radius. Those three numbers predict a solar
+radius of **86.4 px** in the thumbnails used.
 
-El ajuste de circunferencia sobre el fotograma mejor condicionado da **86,5 px**.
+The circle fit on the best-conditioned frame gives **86.5 px**.
 
-Coincidencia al 0,1 %, y ninguno de los tres ingredientes se ajustó a los datos.
-Confirma la cadena óptica completa.
+Agreement to 0.1 %, and none of the three ingredients was tuned to the data. It
+confirms the whole optical chain.
 
-## Píxeles calientes
+## Hot pixels
 
-Un píxel caliente es un defecto fijo y aparece en la misma coordenada en tomas
-distintas. El ruido de disparo cambia de sitio.
+A hot pixel is a fixed defect and appears at the same coordinate across
+different frames. Shot noise moves around.
 
-Comparando `_MG_2419` y `_MG_2420`, dos tomas a ISO 12800 separadas 5 s durante
-la totalidad: 196 píxeles superan 50σ en cada una, y **cero** lo hacen en las dos
-a la vez. Los 196 son ruido.
+Comparing `_MG_2419` and `_MG_2420`, two ISO 12800 frames 5 s apart during
+totality: 196 pixels exceed 50σ in each, and **zero** do so in both at once.
+The 196 are noise.
 
-A ISO 100, comparando `_MG_2429` y `_MG_2431`: **1 píxel** entre 24 216 480, o
-sea 4 × 10⁻⁸.
+At ISO 100, comparing `_MG_2429` and `_MG_2431`: **1 pixel** out of 24 216 480,
+that is 4 × 10⁻⁸.
 
-### El límite de esta prueba
+### The limit of this test
 
-No existe un fotograma de referencia anterior al eclipse, así que esto es un
-recuento absoluto y no un cambio.
+There is no reference frame from before the eclipse, so this is an absolute
+count and not a change.
 
-Más importante: el modo de daño que Schwarz et al. describen para irradiación
-continua es una **pérdida permanente de sensibilidad** de al menos un 10 %, que
-se ve en campo plano y aparece oscura en la imagen. No es un píxel caliente en
-una toma oscura. Estas fotografías no permiten comprobarlo, porque no hay campo
-plano entre ellas.
+More importantly: the damage mode Schwarz et al. describe for continuous
+irradiation is a **permanent loss of sensitivity** of at least 10 %, visible in
+a flat field and appearing dark in the image. It is not a hot pixel in a dark
+frame. These photographs cannot establish it, because there is no flat field
+among them.
 
-El resultado es compatible con la predicción de margen 18×, y no la verifica.
-Para verificarla haría falta un campo plano uniforme antes y después.
+The result is compatible with the predicted 18× margin, and does not verify it.
+Verifying it would need a uniform flat field before and after.
 
-## Resumen
+## Summary
 
-Confirmado por las fotografías:
+Confirmed by the photographs:
 
-- el hardware modelado es el que se usó
-- la escala de placa, al 0,1 %
-- la totalidad duró al menos 41 s, compatible con los 70,3 s predichos
-- el observador disparó a f/40, muy por debajo del peor caso modelado
-- el sensor no tiene píxeles calientes
+- the modelled hardware is the hardware used
+- the plate scale, to 0.1 %
+- totality lasted at least 41 s, compatible with the predicted 70.3 s
+- the observer shot at f/40, well below the modelled worst case
+- the sensor has no hot pixels
 
-No confirmado:
+Not confirmed:
 
-- las horas absolutas de contacto, porque el reloj de la cámara no estaba
-  sincronizado
-- la ausencia de pérdida de sensibilidad, que necesita campo plano
+- the absolute contact times, because the camera clock was not synchronized
+- the absence of sensitivity loss, which needs a flat field
