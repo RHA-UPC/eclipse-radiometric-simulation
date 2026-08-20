@@ -1,21 +1,21 @@
 # Safety
 
-Read this before using any number from this repository to decide what to do with
-your eyes or your camera.
+Required reading before using any number from this repository to decide what to
+do with an eye or a camera.
 
 ## The essentials
 
 **Looking at the Sun without a filter certified to ISO 12312-2 can cause
-permanent, painless retinal damage.** It is painless because the retina has no
-pain receptors, so you will feel nothing while it happens.
+permanent, painless retinal damage.** Painless because the retina has no pain
+receptors, so nothing is felt while it happens.
 
 **The only moment the filter comes off is between second and third contact**,
-that is, during totality, and only if you are inside the umbral path. Outside
-it, no moment is safe.
+that is, during totality, and only inside the umbral path. Outside it, no
+moment is safe.
 
 **A camera without a front solar filter concentrates the Sun onto parts that
 cannot take it.** And an optical viewfinder delivers that concentrated beam
-straight into your eye.
+straight into the eye behind it.
 
 ## Why this project insists
 
@@ -25,7 +25,7 @@ retinal thermal limit by 30 %** at first contact. With a dilated pupil, the
 admissible fixation dropped to twelve seconds.
 
 That low, red, apparently harmless Sun produces no glare, so the aversion
-response that normally forces you to look away disappears. **The hazard outlives
+response that normally forces the eye away disappears. **The hazard outlives
 the discomfort.** That is the most important conclusion of the whole work and
 the easiest to miss.
 
@@ -33,7 +33,7 @@ the easiest to miss.
 
 The exposure times this project computes are **the result of applying the ICNIRP
 2013 equations under declared assumptions**, not a recommendation of how long
-you may look.
+anyone may look.
 
 Specifically, a computed fixation time:
 
@@ -41,17 +41,18 @@ Specifically, a computed fixation time:
   does not transfer to other conditions
 - assumes a healthy eye, without refractive surgery, without aphakia and without
   photosensitising medication
-- assumes a pupil diameter that the work itself discusses and that you cannot
-  measure in the field
+- assumes a pupil diameter that the work itself discusses and that cannot be
+  measured in the field
 - is **an exposure limit, not a target**. ICNIRP limits mark where known risk
   begins, not how far it is prudent to go.
 
 No number here authorises anyone to look at the Sun.
 
-## If the project becomes a web platform
+## Conditions on any interface built from this
 
-These conditions bind any interface built on this code, as
-[`CONTRIBUTING.md`](CONTRIBUTING.md) records:
+These bind any interface built on this code, as
+[`CONTRIBUTING.md`](CONTRIBUTING.md) records. The web page in `web/` is one, and
+they apply to it in full.
 
 1. No ocular exposure result is presented as advice. It is presented as a
    calculation, with its assumptions visible next to the number.
@@ -65,14 +66,19 @@ These conditions bind any interface built on this code, as
 5. Geometry gets verified before answering. Telling someone they are inside the
    path of totality when they are not is the worst possible failure, because it
    would lead them to remove the filter with photosphere still visible.
+6. An answer that the Sun is **out of view** is not permission either. The
+   terrain horizon says whether a ridge stands between the observer and the Sun
+   at one instant and one azimuth, out to a stated radius and under a mean
+   refraction. It does not say the eclipse cannot be seen from a hundred metres
+   away, and it says nothing at all about the instants it was not asked about.
 
 ## About photographic equipment
 
 The work concludes that **the sensor** of a DSLR with a slow zoom faced no
 appreciable thermal risk with the Sun at that altitude. That conclusion **does
 not extend to the rest of the camera**: the shutter curtain and the focusing
-screen are thin, unsunk parts onto which the same solar image falls while you
-frame the shot.
+screen are thin, unsunk parts onto which the same solar image falls while the
+shot is being framed.
 
 The computed margin also depends on the aperture. A 300 mm telephoto at f/2.8
 pointed at the midday Sun comes down to a factor of 1.9 against the only

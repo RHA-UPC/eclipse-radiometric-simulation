@@ -35,12 +35,13 @@ good the constant is.
    `src/eclipsecat.py --selftest`, `src/webdata.py --selftest`,
    `node web/js/besselian.test.js` and `node web/js/radiometry.test.js` cover
    the web front end. The first takes about twenty seconds, the second is instant.
-   You only need them if you touch the catalogue or the map, and then they are
-   mandatory: an error there draws a credible totality path in the wrong place,
-   which would lead someone to remove a filter with the photosphere in view.
+   They are needed only for a change to the catalogue or the map, and then
+   they are mandatory: an error there draws a credible totality path in the
+   wrong place, which would lead someone to remove a filter with the
+   photosphere in view.
 
    `tools/stab_solar.py --selftest` stands apart and is instant. It is outside
-   the manuscript chain, so you only need it if you touch that tool. It covers
+   the manuscript chain, so it is needed only for a change to that tool. It covers
    its four failure modes: the limb fit against the brightness centroid, reading
    totality, the Moon against a bloom edge under a lit sky, and the crop never
    running off the source frame.
@@ -58,7 +59,7 @@ good the constant is.
    It fails if absolute paths, images, video, third-party kernels or e-mail
    addresses reach the git index.
 
-4. **If you touch physics, leave behind a check that fails when you break it.**
+4. **A change to the physics leaves behind a check that fails when it breaks.**
    An identity, an asymptotic limit, or a case with an analytic solution. No
    framework needed: one `assert` inside `_selftest()` is enough.
 
@@ -94,6 +95,7 @@ offer the whole under other licences, including a commercial one. Without that
 assignment the project would lose the option permanently as soon as the first
 outside contribution arrived.
 
-Read it in full before contributing. If you are not comfortable assigning those
-rights, open an issue describing the problem and the fix instead of a pull
-request: a description is not code and requires no assignment.
+Read it in full before contributing. Assigning those rights is not for
+everyone; where it is not acceptable, an issue describing the problem and the
+fix works instead of a pull request. A description is not code and requires no
+assignment.
