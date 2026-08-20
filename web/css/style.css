@@ -125,6 +125,7 @@ button{font-family:inherit}
 .ghost{background:none;border:var(--hair) solid var(--line);color:var(--dim);
   padding:.45rem .9rem;border-radius:6px;cursor:pointer}
 .hint{color:var(--dim);font-size:.78rem;margin:.6rem 0 0}
+.ghost.wide{width:100%;margin-top:.9rem}
 
 .summary{margin-top:.7rem;font-size:.82rem;color:var(--dim);line-height:1.7}
 .summary b{color:var(--ink);font-weight:600}

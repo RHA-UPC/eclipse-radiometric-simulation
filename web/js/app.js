@@ -460,8 +460,89 @@ function contactRows(r) {
     </tr>`).join('');
 }
 
+// El horizonte real del punto marcado, cuando se ha pedido. Vive fuera de
+// renderPoint porque sobrevive a cambiar de eclipse: el relieve del sitio no
+// depende de qué eclipse se esté mirando, y volver a descargarlo sí costaría.
+let horizon = null;
+
+const azRange = r => {
+  const az = ['C1', 'C2', 'MAX', 'C3', 'C4'].filter(k => r[k]).map(k => r[k].az);
+  if (!az.length) return [0, 360];
+  // Desenrollado: un eclipse que empieza al 350 y acaba al 10 no abarca 340
+  // grados de cielo, abarca veinte.
+  const u = az.map(a => a - az[0]).map(d => ((d + 540) % 360) - 180);
+  return [az[0] + Math.min(...u) - 8, az[0] + Math.max(...u) + 8];
+};
+
+// Un obstáculo que el modelo del terreno no puede ver -- el edificio de
+// enfrente, la fila de árboles -- pero que quien está ahí sí ve. Se declara a
+// mano porque nadie lo tiene cartografiado y quien mira sí lo sabe.
+const OBSTACLE = { h: 0, d: 0 };
+const obstacleAlt = () => (OBSTACLE.h > 0 && OBSTACLE.d > 0)
+  ? Math.atan2(OBSTACLE.h, OBSTACLE.d) * 180 / Math.PI : 0;
+
+function skylineAt(az) {
+  return Math.max(horizon ? Terrain.altAt(horizon, az) : 0, obstacleAlt());
+}
+
+function horizonRows(r) {
+  const rows = ['C1', 'C2', 'MAX', 'C3', 'C4'].filter(k => r[k]).map(k => {
+    const sun = r[k].alt, sky = skylineAt(r[k].az);
+    const p = horizon.prof.reduce((best, q) =>
+      Math.abs(((q.az - r[k].az + 540) % 360) - 180)
+        < Math.abs(((best.az - r[k].az + 540) % 360) - 180) ? q : best, horizon.prof[0]);
+    const obs = obstacleAlt() >= p.alt && obstacleAlt() > 0;
+    return `<tr><td><b>${k}</b><br><span style="color:var(--dim);font-size:.72rem">az ${r[k].az.toFixed(0)}°</span></td>
+      <td class="num">${sun.toFixed(1)}°</td>
+      <td class="num">${sky.toFixed(1)}°</td>
+      <td>${sun < 0 ? 'bajo el horizonte'
+        : sun < sky ? `<b>tapado</b>${obs ? ' (obstáculo)' : p.building ? ' (edificio)' : p.distM
+            ? ` (a ${p.distM < 1000 ? Math.round(p.distM) + ' m' : (p.distM / 1000).toFixed(1) + ' km'})`
+            : ''}`
+        : 'a la vista'}</td></tr>`;
+  }).join('');
+  return `<table>
+      <tr><th>contacto</th><th class="num">Sol</th><th class="num">horizonte</th><th></th></tr>
+      ${rows}
+    </table>`;
+}
+
+function horizonBlock(r) {
+  if (!horizon) return `
+    <button id="relieve" class="ghost wide">Comprobar el horizonte real aquí</button>
+    <p class="hint">Todo lo de arriba supone terreno a nivel del mar y horizonte
+    astronómico. Esto descarga el modelo de elevación de la zona y calcula el
+    perfil del relieve hacia el Sol, en este navegador. Es la única parte de la
+    página que pide algo a un tercero: unas cuantas imágenes de un servidor de
+    elevación, que lo sitúan a uno en una tesela de decenas de kilómetros.</p>`;
+  const b = horizon.buildings;
+  return `
+    <div id="hztab">${horizonRows(r)}</div>
+    <div class="assume"><b>Relieve.</b> Elevación del punto
+      <b>${Math.round(horizon.elevM)} m</b>. Perfil hasta ${horizon.radiusKm} km,
+      una muestra cada ${Math.round(horizon.mPerPx)} m, ${horizon.tiles} teselas de
+      ${horizon.credit}. Curvatura terrestre y refracción media (k = 0,13): cerca
+      del suelo y al ocaso la refracción real se mueve lo bastante como para
+      correr un horizonte lejano unos minutos de arco. Un obstáculo más allá de
+      ${horizon.radiusKm} km no entra, y tampoco entra la vegetación.
+      ${b ? `<b>Edificios hasta 400 m:</b> de ${b.total}, ${b.withHeight} declaran altura en
+        OpenStreetMap${b.guessed ? ` (${b.guessed} deducidas del número de plantas, a 3 m cada una)` : ''}.
+        Los demás no la declaran y no entran, y más allá de 400 m no se consulta
+        ninguno: una torre lejana al final de una avenida no está en esta cuenta.` : ''}</div>
+    <div class="row">
+      ${b ? '' : '<button id="edificios" class="ghost">Añadir edificios de OpenStreetMap</button>'}
+    </div>
+    <label style="margin-top:.7rem">Obstáculo propio</label>
+    <div class="coords">
+      <input id="obs-h" type="number" min="0" step="1" placeholder="altura m" value="${OBSTACLE.h || ''}">
+      <input id="obs-d" type="number" min="0" step="1" placeholder="distancia m" value="${OBSTACLE.d || ''}">
+    </div>
+    <p class="hint">Un edificio o una arboleda que el modelo no ve. Se aplica en
+    todas las direcciones${obstacleAlt() ? `: ${obstacleAlt().toFixed(1)}° de altura` : ''}.</p>`;
+}
+
 function renderPoint(e, lat, lon) {
-  const r = Bess.local(e.elements, lat, lon, 0);
+  const r = Bess.local(e.elements, lat, lon, horizon ? horizon.elevM : 0);
   const box = $('#result');
   if (!r || r.visible_obscuration <= 0) {
     box.innerHTML = `<h2>Sin eclipse visible</h2>
@@ -481,16 +562,25 @@ function renderPoint(e, lat, lon) {
     ${isCentral ? `<p><b>${hhmmss(r.duration_s)}</b> de fase ${TYPE[r.central]}</p>` : ''}
     ${belowMax ? `<p class="hint">⚠ El máximo geométrico ocurre con el Sol bajo el
       horizonte. La cifra de arriba es la máxima obscuración con el Sol visible.</p>` : ''}
+    ${horizon && r.MAX.alt > 0 && r.MAX.alt < skylineAt(r.MAX.az)
+      ? `<p class="hint">⚠ En el máximo el Sol está a ${r.MAX.alt.toFixed(1)}° y el
+         horizonte de aquí se levanta hasta ${skylineAt(r.MAX.az).toFixed(1)}°: desde
+         este punto exacto no se ve. La cifra de arriba es geométrica y supone
+         horizonte despejado.</p>` : ''}
     <table>
       <tr><th>contacto</th><th class="num">UTC / ${TZ}</th><th class="num">alt / az</th></tr>
       ${contactRows(r)}
     </table>
-    <div class="assume"><b>Hipótesis.</b> Elevación del terreno 0 m y horizonte
-      astronómico: el relieve real no entra todavía, así que un Sol bajo puede
-      quedar oculto tras una montaña que este cálculo no ve. Altura solar
-      geométrica, sin refracción. Elementos besselianos ajustados desde JPL DE440s,
-      radio solar IAU 2015 nominal (695 700 km). Las horas locales son las de tu
-      navegador (${TZ}), no las del punto marcado.</div>
+    <div class="assume"><b>Hipótesis.</b> ${horizon
+      ? `Elevación del terreno <b>${Math.round(horizon.elevM)} m</b>, tomada del
+         modelo de elevación.`
+      : `Elevación del terreno 0 m y horizonte astronómico: el relieve real no
+         entra hasta que se pide abajo, así que un Sol bajo puede quedar oculto
+         tras una montaña que este cálculo no ve.`}
+      Altura solar geométrica, sin refracción. Elementos besselianos ajustados
+      desde JPL DE440s, radio solar IAU 2015 nominal (695 700 km). Las horas
+      locales son las del navegador (${TZ}), no las del punto marcado.</div>
+    ${horizonBlock(r)}
     ${intensity(r)}
     <button id="calc">Calcular irradiancia y exposición ocular aquí</button>
     <p class="hint">Se resuelve SPECTRL2 sobre 122 longitudes de onda, el
@@ -501,12 +591,60 @@ function renderPoint(e, lat, lon) {
   atmForm = null;
   const btn = document.getElementById('calc');
   if (btn) btn.onclick = () => runRadio(btn, lat, lon);
+  wireHorizon(e, lat, lon);
+}
+
+function wireHorizon(e, lat, lon) {
+  const rel = document.getElementById('relieve');
+  if (rel) rel.onclick = async () => {
+    rel.disabled = true;
+    rel.textContent = 'Descargando el modelo del terreno…';
+    try {
+      const r0 = Bess.local(e.elements, lat, lon, 0);
+      const [a0, a1] = azRange(r0 || {});
+      horizon = await Terrain.horizon(lat, lon, { azFrom: a0, azTo: a1, stepDeg: 1 });
+    } catch (err) {
+      rel.disabled = false;
+      rel.textContent = 'No se pudo descargar el relieve. Reintentar';
+      return;
+    }
+    renderPoint(e, lat, lon);
+  };
+  const ed = document.getElementById('edificios');
+  if (ed) ed.onclick = async () => {
+    ed.disabled = true; ed.textContent = 'Consultando OpenStreetMap…';
+    try {
+      horizon = Terrain.withBuildings(horizon, await Terrain.buildings(lat, lon, 400));
+    } catch (err) {
+      ed.disabled = false; ed.textContent = 'OpenStreetMap no respondió. Reintentar';
+      return;
+    }
+    renderPoint(e, lat, lon);
+  };
+  // Los dos campos se leen juntos en cualquiera de los dos eventos: cada
+  // cambio vuelve a pintar el panel, y con un manejador por campo el segundo
+  // se quedaba escribiendo sobre un nodo que ya no estaba en el documento.
+  const apply = () => {
+    const h = document.getElementById('obs-h'), d = document.getElementById('obs-d');
+    const tab = document.getElementById('hztab');
+    if (!h || !d || !tab) return;
+    OBSTACLE.h = +h.value || 0;
+    OBSTACLE.d = +d.value || 0;
+    // Solo la tabla. Volver a pintar el panel entero destruiría el campo que
+    // se está escribiendo: al saltar de la altura a la distancia, el primer
+    // cambio se llevaba por delante el segundo campo a media escritura.
+    tab.innerHTML = horizonRows(Bess.local(e.elements, lat, lon, horizon.elevM));
+  };
+  ['obs-h', 'obs-d'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.onchange = apply;
+  });
 }
 
 function renderPlace(lat, lon) {
   const rows = [];
   for (const e of CAT.eclipses) {
-    const r = Bess.local(e.elements, lat, lon, 0);
+    const r = Bess.local(e.elements, lat, lon, horizon ? horizon.elevM : 0);
     if (!r || r.visible_obscuration < 0.001) continue;
     rows.push({ e, r });
   }
@@ -541,6 +679,13 @@ function renderPlace(lat, lon) {
 // --- wiring -------------------------------------------------------------
 
 function setPoint(lat, lon) {
+  // El relieve es del punto, no de la sesión: mover la marca lo invalida. Las
+  // teselas siguen en la caché del módulo, así que volver al mismo sitio no
+  // vuelve a descargar nada.
+  if (!lastPoint || Math.abs(lastPoint[0] - lat) > 1e-6 || Math.abs(lastPoint[1] - lon) > 1e-6) {
+    horizon = null;
+    OBSTACLE.h = OBSTACLE.d = 0;
+  }
   lastPoint = [lat, lon];
   if (marker) map.removeLayer(marker);
   marker = L.circleMarker([lat, lon], { radius: 6, color: cssv('--marker-ring'), weight: 2,
