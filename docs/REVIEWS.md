@@ -468,6 +468,31 @@ points 40 km either side of the line and requires `local()`, which sweeps 4001
 instants with no grid at all, to find an eclipse on the inside and none on the
 outside.
 
+## The terrain horizon, checked against one mountain range
+
+The horizon module was written and tested in the Pyrenees, and everything it
+was asked there it answered. Two things it was never asked broke it.
+
+**Near a pole it asked for nine thousand tiles.** A Mercator tile shrinks with
+the cosine of the latitude, and the elevation service does not publish a level
+shallower than the one the module already clamps to, so at 88° one tile is a
+few hundred metres of ground. A 25 km radius then works out at ninety-five
+tiles across: over nine thousand requests for one click on a button. Capped at
+five tiles a side; the profile is now walked only as far as what was actually
+fetched, because past that edge every sample reads as sea level and invents a
+skyline that is not there; and the answer states the radius it used. Measured
+at 88.5° N: 15 tiles, 18 km, 0.8 s.
+
+**Over the sea it returned the depth of the sea floor.** The model carries
+bathymetry and no land mask, so the same Arctic point came back at −3721 m of
+elevation — and that number went straight into the eclipse geometry as the
+observer's height. Anything below the lowest dry land on Earth now reads as sea
+level; real depressions above that keep their value.
+
+Neither is subtle, and neither was visible from the one place the module had
+been pointed at. Same pattern as everything else in this file: the failure sat
+where nothing had a pass criterion.
+
 ## What is left said and not fixed
 
 Above the terminator the region boundary is not a level curve but a jump: the
