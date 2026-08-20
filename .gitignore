@@ -1,19 +1,20 @@
-# --- Datos personales. Nunca se publican. --------------------------------
-# Las fotografías llevan el número de serie del cuerpo en el MakerNote de
-# Canon. El análisis de docs/PHOTOS.md no las necesita: vive en los JSON
-# derivados de data/, que solo contienen modelo, óptica, tiempo, f e ISO.
+# --- Personal data. Never published. -------------------------------------
+# The photographs carry the camera body's serial number in the Canon
+# MakerNote. The analysis in docs/PHOTOS.md does not need them: it lives in
+# the derived JSON in data/, which keeps only model, optics, exposure time,
+# aperture and ISO.
 fotografias/
 *.CR2
 *.cr2
 *.NEF
 *.ARW
 
-# --- Datos de terceros que se descargan solos ----------------------------
-# Skyfield los vuelve a bajar de NAIF y del IERS en la primera ejecución.
+# --- Third-party data that downloads itself ------------------------------
+# Skyfield fetches these again from NAIF and the IERS on first run.
 data/de440s.bsp
 data/finals2000A.all
 
-# --- Entorno y compilación -----------------------------------------------
+# --- Environment and build -----------------------------------------------
 .venv/
 venv/
 __pycache__/
