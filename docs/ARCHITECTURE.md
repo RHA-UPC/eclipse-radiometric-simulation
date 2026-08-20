@@ -151,15 +151,28 @@ Radiometry does not load until somebody presses the button, and neither does
 the terrain horizon: between them, 27 kB of code and 8 kB of tables that most
 visits never need, and without a declared atmosphere the irradiance number
 would mean nothing anyway. `src/webdata.py` is what exports those tables, each
-with its citation.
+with its citation. Their interfaces went the same way and for the same reason —
+`radio-ui.js` is fetched with `radiometry.js` and `profile.js` with
+`terrain.js`, because a panel that cannot be drawn before its data arrives has
+no business arriving first.
 
-The first load is eight files and 126 kB gzipped, of which Leaflet is a third.
+The first load is eight files and 127 kB gzipped, of which Leaflet is a third.
 `world.json` is not among them: it arrives only with the coastline base map or
 when a tile server fails, and it is delta-encoded — rings of integer
 thousandths of a degree, differenced along the ring, the closing vertex
-implied. That is 287 kB against 659 for the same 33 894 vertices, because a
-float64 tail next to an eight-kilometre simplification tolerance is noise that
-gzip cannot compress. `loadWorld` decodes it back into GeoJSON, one feature per
+implied, and the run of deltas written as one string of signed varints in the
+encoded-polyline alphabet. That is 149 kB against 659 for the same 33 894
+vertices, because a float64 tail next to an eight-kilometre simplification
+tolerance is noise that gzip cannot compress, and because 64 836 numbers
+written as a JSON array spend a comma on each and a minus sign on half. The
+integers are the same to the last bit either way: the packing was checked
+vertex by vertex against the decoder it replaced, and none of the 33 894 moved.
+
+Coarser coordinates were measured and refused. Rounding to hundredths of a
+degree instead of thousandths takes the file to 82 kB gzipped, a further 24 kB,
+and moves the coastline by up to half a kilometre — on a page that draws
+umbral limits to the kilometre and lets anyone zoom to street level, that is
+buying bytes with the map. `loadWorld` decodes it back into GeoJSON, one feature per
 country, because Leaflet emits one SVG path per feature and the cost of a zoom
 goes with the path count.
 

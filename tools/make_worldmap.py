@@ -114,6 +114,26 @@ def _poly(p, tol, min_area, nd):
     return rs or None
 
 
+def _varints(nums):
+    """The same integers in the encoded-polyline alphabet.
+
+    A JSON array of 64 836 numbers spends a comma on every one of them and a
+    minus sign on half, and the deltas of a coastline are small enough that
+    most of them fit in a single printable character. Nothing is rounded here:
+    the integers come back identical, which is the only reason this is worth
+    doing at all -- a coordinate that loses a digit to save a byte is a
+    different map, not a smaller one.
+    """
+    out = []
+    for n in nums:
+        v = ~(n << 1) if n < 0 else n << 1
+        while v >= 0x20:
+            out.append(chr((0x20 | (v & 0x1f)) + 63))
+            v >>= 5
+        out.append(chr(v + 63))
+    return ''.join(out)
+
+
 def encode(feats, scale):
     """Rings as flat integer deltas, which is where the file size actually is.
 
@@ -134,9 +154,10 @@ def encode(feats, scale):
     turned 221 paths into 1485 and a pair of zooms from 30 ms into seven
     seconds. The file is the same size either way.
 
-    Measured against the GeoJSON it replaces: 659 kB to 287 kB raw, 240 kB to
-    117 kB gzipped, with the same 221 features, 1476 rings and 33 894 vertices,
-    and a worst coordinate deviation of 56 m.
+    Measured against the GeoJSON it replaces: 659 kB to 149 kB raw, 240 kB to
+    106 kB gzipped, with the same 221 features, 1476 rings and 33 894 vertices,
+    and a worst coordinate deviation of 56 m -- all of which comes from the
+    rounding to thousandths of a degree, none from the packing.
     """
     out = []
     for f in feats:
@@ -152,7 +173,7 @@ def encode(feats, scale):
                     flat += [ix, iy] if i == 0 else [ix - px, iy - py]
                     px, py = ix, iy
                 if len(flat) >= 6:
-                    rings.append(flat)
+                    rings.append(_varints(flat))
             if rings:
                 polys.append(rings)
         if polys:

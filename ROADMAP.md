@@ -144,6 +144,13 @@ All three are acknowledged in the manuscript and in
       so it needs its own scheduled job; the rest fit in one step.
 - [ ] Add `tools/privacy_check.sh` as a pre-push hook, so it does not depend on
       somebody remembering.
+- [ ] **The contour scan is the page's hot loop and has room in it.** A
+      profile of drawing one eclipse puts 29 % of the time inside the marching
+      squares in `contours`, 24 % in `obscurationGrid` and 18 % in `obsAt`, and
+      a standalone benchmark of the cell scan alone ran it in 18 ms against the
+      current 40. It is the most delicate code in the repository and the
+      rewrite has to come with `besselian.test.js` green and the vertex
+      positions unchanged, so it is worth doing carefully or not at all.
 - [ ] Pin the dependency versions. The manuscript declares the ones used, but
       there is no `requirements.txt` or `pyproject.toml`.
 - [ ] Cut `limbdark.py`'s runtime, or separate its convergence study from the
