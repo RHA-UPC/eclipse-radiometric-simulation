@@ -381,6 +381,13 @@ What is still open:
   errors with no image loaded, or nine seconds with none. That second criterion
   is what covers the case that hangs instead of failing, which a `tileerror`
   handler never sees.
+- **The coastline file is not GeoJSON.** `web/data/world.json` is rings of
+  integer thousandths of a degree, delta-encoded along the ring, with the
+  closing vertex implied and one entry per country. 287 kB instead of 659 for
+  the same 33 894 vertices. `loadWorld` decodes it; `tools/make_worldmap.py`
+  writes it. The per-country grouping is not cosmetic: Leaflet emits one SVG
+  path per feature, so flattening the multipolygons turned 221 paths into 1485
+  and a pair of zooms from 30 ms into seconds.
 - **Do not use Leaflet's canvas renderer for the offline map.** It is the right
   tool on paper and it kills the renderer process in headless Chromium on
   `setView`, even with the old 10 600-vertex file. Tried in both panes and with
@@ -519,6 +526,13 @@ What is still open:
   zero calls a Sun at −1° hidden when it is in plain view. The dip that can be
   reported is capped by the search radius, which is why the radius is stated
   with the answer.
+- **The eleven attribution lines in `terrain.js` are the licence, not a
+  courtesy.** The AWS registry entry for that bucket names the joerd
+  attribution document as the licence, and four of the datasets behind it are
+  CC BY, where attribution is a condition and breach terminates the grant.
+  They are printed verbatim under the horizon result. Summarising them is what
+  the page used to do, and the summary named a source that is not used and
+  omitted the one that serves the Arctic.
 - The elevation tiles are Mercator and shrink with the cosine of the latitude,
   so the zoom level is chosen per query to keep the fetch at three tiles
   across. A fixed zoom fetches nine at the equator and thirty-six in Lapland.
@@ -539,6 +553,15 @@ What is still open:
 - No user-facing string is written in JavaScript either. They live in
   `web/js/lang.js`, five languages per key, and `lang.test.js` fails on a
   missing one.
+- **Nothing is written to localStorage until the visitor chooses something.**
+  The language, theme and base map are all read on load with a fallback, and
+  the fallback is not stored. A default nobody picked is not a preference, and
+  storing it on load is the one thing on this page that would need asking
+  about first.
+- `radiometry.js` and `terrain.js` are **not** in the page's script tags. They
+  are injected by `need()` when their button is pressed, which is the only
+  thing that reaches them. Adding a `<script>` for either puts 27 kB back on
+  the critical path of every visit that never asks.
 - Numbers never appear as literals in the dictionary. They arrive already
   formatted for the active locale through `Intl`: a decimal point in a Spanish
   sentence is a mistake and a decimal comma in an English one is a different

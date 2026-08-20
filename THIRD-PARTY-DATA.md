@@ -39,18 +39,42 @@ Produced by Airbus Defence and Space under contract with ESA for the European
 Union's Copernicus programme. The rights holders are DLR e.V. and Airbus
 Defence and Space GmbH.
 
-The access licence requires reproducing a literal copyright notice. **It is not
-transcribed here from memory**: take it from the current text before
-redistributing anything derived from the DEM.
+The access licence requires the copyright notice to accompany the DEM **and
+anything derived from it**, and this repository is already a redistributor:
+`data/horizon.json` is a horizon profile computed from the DEM, and the 616.1 m
+site elevation propagates from there into the figures and the manuscript. So
+the notice travels inside that file, in its `_notice` field, and
+`src/terrain.py` writes it there whenever the file is regenerated:
+
+> Produced using Copernicus DEM GLO-30. (c) DLR e.V. 2010-2014 and (c) Airbus
+> Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European
+> Union and ESA; all rights reserved.
+
+Until 20 August 2026 this section identified the obligation and then deferred
+it onto whoever reused the repository, while the repository itself was the one
+redistributing. Take the notice from the current upstream text before relying
+on the wording above.
 <https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model>
 
 **Mapzen / Amazon Terrain Tiles**, used by the web page for the terrain
 horizon. Elevation in metres packed into the RGB channels of a PNG, served
-without a key from `s3.amazonaws.com/elevation-tiles-prod`. It is a build
-combining SRTM, ASTER GDEM, NED, EU-DEM, GMTED2010, ETOPO1 and several national
-sources, each with its own terms; the credit line the page prints names them.
-Nine tiles per query, cached in the tab, and only when the visitor asks.
-<https://github.com/tilezen/joerd/blob/master/docs/attribution.md>
+without a key from `s3.amazonaws.com/elevation-tiles-prod`. Nine tiles per
+query, cached in the tab, and only when the visitor asks.
+
+**For this dataset the attribution document is the licence.** The AWS Open Data
+registry entry names
+<https://github.com/tilezen/joerd/blob/master/docs/attribution.md> as the
+licence, and that document opens with a block headed *Required attribution*
+listing eleven statements. Four of the datasets behind it are CC BY, where
+attribution is a condition of the licence and breach terminates it
+automatically; others are OGL-UK and OGL-Canada, which also fix the wording.
+The eleven are therefore reproduced verbatim in `web/js/terrain.js` and printed
+under the horizon result, not summarised.
+
+Until 20 August 2026 the page printed one line naming six labels, which is not
+what the licence asks for. That line also named ASTER, which is not among the
+sources, and omitted ArcticDEM, which is — and ArcticDEM is what serves the
+latitudes where this project's own eclipse begins.
 
 This is the one request the calculator makes that reveals anything about the
 visitor: a tile of tens of kilometres a side, enough to say roughly where the
@@ -61,8 +85,13 @@ its own, and why the page says so at the button.
 
 **CAMS**, aerosol optical depth at 550 nm.
 Copernicus Atmosphere Monitoring Service, served through the Open-Meteo air
-quality API. Copernicus products require attribution to the service and to the
-European Union.
+quality API. The licence fixes the form of words, and `data/cams_aod.json`
+carries it in its `_notice` field because that file is tracked here:
+
+> Generated using Copernicus Atmosphere Monitoring Service information 2026.
+> Neither the European Commission nor ECMWF is responsible for any use of this
+> data.
+
 <https://atmosphere.copernicus.eu/>
 
 **ECMWF IFS**, precipitable water vapour, surface pressure and cloud cover.
@@ -186,7 +215,7 @@ it, because a cap without cartography reads as what it is while the black read
 as a loading failure. That is: the map reaches the poles and the bands and
 paths are drawn there, but the street background is not.
 
-**Natural Earth, admin-0 countries at 1:10 m** — `web/data/world.geojson`, the
+**Natural Earth, admin-0 countries at 1:10 m** — `web/data/world.json`, the
 coastline base map and the offline fallback. **Public domain**, no attribution
 required; cited anyway out of courtesy and because provenance matters.
 <https://www.naturalearthdata.com>
@@ -208,8 +237,14 @@ A query to `overpass-api.de` returns the footprints and tags of buildings
 within 400 m of the marked point. It is OpenStreetMap data under **ODbL**, and
 it is a shared free endpoint used under its own terms; the query is sent only
 when the visitor presses the button that says so, and it does send the marked
-coordinate.
-<https://overpass-api.de/> · <https://operations.osmfoundation.org/policies/>
+coordinate. The result is a Produced Work in the sense of ODbL 4.3, so the
+panel that shows it names OpenStreetMap and links the licence.
+
+`overpass-api.de` is **not** an OSM Foundation service — it is an independently
+run public instance, and the Foundation's operations policies list Tile,
+Vector Tile, Nominatim, API and Security, with no Overpass entry. The terms
+that apply are the instance's own.
+<https://overpass-api.de/> · <https://dev.overpass-api.de/>
 
 **Cividis**, the accessible mode's ramp, is cited as a reference and not
 redistributed: Nuñez, Anderton and Renslow (2018), *Optimizing colormaps with

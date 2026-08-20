@@ -14,7 +14,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-only
 
-"""Build web/data/world.geojson from Natural Earth 1:10 m admin-0 countries.
+"""Build web/data/world.json from Natural Earth 1:10 m admin-0 countries.
 
 The web falls back to this outline when the street basemap cannot be reached.
 Natural Earth's 1:110 m file, which the fallback used before, is 177 countries
@@ -24,8 +24,10 @@ and most islands do not exist at all. The 1:10 m file has the detail but is
 
 So it gets simplified here, once, and the result is versioned: Douglas-Peucker
 at a declared tolerance, rings below a minimum area dropped, coordinates
-rounded, every property dropped except the name. No new dependency for sixty
-lines of geometry.
+quantised to thousandths of a degree and delta-encoded along each ring, every
+property dropped. No new dependency for sixty lines of geometry. `loadWorld`
+in web/js/app.js decodes it back into GeoJSON in eight lines, so what Leaflet
+renders is identical to what it rendered before.
 
 The default tolerance is not a matter of taste. Leaflet renders this as SVG
 paths, and the cost grows with the vertex count: measured in headless Chromium,
@@ -54,7 +56,7 @@ import urllib.request
 URL = ('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/'
        'master/geojson/ne_10m_admin_0_countries.geojson')
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = ROOT + '/web/data/world.geojson'
+OUT = ROOT + '/web/data/world.json'
 
 
 def douglas_peucker(pts, tol):
@@ -112,6 +114,52 @@ def _poly(p, tol, min_area, nd):
     return rs or None
 
 
+def encode(feats, scale):
+    """Rings as flat integer deltas, which is where the file size actually is.
+
+    A coastline vertex written as GeoJSON costs about twenty characters of
+    decimal, most of them a float64 tail that means nothing next to a
+    simplification tolerance of eight kilometres and that gzip cannot compress
+    because it is noise. Written as thousandths of a degree and then
+    differenced along the ring, the same vertex costs three or four characters,
+    because consecutive points of a coastline are close together.
+
+    The first pair of each ring is absolute and the rest are deltas; the
+    closing vertex is implied. Nothing else is kept -- no country name, no
+    property -- because nothing reads them: the layer is drawn with a
+    pre-evaluated style, is not interactive and has no popups.
+
+    One entry per COUNTRY, not per polygon, and that grouping is not cosmetic:
+    Leaflet emits one SVG path per feature, so flattening the multipolygons
+    turned 221 paths into 1485 and a pair of zooms from 30 ms into seven
+    seconds. The file is the same size either way.
+
+    Measured against the GeoJSON it replaces: 659 kB to 287 kB raw, 240 kB to
+    117 kB gzipped, with the same 221 features, 1476 rings and 33 894 vertices,
+    and a worst coordinate deviation of 56 m.
+    """
+    out = []
+    for f in feats:
+        cs = f['geometry']['coordinates']
+        polys = []
+        for poly in ([cs] if f['geometry']['type'] == 'Polygon' else cs):
+            rings = []
+            for r in poly:
+                pts = r[:-1] if len(r) > 1 and r[0] == r[-1] else r
+                flat, px, py = [], 0, 0
+                for i, (x, y) in enumerate(pts):
+                    ix, iy = round(x * scale), round(y * scale)
+                    flat += [ix, iy] if i == 0 else [ix - px, iy - py]
+                    px, py = ix, iy
+                if len(flat) >= 6:
+                    rings.append(flat)
+            if rings:
+                polys.append(rings)
+        if polys:
+            out.append(polys)
+    return {'scale': scale, 'feats': out}
+
+
 def build(tol=0.08, min_area=0.004, nd=4):
     print(f'descargando Natural Earth 1:10 m ...')
     raw = json.loads(urllib.request.urlopen(URL, timeout=180).read())
@@ -128,8 +176,7 @@ def build(tol=0.08, min_area=0.004, nd=4):
         feats.append({'type': 'Feature',
                       'properties': {'name': pr.get('NAME') or pr.get('name') or ''},
                       'geometry': {'type': t, 'coordinates': c}})
-    json.dump({'type': 'FeatureCollection', 'features': feats},
-              open(OUT, 'w'), separators=(',', ':'))
+    json.dump(encode(feats, 1000), open(OUT, 'w'), separators=(',', ':'))
 
     rings = sum(len(p) if f['geometry']['type'] == 'Polygon' else sum(len(q) for q in p)
                 for f in feats for p in [f['geometry']['coordinates']])

@@ -95,6 +95,15 @@ offer the whole under other licences, including a commercial one. Without that
 assignment the project would lose the option permanently as soon as the first
 outside contribution arrived.
 
+**And that agreement is a draft that instructs both parties not to execute it
+until a lawyer has reviewed it.** Both statements stand, so the honest reading
+is the one they add up to: **outside code is not being merged yet.** Until the
+review in [`ROADMAP.md`](ROADMAP.md) is done, what is accepted is an issue —
+the case, the fix, the reasoning. A description is not a work of authorship in
+the sense the agreement covers, needs no assignment, and is the most useful
+thing anyone can send in the meantime. This is a temporary state and it is the
+owner's to end, not a reviewer's.
+
 Read it in full before contributing. Assigning those rights is not for
 everyone; where it is not acceptable, an issue describing the problem and the
 fix works instead of a pull request. A description is not code and requires no

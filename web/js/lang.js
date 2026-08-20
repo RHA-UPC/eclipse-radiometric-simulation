@@ -94,7 +94,7 @@ const Lang = (() => {
     it: '<strong>Guardare il Sole senza un filtro certificato ISO 12312-2 può provocare un danno retinico permanente e indolore.</strong> Indolore, perché la retina non ha recettori del dolore.',
     fr: '<strong>Regarder le Soleil sans filtre certifié ISO 12312-2 peut provoquer des lésions rétiniennes permanentes et indolores.</strong> Indolores, car la rétine n’a pas de récepteurs de la douleur.' },
   gate_p2: {
-    en: 'The filter comes off <strong>between second and third contact</strong> — that is, during totality — and only inside the path of the umbra. Outside it there is no safe moment at all.',
+    en: 'The filter comes off <strong>only between second and third contact</strong> — that is, during totality — and only inside the path of the umbra. Outside it there is no safe moment at all.',
     es: 'El filtro solo se retira <strong>entre el segundo y el tercer contacto</strong>, es decir durante la totalidad, y únicamente dentro de la franja umbral. Fuera de ella no hay ningún momento seguro.',
     ca: 'El filtre només es retira <strong>entre el segon i el tercer contacte</strong>, és a dir durant la totalitat, i únicament dins de la franja umbral. Fora d’aquesta franja no hi ha cap moment segur.',
     it: 'Il filtro si toglie <strong>tra il secondo e il terzo contatto</strong>, cioè durante la totalità, e soltanto dentro la fascia di totalità. Fuori non esiste alcun momento sicuro.',
@@ -124,11 +124,11 @@ const Lang = (() => {
     it: 'Segna un punto sulla mappa per vedere le circostanze in quel luogo.',
     fr: 'Marquez un point sur la carte pour voir les circonstances à cet endroit.' },
   hint_place: {
-    en: 'Or mark the point on the map directly. The location does not leave the browser: there is no server here.',
-    es: 'O marca el punto directamente en el mapa. La ubicación no sale del navegador: aquí no hay servidor.',
-    ca: 'O marca el punt directament al mapa. La ubicació no surt del navegador: aquí no hi ha servidor.',
-    it: 'Oppure segna il punto direttamente sulla mappa. La posizione non esce dal browser: qui non c’è alcun server.',
-    fr: 'Ou marquez le point directement sur la carte. La position ne quitte pas le navigateur : il n’y a pas de serveur ici.' },
+    en: 'Or mark the point on the map directly. Every figure is computed here, in the browser: this page has no server. The point itself reaches a third party as the bounding box of the map tiles on screen, and — only if the buildings button is pressed — as a query to OpenStreetMap.',
+    es: 'O marca el punto directamente en el mapa. Todas las cifras se calculan aquí, en el navegador: esta página no tiene servidor. El punto sí llega a un tercero como el recuadro de las teselas que hay en pantalla, y —solo si se pulsa el botón de edificios— como consulta a OpenStreetMap.',
+    ca: 'O marca el punt directament al mapa. Totes les xifres es calculen aquí, al navegador: aquesta pàgina no té servidor. El punt sí que arriba a un tercer com el requadre de les tessel·les que hi ha a la pantalla, i —només si es prem el botó d’edificis— com a consulta a OpenStreetMap.',
+    it: 'Oppure segna il punto direttamente sulla mappa. Ogni cifra si calcola qui, nel browser: questa pagina non ha server. Il punto arriva invece a terzi come riquadro delle tessere presenti sullo schermo e — solo se si preme il pulsante degli edifici — come interrogazione a OpenStreetMap.',
+    fr: 'Ou marquez le point directement sur la carte. Tous les chiffres sont calculés ici, dans le navigateur : cette page n’a pas de serveur. Le point, lui, parvient à un tiers sous la forme du cadre des tuiles affichées, et — seulement si le bouton des bâtiments est actionné — comme requête à OpenStreetMap.' },
 
   /* ---- eclipse types ------------------------------------------------- */
   type_total: { en: 'total', es: 'total', ca: 'total', it: 'totale', fr: 'totale' },
@@ -291,11 +291,11 @@ const Lang = (() => {
     ca: 'Comprovar l’horitzó real aquí', it: 'Verificare qui l’orizzonte reale',
     fr: 'Vérifier l’horizon réel ici' },
   hz_intro: {
-    en: 'Everything above assumes ground at sea level and an astronomical horizon. This downloads the elevation model for the area and works out the skyline towards the Sun, in this browser. It is the only part of the page that asks a third party for anything: a handful of images from an elevation server, which place the visitor inside a tile tens of kilometres across.',
-    es: 'Todo lo de arriba supone terreno a nivel del mar y horizonte astronómico. Esto descarga el modelo de elevación de la zona y calcula el perfil del relieve hacia el Sol, en este navegador. Es la única parte de la página que pide algo a un tercero: unas cuantas imágenes de un servidor de elevación, que sitúan a quien mira dentro de una tesela de decenas de kilómetros.',
-    ca: 'Tot el que hi ha a dalt suposa terreny al nivell del mar i horitzó astronòmic. Això descarrega el model d’elevació de la zona i calcula el perfil del relleu cap al Sol, en aquest navegador. És l’única part de la pàgina que demana res a un tercer: unes quantes imatges d’un servidor d’elevació, que situen qui mira dins d’una tessel·la de desenes de quilòmetres.',
-    it: 'Tutto quanto sopra presuppone terreno al livello del mare e orizzonte astronomico. Questo scarica il modello di elevazione della zona e calcola il profilo del rilievo verso il Sole, in questo browser. È l’unica parte della pagina che chiede qualcosa a terzi: alcune immagini di un server di elevazione, che collocano chi guarda dentro una tessera di decine di chilometri.',
-    fr: 'Tout ce qui précède suppose un terrain au niveau de la mer et un horizon astronomique. Ceci télécharge le modèle d’élévation de la zone et calcule le profil du relief vers le Soleil, dans ce navigateur. C’est la seule partie de la page qui demande quoi que ce soit à un tiers : quelques images d’un serveur d’élévation, qui situent le visiteur dans une tuile de plusieurs dizaines de kilomètres.' },
+    en: 'Everything above assumes ground at sea level and an astronomical horizon. This downloads the elevation model for the area and works out the skyline towards the Sun, in this browser. The download goes to an elevation server, which places the visitor inside a tile tens of kilometres across; the street and relief base maps already contact their operators on every tile, and the coastline base map contacts nobody.',
+    es: 'Todo lo de arriba supone terreno a nivel del mar y horizonte astronómico. Esto descarga el modelo de elevación de la zona y calcula el perfil del relieve hacia el Sol, en este navegador. La descarga va a un servidor de elevación, que sitúa a quien mira dentro de una tesela de decenas de kilómetros; los fondos de calles y de relieve ya contactan con su proveedor en cada tesela, y el de solo costas no contacta con nadie.',
+    ca: 'Tot el que hi ha a dalt suposa terreny al nivell del mar i horitzó astronòmic. Això descarrega el model d’elevació de la zona i calcula el perfil del relleu cap al Sol, en aquest navegador. La descàrrega va a un servidor d’elevació, que situa qui mira dins d’una tessel·la de desenes de quilòmetres; els fons de carrers i de relleu ja contacten amb el seu proveïdor a cada tessel·la, i el de només costes no contacta amb ningú.',
+    it: 'Tutto quanto sopra presuppone terreno al livello del mare e orizzonte astronomico. Questo scarica il modello di elevazione della zona e calcola il profilo del rilievo verso il Sole, in questo browser. Lo scaricamento va a un server di elevazione, che colloca chi guarda dentro una tessera di decine di chilometri; gli sfondi di strade e di rilievo contattano già il loro operatore a ogni tessera, e quello di sole coste non contatta nessuno.',
+    fr: 'Tout ce qui précède suppose un terrain au niveau de la mer et un horizon astronomique. Ceci télécharge le modèle d’élévation de la zone et calcule le profil du relief vers le Soleil, dans ce navigateur. Le téléchargement va à un serveur d’élévation, qui situe le visiteur dans une tuile de plusieurs dizaines de kilomètres ; les fonds de rues et de relief contactent déjà leur opérateur à chaque tuile, et celui des côtes seules ne contacte personne.' },
   hz_loading: {
     en: 'Downloading the terrain model…', es: 'Descargando el modelo del terreno…',
     ca: 'Descarregant el model del terreny…', it: 'Scaricamento del modello del terreno…',
@@ -319,11 +319,15 @@ const Lang = (() => {
   hz_at_dist: { en: ' (at {d})', es: ' (a {d})', ca: ' (a {d})', it: ' (a {d})', fr: ' (à {d})' },
   hz_assume_h: { en: 'Relief.', es: 'Relieve.', ca: 'Relleu.', it: 'Rilievo.', fr: 'Relief.' },
   hz_assume: {
-    en: 'Elevation of the point <b>{elev} m</b>. Profile out to {radius} km, one sample every {step} m, {tiles} tiles from {credit}. Earth curvature and mean refraction (k = 0.13): near the ground and at sunset the real refraction swings enough to move a distant skyline by a few arcminutes. An obstacle beyond {radius} km does not enter, and neither does vegetation.',
-    es: 'Elevación del punto <b>{elev} m</b>. Perfil hasta {radius} km, una muestra cada {step} m, {tiles} teselas de {credit}. Curvatura terrestre y refracción media (k = 0,13): cerca del suelo y al ocaso la refracción real se mueve lo bastante como para correr un horizonte lejano unos minutos de arco. Un obstáculo más allá de {radius} km no entra, y tampoco entra la vegetación.',
-    ca: 'Elevació del punt <b>{elev} m</b>. Perfil fins a {radius} km, una mostra cada {step} m, {tiles} tessel·les de {credit}. Curvatura terrestre i refracció mitjana (k = 0,13): a prop del sòl i al capvespre la refracció real es mou prou com per desplaçar un horitzó llunyà uns minuts d’arc. Un obstacle més enllà de {radius} km no hi entra, i la vegetació tampoc.',
-    it: 'Quota del punto <b>{elev} m</b>. Profilo fino a {radius} km, un campione ogni {step} m, {tiles} tessere da {credit}. Curvatura terrestre e rifrazione media (k = 0,13): vicino al suolo e al tramonto la rifrazione reale oscilla abbastanza da spostare un orizzonte lontano di qualche minuto d’arco. Un ostacolo oltre {radius} km non entra, e nemmeno la vegetazione.',
-    fr: 'Altitude du point <b>{elev} m</b>. Profil jusqu’à {radius} km, un échantillon tous les {step} m, {tiles} tuiles de {credit}. Courbure terrestre et réfraction moyenne (k = 0,13) : près du sol et au coucher, la réfraction réelle varie assez pour déplacer un horizon lointain de quelques minutes d’arc. Un obstacle au-delà de {radius} km n’entre pas, et la végétation non plus.' },
+    en: 'Elevation of the point <b>{elev} m</b>. Profile out to {radius} km, one sample every {step} m, {tiles} tiles. Earth curvature and mean refraction (k = 0.13): near the ground and at sunset the real refraction swings enough to move a distant skyline by a few arcminutes. An obstacle beyond {radius} km does not enter, and neither does vegetation.',
+    es: 'Elevación del punto <b>{elev} m</b>. Perfil hasta {radius} km, una muestra cada {step} m, {tiles} teselas. Curvatura terrestre y refracción media (k = 0,13): cerca del suelo y al ocaso la refracción real se mueve lo bastante como para correr un horizonte lejano unos minutos de arco. Un obstáculo más allá de {radius} km no entra, y tampoco entra la vegetación.',
+    ca: 'Elevació del punt <b>{elev} m</b>. Perfil fins a {radius} km, una mostra cada {step} m, {tiles} tessel·les. Curvatura terrestre i refracció mitjana (k = 0,13): a prop del sòl i al capvespre la refracció real es mou prou com per desplaçar un horitzó llunyà uns minuts d’arc. Un obstacle més enllà de {radius} km no hi entra, i la vegetació tampoc.',
+    it: 'Quota del punto <b>{elev} m</b>. Profilo fino a {radius} km, un campione ogni {step} m, {tiles} tessere. Curvatura terrestre e rifrazione media (k = 0,13): vicino al suolo e al tramonto la rifrazione reale oscilla abbastanza da spostare un orizzonte lontano di qualche minuto d’arco. Un ostacolo oltre {radius} km non entra, e nemmeno la vegetazione.',
+    fr: 'Altitude du point <b>{elev} m</b>. Profil jusqu’à {radius} km, un échantillon tous les {step} m, {tiles} tuiles. Courbure terrestre et réfraction moyenne (k = 0,13) : près du sol et au coucher, la réfraction réelle varie assez pour déplacer un horizon lointain de quelques minutes d’arc. Un obstacle au-delà de {radius} km n’entre pas, et la végétation non plus.' },
+  hz_credit: {
+    en: 'Elevation data: required attribution', es: 'Datos de elevación: atribución exigida',
+    ca: 'Dades d’elevació: atribució exigida', it: 'Dati di elevazione: attribuzione richiesta',
+    fr: 'Données d’élévation : attribution exigée' },
   hz_buildings_btn: {
     en: 'Add OpenStreetMap buildings', es: 'Añadir edificios de OpenStreetMap',
     ca: 'Afegir edificis d’OpenStreetMap', it: 'Aggiungere edifici da OpenStreetMap',
@@ -334,11 +338,11 @@ const Lang = (() => {
     it: 'OpenStreetMap non ha risposto. Riprovare',
     fr: 'OpenStreetMap n’a pas répondu. Réessayer' },
   hz_buildings_note: {
-    en: '<b>Buildings out to 400 m:</b> of {total}, {n} declare a height in OpenStreetMap{guess}. The rest do not, and do not enter; beyond 400 m none is queried, so a distant tower at the end of an avenue is not in this count.',
-    es: '<b>Edificios hasta 400 m:</b> de {total}, {n} declaran altura en OpenStreetMap{guess}. Los demás no la declaran y no entran, y más allá de 400 m no se consulta ninguno: una torre lejana al final de una avenida no está en esta cuenta.',
-    ca: '<b>Edificis fins a 400 m:</b> de {total}, {n} declaren altura a OpenStreetMap{guess}. La resta no la declaren i no hi entren, i més enllà de 400 m no se’n consulta cap: una torre llunyana al final d’una avinguda no és en aquest compte.',
-    it: '<b>Edifici fino a 400 m:</b> su {total}, {n} dichiarano un’altezza in OpenStreetMap{guess}. Gli altri non la dichiarano e non entrano, e oltre i 400 m non se ne consulta nessuno: una torre lontana in fondo a un viale non è in questo conto.',
-    fr: '<b>Bâtiments jusqu’à 400 m :</b> sur {total}, {n} déclarent une hauteur dans OpenStreetMap{guess}. Les autres ne la déclarent pas et n’entrent pas, et au-delà de 400 m aucun n’est interrogé : une tour lointaine au bout d’une avenue n’est pas dans ce compte.' },
+    en: '<b>Buildings out to 400 m:</b> of {total}, {n} declare a height in <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL){guess}. The rest do not, and do not enter; beyond 400 m none is queried, so a distant tower at the end of an avenue is not in this count.',
+    es: '<b>Edificios hasta 400 m:</b> de {total}, {n} declaran altura en <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL){guess}. Los demás no la declaran y no entran, y más allá de 400 m no se consulta ninguno: una torre lejana al final de una avenida no está en esta cuenta.',
+    ca: '<b>Edificis fins a 400 m:</b> de {total}, {n} declaren altura a <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL){guess}. La resta no la declaren i no hi entren, i més enllà de 400 m no se’n consulta cap: una torre llunyana al final d’una avinguda no és en aquest compte.',
+    it: '<b>Edifici fino a 400 m:</b> su {total}, {n} dichiarano un’altezza in <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL){guess}. Gli altri non la dichiarano e non entrano, e oltre i 400 m non se ne consulta nessuno: una torre lontana in fondo a un viale non è in questo conto.',
+    fr: '<b>Bâtiments jusqu’à 400 m :</b> sur {total}, {n} déclarent une hauteur dans <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL){guess}. Les autres ne la déclarent pas et n’entrent pas, et au-delà de 400 m aucun n’est interrogé : une tour lointaine au bout d’une avenue n’est pas dans ce compte.' },
   hz_buildings_guess: {
     en: ' ({n} inferred from the number of storeys, at 3 m each)',
     es: ' ({n} deducidas del número de plantas, a 3 m cada una)',
@@ -575,6 +579,16 @@ const Lang = (() => {
   why_offline: { en: 'offline', es: 'sin conexión', ca: 'sense connexió',
     it: 'senza connessione', fr: 'hors connexion' },
 
+  privacy_h: { en: 'What leaves this browser.', es: 'Qué sale de este navegador.',
+    ca: 'Què surt d’aquest navegador.', it: 'Che cosa esce da questo browser.',
+    fr: 'Ce qui sort de ce navigateur.' },
+  privacy_note: {
+    en: 'Every figure on this page is computed here; there is no server behind it, no analytics, no cookies and no third-party script. Three things are stored locally — the chosen language, theme and base map — and nothing else. Four hosts receive a request, each of which sees an IP address: the base map operator on every tile, unless the coastline map is chosen, which contacts nobody; an elevation server, only when the terrain button is pressed; and OpenStreetMap, only when the buildings button is pressed, which is the one request that carries the marked coordinate itself. The elevation tiles are served from the United States. The full list, with each provider’s terms, is in <a href="../THIRD-PARTY-DATA.md">THIRD-PARTY-DATA.md</a>.',
+    es: 'Todas las cifras de esta página se calculan aquí; no hay servidor detrás, ni analítica, ni cookies, ni script de terceros. Se guardan localmente tres cosas —el idioma, el tema y el fondo de mapa elegidos— y nada más. Cuatro servidores reciben una petición, y cada uno de ellos ve una dirección IP: el del fondo de mapa en cada tesela, salvo con el fondo de solo costas, que no contacta con nadie; un servidor de elevación, solo al pulsar el botón del relieve; y OpenStreetMap, solo al pulsar el de edificios, que es la única petición que lleva el punto marcado. Las teselas de elevación se sirven desde Estados Unidos. La lista completa, con los términos de cada proveedor, está en <a href="../THIRD-PARTY-DATA.md">THIRD-PARTY-DATA.md</a>.',
+    ca: 'Totes les xifres d’aquesta pàgina es calculen aquí; no hi ha servidor al darrere, ni analítica, ni galetes, ni cap script de tercers. Es desen localment tres coses —l’idioma, el tema i el fons de mapa triats— i res més. Quatre servidors reben una petició, i cadascun veu una adreça IP: el del fons de mapa a cada tessel·la, llevat del fons de només costes, que no contacta amb ningú; un servidor d’elevació, només en prémer el botó del relleu; i OpenStreetMap, només en prémer el d’edificis, que és l’única petició que duu el punt marcat. Les tessel·les d’elevació se serveixen des dels Estats Units. La llista completa, amb els termes de cada proveïdor, és a <a href="../THIRD-PARTY-DATA.md">THIRD-PARTY-DATA.md</a>.',
+    it: 'Ogni cifra di questa pagina si calcola qui; non c’è alcun server dietro, né analitica, né cookie, né script di terzi. Si conservano localmente tre cose — la lingua, il tema e lo sfondo di mappa scelti — e nient’altro. Quattro server ricevono una richiesta, e ciascuno vede un indirizzo IP: quello dello sfondo di mappa a ogni tessera, salvo con lo sfondo di sole coste, che non contatta nessuno; un server di elevazione, solo premendo il pulsante del rilievo; e OpenStreetMap, solo premendo quello degli edifici, che è l’unica richiesta a portare con sé il punto segnato. Le tessere di elevazione sono servite dagli Stati Uniti. L’elenco completo, con i termini di ciascun fornitore, è in <a href="../THIRD-PARTY-DATA.md">THIRD-PARTY-DATA.md</a>.',
+    fr: 'Tous les chiffres de cette page sont calculés ici ; il n’y a aucun serveur derrière, ni analytique, ni cookies, ni script tiers. Trois choses sont conservées localement — la langue, le thème et le fond de carte choisis — et rien d’autre. Quatre serveurs reçoivent une requête, et chacun voit une adresse IP : celui du fond de carte à chaque tuile, sauf avec le fond des côtes seules, qui ne contacte personne ; un serveur d’élévation, uniquement lorsque le bouton du relief est actionné ; et OpenStreetMap, uniquement lorsque celui des bâtiments l’est, qui est la seule requête à emporter le point marqué. Les tuiles d’élévation sont servies depuis les États-Unis. La liste complète, avec les conditions de chaque fournisseur, se trouve dans <a href="../THIRD-PARTY-DATA.md">THIRD-PARTY-DATA.md</a>.' },
+
   /* ---- footer -------------------------------------------------------- */
   footer_main: {
     en: 'JPL DE440s ephemerides · Besselian elements and spectrum by <code>src/eclipsecat.py</code> and <code>src/webdata.py</code> · map <a href="vendor/LICENSE-leaflet.txt">Leaflet</a> (BSD-2) · fallback coastlines Natural Earth 1:10 m simplified (public domain) · SPECTRL2 table via <a href="vendor/LICENSE-pvlib.txt">pvlib</a> (BSD-3) · <a href="../LICENSES.md">AGPL-3.0 / CC BY-SA 4.0</a>',
@@ -738,10 +752,14 @@ const Lang = (() => {
   const pct = v => nf(v, v > 0.999 && v < 1 ? 3 : 1) + PCT_SPACE[lang] + '%';
   const pctRaw = (v, d) => nf(v, d) + PCT_SPACE[lang] + '%';
 
-  const set = l => {
+  // `remember` is false on the load path. A language picked from the
+  // browser's own Accept-Language is not a choice the visitor made, and
+  // storing it on load would put something on their machine before they have
+  // touched anything.
+  const set = (l, remember) => {
     if (!S.app_title[l]) l = 'en';
     lang = l;
-    try { localStorage.setItem('lang', l); } catch (e) { /* nada */ }
+    if (remember !== false) { try { localStorage.setItem('lang', l); } catch (e) { /* none */ } }
     document.documentElement.lang = l;
   };
 

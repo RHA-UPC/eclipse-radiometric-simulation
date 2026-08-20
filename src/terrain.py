@@ -132,6 +132,16 @@ def main():
         }
 
     doc = {
+        # The notice travels with the file, not with the document that
+        # describes the obligation. This is a product derived from the
+        # Copernicus DEM and its licence requires the notice to accompany the
+        # derivative, which is exactly what this file is.
+        '_notice': ('Produced using Copernicus DEM GLO-30. (c) DLR e.V. 2010-2014 and '
+                    '(c) Airbus Defence and Space GmbH 2014-2018 provided under '
+                    'COPERNICUS by the European Union and ESA; all rights reserved. '
+                    'This file is a derived product: a horizon profile computed from '
+                    'that DEM by src/terrain.py. The project claims no rights in the '
+                    'underlying model and grants none.'),
         'dem': 'Copernicus DEM GLO-30 (ESA/Airbus), 1 arcsec, EGM2008',
         'observer_height_dem_m': h0_dem,
         'observer_height_srtm30m_m': S.ELEV_M,

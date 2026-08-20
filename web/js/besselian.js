@@ -174,15 +174,79 @@ const Bess = (() => {
       // Fall back to the whole window rather than to C1: if a contact is
       // missing the interval must widen, never collapse.
       const ta = out.C1 ? out.C1.t : -span, tb = out.C4 ? out.C4.t : span;
-      let vo = 0, vt = null;
-      for (let i = 0; i <= 400; i++) {
-        const t = ta + (tb - ta) * i / 400, g = geom(B, o, t);
-        if (altaz(o, g).alt <= 0) continue;
-        const ob = obscuration(g.m, (g.L1 + g.L2) / 2, (g.L1 - g.L2) / 2);
-        if (ob > vo) { vo = ob; vt = t; }
+
+      // This used to sample 401 instants and keep the ones with the Sun up.
+      // Where the whole window sits at an altitude of about zero -- the
+      // grazing rim of the visible region -- that loop finds either all of
+      // them or none, and which of the two flips on a change of one unit in
+      // the last place of the elements. Two neighbouring points then answered
+      // "no eclipse here" and "0,0 % with the Sun at 0,0 degrees", and nothing
+      // about the geometry had changed.
+      //
+      // So the horizon is not sampled for any more. sin(alt) is A + B*cos H
+      // with H nearly linear in time and d nearly fixed, that is one cosine:
+      // over a window of a few hours it has one extremum and at most two
+      // zeros. The extremum is found on a five-minute grid and refined, and
+      // the zeros are bisected. The answer then turns on a comparison of a
+      // refined maximum against zero, which moves as smoothly as the input.
+      const altAt = t => altaz(o, geom(B, o, t)).alt;
+      const NS = 96;
+      let iBest = 0, aBest = -Infinity;
+      const grid = new Float64Array(NS + 1);
+      for (let i = 0; i <= NS; i++) {
+        grid[i] = altAt(ta + (tb - ta) * i / NS);
+        if (grid[i] > aBest) { aBest = grid[i]; iBest = i; }
       }
-      out.visible_obscuration = vo;
-      out.visible_max = vt === null ? null : stamp(vt);
+      // Golden section around the best sample. A cosine's peak is broad, so a
+      // five-minute grid cannot hide it; what this buys is the last decimal.
+      {
+        const step = (tb - ta) / NS, gr = 0.6180339887498949;
+        let lo = ta + (tb - ta) * Math.max(0, iBest - 1) / NS;
+        let hi = ta + (tb - ta) * Math.min(NS, iBest + 1) / NS;
+        let c = hi - gr * (hi - lo), d = lo + gr * (hi - lo);
+        let fc = altAt(c), fd = altAt(d);
+        for (let i = 0; i < 20 && step > 0; i++) {
+          if (fc > fd) { hi = d; d = c; fd = fc; c = hi - gr * (hi - lo); fc = altAt(c); }
+          else { lo = c; c = d; fc = fd; d = lo + gr * (hi - lo); fd = altAt(d); }
+        }
+        aBest = Math.max(aBest, fc, fd);
+      }
+
+      if (aBest <= 0) { out.visible_obscuration = 0; out.visible_max = null; }
+      else {
+        // The instants where the altitude crosses zero, bisected on the
+        // bracketing grid cells. At most two, and the runs between them are
+        // where the Sun is up.
+        const cross = lo => {
+          let a2 = ta + (tb - ta) * lo / NS, b2 = ta + (tb - ta) * (lo + 1) / NS;
+          const up0 = grid[lo] > 0;
+          for (let i = 0; i < 40; i++) {
+            const m = (a2 + b2) / 2;
+            if ((altAt(m) > 0) === up0) a2 = m; else b2 = m;
+          }
+          return (a2 + b2) / 2;
+        };
+        const runs = [];
+        let start = grid[0] > 0 ? ta : null;
+        for (let i = 0; i < NS; i++) {
+          if ((grid[i] > 0) === (grid[i + 1] > 0)) continue;
+          const t = cross(i);
+          if (start === null) start = t; else { runs.push([start, t]); start = null; }
+        }
+        if (start !== null) runs.push([start, tb]);
+        if (!runs.length) runs.push([ta, tb]);   // the peak is up but no sample was
+
+        let vo = 0, vt = null;
+        for (const [t0, t1] of runs) {
+          for (let i = 0; i <= 200; i++) {
+            const t = t0 + (t1 - t0) * i / 200, g = geom(B, o, t);
+            const ob = obscuration(g.m, (g.L1 + g.L2) / 2, (g.L1 - g.L2) / 2);
+            if (ob > vo) { vo = ob; vt = t; }
+          }
+        }
+        out.visible_obscuration = vo;
+        out.visible_max = vt === null ? null : stamp(vt);
+      }
     }
     return out;
   }
@@ -791,7 +855,7 @@ const Bess = (() => {
     // new point, and that one is computed against the real function.
     const segKm = (a, b) => Math.hypot((b[1] - a[1]) * Math.cos((a[0] + b[0]) / 2 * D2R),
                                        b[0] - a[0]) * KM_PER_DEG;
-    function densify(ring, level) {
+    function refineRing(ring, level) {
       for (let pass = 0; pass < maxDepth; pass++) {
         const n = ring.length;
         const h = new Float64Array(n);
@@ -1000,7 +1064,7 @@ const Bess = (() => {
         // does not touch -- it only moves jump vertices -- and the tooth
         // survives, held up by its own children.
         const sm = smoothJumps(ring);
-        rings.push(tolKm > 0 ? densify(sm, level) : sm);
+        rings.push(tolKm > 0 ? refineRing(sm, level) : sm);
       }
       // Drop the unrefinable-segment marker: it is densify() scaffolding and
       // has no business in the result, where Leaflet would read it as an

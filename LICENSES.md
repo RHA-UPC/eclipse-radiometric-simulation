@@ -14,10 +14,25 @@ the licence that suits it.
 Every source file carries a header with
 `SPDX-License-Identifier: AGPL-3.0-only`.
 
-`web/data/spectral.json` is the one exception inside `web/data/`: it
-redistributes a coefficient table that arrives under BSD-3-Clause, and that
-licence travels with it in `web/vendor/LICENSE-pvlib.txt`. See
-[`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md).
+Three things inside those data directories are **not** the project's to
+license, and CC BY-SA does not reach them:
+
+- `web/data/spectral.json` redistributes a SPECTRL2 coefficient table that
+  arrives under BSD-3-Clause; that licence travels with it in
+  `web/vendor/LICENSE-pvlib.txt`. The same file also carries the ICNIRP 2013
+  B(λ) and R(λ) weighting functions and the CIE 1924 photopic curve V(λ). The
+  project claims no rights in those tables and grants none: they are
+  reproduced as numerical facts so the calculation can be checked.
+- `data/literature.json` holds short verbatim quotations from third-party
+  works, reproduced under the quotation right of article 32.1 of the Spanish
+  consolidated Intellectual Property Act. That is an exception personal to
+  this work; it creates nothing that can be passed on, so those quotations are
+  not licensed onward.
+- `data/horizon.json` and `data/cams_aod.json` are derived from Copernicus
+  products and carry the notices those licences require, inside the files
+  themselves.
+
+See [`THIRD-PARTY-DATA.md`](THIRD-PARTY-DATA.md) for each provider's terms.
 
 ## Why AGPL and not GPL
 

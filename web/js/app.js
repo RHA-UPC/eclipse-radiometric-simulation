@@ -9,6 +9,21 @@
 'use strict';
 
 const t = (k, v) => Lang.t(k, v);
+
+// Two of the four modules are only reachable from a button, so they are only
+// fetched from one. `radiometry.js` is 13 kB of code that nothing calls until
+// the irradiance button is pressed -- its 8 kB of tables were already lazy --
+// and `terrain.js` is another 14 kB that nothing calls until the horizon
+// button is. Together they are 8 % of the first load and two blocking
+// requests, spent on the visits that never ask.
+const pending = {};
+const need = src => pending[src] || (pending[src] = new Promise((ok, no) => {
+  const el = document.createElement('script');
+  el.src = src;
+  el.onload = ok;
+  el.onerror = () => { pending[src] = null; no(new Error(src)); };
+  document.head.appendChild(el);
+}));
 const TYPE = k => Lang.t('type_' + k);
 const $ = s => document.querySelector(s);
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -123,7 +138,10 @@ function initMap() {
     Object.assign(map.getPane(name).style, { zIndex: z, pointerEvents: 'none' });
   }
   addCaps();
-  setBasemap(store.get('mapa') || 'streets');
+  // `false`: nothing is written to storage until the visitor uses the
+  // selector. A default nobody chose is not a preference, and storing it on
+  // load is the one thing on this page that would need asking about.
+  setBasemap(store.get('mapa') || 'streets', false);
 
   // No black strips: the minimum zoom is the level at which the world still
   // covers the window, and panning is clamped to the world. It depends on the
@@ -246,17 +264,48 @@ function setBasemap(kind, remember) {
 // for it.
 //
 // ONE layer, filled and stroked, not two. Leaflet turns every coordinate into
-// an L.LatLng object, so this file's 190 000 vertices are already 190 000
-// objects; building it twice to get the fill under the raster and the borders
-// over it cost twice that and killed the tab. The coastlines now sit under the
-// raster, which is where the street basemap's own coastlines sit anyway.
+// an L.LatLng object, so this file's 33 894 vertices are already 33 894
+// objects; building it twice to get the fill under the bands and the borders
+// over them cost twice that and killed the tab. The coastlines sit under the
+// bands, which is where the tiled base maps' own coastlines sit anyway.
 //
-// The canvas renderer is not optional either: as SVG paths, 3 800 rings take
-// seconds to lay out and stutter on every pan.
+// ONE feature per country, and that is the part that decides the cost. Leaflet
+// emits one SVG path per feature, not per ring: 221 features render as 235
+// paths and a zoom costs about 30 ms, while flattening the multipolygons into
+// 1476 separate features made it 1485 paths and seconds. The vertex count is
+// identical either way.
+//
+// The canvas renderer would lift the ceiling further and is NOT used: it kills
+// the renderer process in headless Chromium on setView. That is why the
+// tolerance in tools/make_worldmap.py sits where it does. An earlier version
+// of this comment claimed the canvas renderer was in use; it never was.
 function loadWorld() {
   if (worldLoad) return worldLoad.then(() => { if (landLayer) landLayer.addTo(map); });
-  worldLoad = fetch('data/world.geojson').then(r => r.json()).then(g => {
-    landLayer = L.geoJSON(g, { pane: 'land', interactive: false, style: landStyle() });
+  worldLoad = fetch('data/world.json').then(r => r.json()).then(w => {
+    // The file is rings of integer deltas in thousandths of a degree, not
+    // GeoJSON: the same 33 894 vertices cost 287 kB instead of 659, because a
+    // float64 tail next to an eight-kilometre simplification tolerance is
+    // noise that gzip cannot compress. Decoded back into GeoJSON here, so
+    // what Leaflet renders is what it rendered before, path for path.
+    const k = 1 / w.scale;
+    const ring = f => {
+      const out = [];
+      let x = 0, y = 0;
+      for (let i = 0; i < f.length; i += 2) {
+        x = i ? x + f[i] : f[i];
+        y = i ? y + f[i + 1] : f[i + 1];
+        out.push([x * k, y * k]);
+      }
+      out.push(out[0]);                // the closing vertex is implied
+      return out;
+    };
+    // One feature per country, because Leaflet emits one SVG path per feature
+    // and the cost of a zoom goes with the path count, not with the vertices.
+    const feats = w.feats.map(polys => ({
+      type: 'Feature', properties: {},
+      geometry: { type: 'MultiPolygon', coordinates: polys.map(p2 => p2.map(ring)) } }));
+    landLayer = L.geoJSON({ type: 'FeatureCollection', features: feats },
+                          { pane: 'land', interactive: false, style: landStyle() });
     borderLayer = null;
   }).catch(() => { worldLoad = null; });
   return worldLoad.then(() => { if (landLayer) landLayer.addTo(map); });
@@ -525,7 +574,9 @@ function horizonBlock(r) {
     <div id="hztab">${horizonRows(r)}</div>
     <div class="assume"><b>${t('hz_assume_h')}</b> ${t('hz_assume', {
         elev: Lang.nf(horizon.elevM, 0), radius: Lang.nf(horizon.radiusKm, 0),
-        step: Lang.nf(horizon.mPerPx, 0), tiles: horizon.tiles, credit: horizon.credit })}
+        step: Lang.nf(horizon.mPerPx, 0), tiles: horizon.tiles })}
+      <details class="credit"><summary>${t('hz_credit')}</summary><ul>${
+        horizon.credit.map(c => `<li>${c}</li>`).join('')}</ul></details>
       ${b ? ' ' + t('hz_buildings_note', { total: b.total, n: b.withHeight,
               guess: b.guessed ? t('hz_buildings_guess', { n: b.guessed }) : '' }) : ''}</div>
     <div class="row">
@@ -588,6 +639,7 @@ function wireHorizon(e, lat, lon) {
     rel.disabled = true;
     rel.textContent = t('hz_loading');
     try {
+      await need('js/terrain.js');
       const r0 = Bess.local(e.elements, lat, lon, 0);
       const [a0, a1] = azRange(r0 || {});
       horizon = await Terrain.horizon(lat, lon, { azFrom: a0, azTo: a1, stepDeg: 1 });
@@ -602,6 +654,7 @@ function wireHorizon(e, lat, lon) {
   if (ed) ed.onclick = async () => {
     ed.disabled = true; ed.textContent = t('hz_loading');
     try {
+      await need('js/terrain.js');
       horizon = Terrain.withBuildings(horizon, await Terrain.buildings(lat, lon, 400));
     } catch (err) {
       ed.disabled = false; ed.textContent = t('hz_buildings_failed');
@@ -699,7 +752,7 @@ function setMode(m) {
 // Language. The page is hydrated before anything else runs, so the first paint
 // is already in the right language rather than in English for a frame.
 const langSel = $('#lang');
-Lang.set(Lang.pick());
+Lang.set(Lang.pick(), false);
 langSel.innerHTML = Object.entries(Lang.names)
   .map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
 langSel.value = Lang.lang;
@@ -950,6 +1003,7 @@ function renderRadio(R) {
 async function runRadio(btn, lat, lon) {
   btn.disabled = true;
   btn.textContent = t('rad_button_busy');
+  await need('js/radiometry.js');
   await Radio.load();
   if (!atmForm) {
     btn.insertAdjacentHTML('beforebegin', atmPanel(Radio.tables.atmospheres.g173));

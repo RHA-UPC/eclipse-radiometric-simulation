@@ -235,7 +235,7 @@
 
   addEventListener('DOMContentLoaded', () => {
     const langSel = $('#lang');
-    Lang.set(Lang.pick());
+    Lang.set(Lang.pick(), false);
     langSel.innerHTML = Object.entries(Lang.names)
       .map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
     langSel.value = Lang.lang;

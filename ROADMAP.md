@@ -155,9 +155,57 @@ All three are acknowledged in the manuscript and in
 
 - [ ] **Review of [`CLA.md`](CLA.md) by a lawyer before merging the first
       outside contribution.** The current draft was written by someone who is
-      not one. Clause 2's assignment against the limits of article 43 of the
-      Spanish consolidated Intellectual Property Act matters especially, as
-      does clause 5's partial waiver of moral rights.
+      not one, and until the review lands no outside code is merged — which is
+      what the draft's own banner asks for and what
+      [`CONTRIBUTING.md`](CONTRIBUTING.md) now says. An adversarial audit on 20
+      August 2026 read it against the Spanish consolidated Intellectual
+      Property Act (TRLPI) and left five specific questions for whoever does
+      the review:
+
+      - **Clause 2 survives article 43.3**, contrary to the assumption it was
+        drafted against. What saves it is the per-commit trailer required by
+        clause 12: each contribution is identified separately at the moment of
+        submission, so this is not an assignment over the body of an author's
+        future works. Clause 2's limit to "every form of exploitation known at
+        the date of signature" also tracks article 43.5 correctly. Keep both.
+        The exposure is the blanket sentence the contributor is asked to write
+        in the pull request; if that is read as standing consent for
+        everything they may ever submit, article 43.3 does reach it.
+      - **Article 48 versus clause 9.** An exclusive assignment obliges the
+        assignee to put every necessary means into actually exploiting the
+        work. Clause 9 says the Owner is under no obligation to incorporate,
+        maintain or distribute anything. Those cannot both stand, and the duty
+        attaches by operation of law.
+      - **Article 47 versus "no further remuneration is due".** An author who
+        assigned for a lump sum keeps an action to revise the remuneration if
+        it turns out manifestly disproportionate to the profits, for ten
+        years, and article 55 makes that non-waivable. The whole point of the
+        CLA is to allow a commercial licence, which is exactly the situation
+        the article addresses.
+      - **Clause 5 is honest and empty.** Its first paragraph correctly says
+        moral rights cannot be waived under Spanish law. Its second asks for a
+        covenant not to exercise them, which article 55 reaches as a waiver by
+        another name. Article 14.4 integrity survives regardless: a
+        contributor may still oppose a modification that harms their
+        reputation, which is the one case the clause was written to prevent.
+      - **Clause 7.2 states a rule Spanish law does not have.** Article 44
+        gives authors of sixteen to eighteen who live independently full
+        capacity to assign; it offers nothing for an author under sixteen, and
+        a minor's contract stays voidable for four years past majority.
+        Guardian consent does not cure that. Accepting contributions only from
+        eighteen and over, or sixteen and over on article 44 terms, removes
+        the problem instead of papering it.
+
+      Two smaller ones for the same pass: clause 11 fixes jurisdiction at "the
+      Owner's domicile", which the document never states, so a contributor
+      cannot know which courts they are accepting; and the CLA collects a real
+      name and e-mail and publishes them permanently in a public history with
+      no clause identifying the controller, the purpose or the retention.
+
+- [ ] **Move the attribution promise off git history.** Clause 5 discharges
+      the article 14.3 paternity right by undertaking to preserve authorship
+      "in the repository history". Rebase, squash-merge and force-push all
+      rewrite that. An `AUTHORS` file in the tree is durable; a log is not.
 - [ ] Decide whether the CLA is accepted signed per commit line or through a
       bot, and automate the check.
 - [ ] Define the price and scope of the commercial licence before anybody asks

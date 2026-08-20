@@ -131,7 +131,7 @@ three expensive modules takes part.
 ```
 web/index.html            two modes: by eclipse and by place
 web/stabilise.html        the video stabiliser, a separate page
-web/js/lang.js            176 keys × 5 languages, plus the number formatting
+web/js/lang.js            180 keys × 5 languages, plus the number formatting
 web/js/besselian.js       geometry: a port of eclipsecat.py
 web/js/radiometry.js      radiometry: a port of spectral, limbdark and eye
 web/js/terrain.js         skyline from an elevation model, and buildings
@@ -140,16 +140,27 @@ web/js/stabilise-ui.js    two passes over the video, and the recording
 web/js/app.js             map, layers and the writing of the panels
 web/js/*.test.js          each port against its original, and the dictionaries
 web/css/style.css         the three themes, as variables
-web/data/eclipses.json    the catalogue, 60 kB
-web/data/spectral.json    fixed SPECTRL2, ICNIRP and CIE tables, 7.6 kB
-web/data/world.geojson    coastlines, Natural Earth 1:10 m simplified
+web/data/eclipses.json    the catalogue, 51 kB
+web/data/spectral.json    fixed SPECTRL2, ICNIRP and CIE tables, 8.5 kB
+web/data/world.json       coastlines, Natural Earth 1:10 m, delta-encoded
 web/vendor/               Leaflet 1.9.4, BSD-2-Clause, with its notice
 ```
 
-Radiometry does not load until somebody presses the button: 8 kB of tables and
-around 200 ms of arithmetic that most visits do not need, and without a
-declared atmosphere the number would mean nothing. `src/webdata.py` is what
-exports those tables, each with its citation.
+Radiometry does not load until somebody presses the button, and neither does
+the terrain horizon: between them, 27 kB of code and 8 kB of tables that most
+visits never need, and without a declared atmosphere the irradiance number
+would mean nothing anyway. `src/webdata.py` is what exports those tables, each
+with its citation.
+
+The first load is eight files and 126 kB gzipped, of which Leaflet is a third.
+`world.json` is not among them: it arrives only with the coastline base map or
+when a tile server fails, and it is delta-encoded — rings of integer
+thousandths of a degree, differenced along the ring, the closing vertex
+implied. That is 287 kB against 659 for the same 33 894 vertices, because a
+float64 tail next to an eight-kilometre simplification tolerance is noise that
+gzip cannot compress. `loadWorld` decodes it back into GeoJSON, one feature per
+country, because Leaflet emits one SVG path per feature and the cost of a zoom
+goes with the path count.
 
 The map is equirectangular (`L.CRS.EPSG4326`), not Mercator. Eclipse maps are
 drawn that way by tradition, but the deciding reason is different: **it reaches

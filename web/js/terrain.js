@@ -25,10 +25,35 @@ const Terrain = (() => {
   'use strict';
 
   // Terrarium tiles: elevation in metres packed into RGB, from the Mapzen /
-  // Amazon open elevation build (SRTM, ASTER, NED, EU-DEM, and others). Public
-  // and keyless. The unpacking below is their documented format.
+  // Amazon open elevation build. Public and keyless. The unpacking below is
+  // their documented format.
   const TILES = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium';
-  const CREDIT = 'Mapzen / Amazon — SRTM, ASTER, NED, EU-DEM, GMTED, ETOPO1';
+
+  // The attribution document IS the licence: the AWS Open Data registry entry
+  // for this bucket names
+  // github.com/tilezen/joerd/blob/master/docs/attribution.md as the licence,
+  // and that document opens with a block headed "Required attribution"
+  // listing eleven statements. Four of the datasets behind it are CC BY, where
+  // attribution is a condition and breach terminates the licence
+  // automatically; others are OGL-UK and OGL-Canada, which also fix the words.
+  //
+  // So the eleven are reproduced verbatim rather than summarised. The summary
+  // this file used to print named ASTER, which is not one of the sources, and
+  // omitted ArcticDEM, which is -- and ArcticDEM is what serves the latitudes
+  // where this project's own eclipse begins.
+  const CREDIT = [
+    'ArcticDEM terrain data DEM(s) were created from DigitalGlobe, Inc., imagery and funded under National Science Foundation awards 1043681, 1559691, and 1542736',
+    'Australia terrain data © Commonwealth of Australia (Geoscience Australia) 2017',
+    'Austria terrain data © offene Daten Österreichs – Digitales Geländemodell (DGM) Österreich',
+    'Canada terrain data contains information licensed under the Open Government Licence – Canada',
+    'Europe terrain data produced using Copernicus data and information funded by the European Union - EU-DEM layers',
+    'Global ETOPO1 terrain data U.S. National Oceanic and Atmospheric Administration',
+    'Mexico terrain data source: INEGI, Continental relief, 2016',
+    'New Zealand terrain data Copyright 2011 Crown copyright (c) Land Information New Zealand and the New Zealand Government (All rights reserved)',
+    'Norway terrain data © Kartverket',
+    'United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved',
+    'United States 3DEP (formerly NED) and global GMTED2010 and SRTM terrain data courtesy of the U.S. Geological Survey'
+  ];
 
   // Curvature plus standard refraction. Light bends towards the ground, so a
   // distant ridge looks higher than plain geometry says; the classical

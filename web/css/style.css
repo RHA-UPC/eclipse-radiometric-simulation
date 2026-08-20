@@ -156,6 +156,9 @@ tr.clickable:hover td{background:var(--bg)}
 .assume{margin-top:.9rem;padding:.6rem .7rem;border:var(--hair) solid var(--line);
   border-radius:6px;font-size:.75rem;color:var(--dim);line-height:1.6}
 .assume b{color:var(--ink)}
+.credit{margin-top:.5rem;font-size:.72rem}
+.credit summary{cursor:pointer;color:var(--accent)}
+.credit ul{margin:.4rem 0 0;padding-left:1.1rem;line-height:1.5}
 .danger{margin-top:.9rem;padding:.6rem .7rem;border-radius:6px;color:var(--warn-ink);
   background:var(--warn-bg);border:var(--hair) solid var(--warn-line);
   font-size:.78rem;line-height:1.55}
@@ -167,6 +170,7 @@ tr.clickable:hover td{background:var(--bg)}
   border-radius:10px;padding:1.6rem}
 .gate-box h1{margin:0 0 .8rem;font-size:1.15rem}
 .gate-box p{font-size:.87rem;line-height:1.65}
+.gate-box p.fine{font-size:.75rem;color:var(--dim);border-top:var(--hair) solid var(--line);padding-top:.7rem}
 .gate[hidden]{display:none}
 
 .leaflet-container{background:var(--map-bg)}

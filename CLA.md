@@ -1,13 +1,15 @@
 # Contributor Licence Agreement
 
-> **Translation.** This is an English translation of [`CLA.md`](CLA.md),
-> provided so that contributors anywhere can read what they are agreeing to.
-> **The Spanish version is the authoritative one.** Where the two differ, the
-> Spanish text governs.
-
 **Draft. Pending review by a lawyer before the first contribution is accepted.**
 The person who drafted it is not a lawyer. Do not sign it, and do not require it
-signed, until a professional has reviewed it.
+signed, until a professional has reviewed it. Until that review lands, outside
+code is not merged; see [`CONTRIBUTING.md`](CONTRIBUTING.md) for what is
+accepted meanwhile.
+
+This English text is the only text. An earlier revision carried a banner
+declaring a Spanish version authoritative; that version was merged into this
+one on 20 August 2026 and no longer exists, so the banner has been removed
+rather than left pointing at a document nobody can read.
 
 ---
 

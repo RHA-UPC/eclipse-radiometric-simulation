@@ -307,6 +307,13 @@ to decide what to do with an eye or a camera. The exposure times this project
 computes are the result of applying the ICNIRP equations under declared
 hypotheses, not a recommendation.
 
+## Affiliation
+
+The project is personal. The GitHub organisation handle carries the author's
+initials and their university only as a personal identifier: it implies no
+endorsement by, and no affiliation with, the Universitat Politècnica de
+Catalunya. The manuscript says the same in its own author line.
+
 ## Licence
 
 Code under **AGPL-3.0-only**, text and figures under **CC BY-SA 4.0**. Which
