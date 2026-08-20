@@ -9,8 +9,12 @@ Leaflet are self-hosted, and every number on the screen is produced by the
 visiting browser, so a marked coordinate is never sent anywhere.
 
 ```bash
-cd web && python -m http.server 8000     # then open http://localhost:8000
+python -m http.server 8000     # from the repository root
 ```
+
+then open <http://localhost:8000/web/>. Serving the repository root and not
+`web/` is deliberate: the page links out to `SAFETY.md`, `LICENSES.md` and
+`THIRD-PARTY-DATA.md`, which live one level up.
 
 ## What it answers
 
