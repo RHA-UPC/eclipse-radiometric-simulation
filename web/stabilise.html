@@ -4,12 +4,13 @@
   Copyright (C) 2026 Ricardo Heredia Alessandrello
   SPDX-License-Identifier: AGPL-3.0-only
 -->
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estabilizador solar</title>
-<meta name="description" content="Fija el Sol eclipsado en un punto del encuadre, en el propio navegador y sin subir el vídeo a ningún sitio.">
+<title>Solar video stabiliser</title>
+<meta name="description" data-i18n="st_tagline" data-i18n-attr="content"
+      content="Pins the eclipsed Sun to a fixed point of the frame, in the browser, without uploading the video anywhere.">
 <link rel="stylesheet" href="css/style.css">
 <script>
   try {
@@ -22,27 +23,19 @@
 <body>
 
 <header>
-  <h1>Estabilizador solar</h1>
+  <h1 data-i18n="st_title">Solar video stabiliser</h1>
   <nav class="modes">
-    <a class="mode" href="index.html">Calculadora de eclipses</a>
+    <a class="mode" href="index.html" data-i18n="nav_calculator">Eclipse calculator</a>
   </nav>
+  <select id="lang" data-i18n="aria_lang" data-i18n-attr="aria-label" aria-label="Language"></select>
 </header>
 
 <main class="page">
-  <p class="lead">Un estabilizador corriente sigue el fondo, y un eclipse filmado
-  contra el cielo no tiene fondo. El centroide de brillo tampoco sirve: el de un
-  creciente cae dentro de la uña iluminada y avanza hacia el limbo descubierto a
-  medida que la Luna entra, así que el Sol «estabilizado» se iría casi un radio
-  solar al ritmo del propio eclipse. Lo que no se mueve es el limbo, un arco de
-  radio constante alrededor del centro del Sol pase lo que pase con la
-  cobertura. Esto le ajusta una circunferencia y desprecia todo lo de dentro.</p>
-
-  <p class="lead"><b>El vídeo no se sube a ningún sitio.</b> Se abre desde el
-  disco, se procesa en este navegador y el resultado se queda aquí. Esta página
-  no tiene servidor al que subir nada.</p>
+  <p class="lead" data-i18n="st_why"></p>
+  <p class="lead" data-i18n="st_privacy"></p>
 
   <div id="drop" class="drop">
-    <p>Arrastra aquí un vídeo, o</p>
+    <p data-i18n="st_drop">Drop a video here, or</p>
     <input type="file" id="file" accept="video/*">
   </div>
 
@@ -50,63 +43,44 @@
     <p class="sub" id="name"></p>
     <div class="vids">
       <div>
-        <label>Original</label>
+        <label data-i18n="st_original">Original</label>
         <video id="src" playsinline muted controls></video>
       </div>
       <div>
-        <label>Seguimiento</label>
+        <label data-i18n="st_tracking">Tracking</label>
         <canvas id="preview"></canvas>
       </div>
     </div>
 
     <div class="row">
-      <button id="go">Estabilizar</button>
-      <label class="check"><input type="checkbox" id="full"> Conservar el encuadre entero</label>
-      <button id="again" class="ghost">Otro vídeo</button>
+      <button id="go" data-i18n="st_go">Stabilise</button>
+      <label class="check"><input type="checkbox" id="full">
+        <span data-i18n="st_keep_frame">Keep the whole frame</span></label>
+      <button id="again" class="ghost" data-i18n="st_another">Another video</button>
     </div>
-    <p class="hint">Sin marcar, el resultado se recorta a la mayor ventana 16:9
-    que ningún fotograma se salga: desplazar un fotograma deja bordes en blanco,
-    y contra un cielo iluminado eso se lee como un fallo. Marcado, se conserva
-    el encuadre completo y los bordes aparecen en negro.</p>
+    <p class="hint" data-i18n="st_crop_hint"></p>
 
     <p class="hint" id="status">—</p>
     <progress id="bar" max="1" value="0" hidden></progress>
 
     <div id="out-box" hidden>
-      <label>Resultado</label>
+      <label data-i18n="st_result">Result</label>
       <video id="out" controls playsinline></video>
-      <p class="row"><a id="dl" class="ghost" href="#" download>Guardar el vídeo</a></p>
-      <div class="assume"><b>Qué sale y qué no.</b> El vídeo se vuelve a
-      codificar a partir de los fotogramas ya desplazados, así que no lleva la
-      pista de audio ni los metadatos de la cámara: ni la fecha, ni el modelo,
-      ni las coordenadas si las llevaba. Eso no es un efecto secundario que
-      convenga deshacer. El seguimiento no se suaviza más allá de rechazar
-      ajustes atípicos: el temblor del trípode es movimiento real y quitarlo es
-      justo el objetivo, mientras que suavizar la medida restaría una posición
-      suavizada y dejaría el temblor dentro.</div>
+      <p class="row"><a id="dl" class="ghost" href="#" download data-i18n="st_save">Save the video</a></p>
+      <div class="assume"><b data-i18n="st_out_h">What comes out and what does not.</b>
+        <span data-i18n="st_out"></span></div>
     </div>
   </section>
 
-  <div class="assume"><b>Cómo lo hace.</b> Tres regímenes, porque lo que se
-  puede seguir cambia a lo largo del eclipse. Con el Sol parcialmente cubierto
-  se ajusta una circunferencia al <b>limbo de la fotosfera</b>, que satura
-  mientras nada más en el encuadre se le acerca. En la totalidad la fotosfera
-  desaparece y lo que queda es un <b>agujero</b> dentro de la corona: el disco
-  de la Luna, que se localiza como la región oscura que el borde del fotograma
-  no alcanza. Con el cielo iluminado la fotosfera florece muy por fuera de su
-  propio limbo y un umbral trazaría el resplandor, así que se sigue la
-  <b>Luna</b> por el gradiente radial con signo alrededor de un anillo, que
-  distingue un borde oscuro-a-claro de uno claro-a-oscuro y descarta el
-  resplandor. El mismo código y las mismas decisiones que
-  <code>tools/stab_solar.py</code>, comprobados contra los mismos casos
-  sintéticos en <code>web/js/stabilise.test.js</code>.</div>
+  <div class="assume"><b data-i18n="st_how_h">How it works.</b> <span data-i18n="st_how"></span></div>
 </main>
 
 <footer>
-  Mismo cálculo que <code>tools/stab_solar.py</code> ·
+  <span data-i18n="st_footer"></span> ·
   <a href="../LICENSES.md">AGPL-3.0 / CC BY-SA 4.0</a>
 </footer>
 
+<script src="js/lang.js"></script>
 <script src="js/stabilise.js"></script>
 <script src="js/stabilise-ui.js"></script>
 </body>

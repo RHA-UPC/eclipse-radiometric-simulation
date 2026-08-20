@@ -8,7 +8,8 @@
 // travel next to the number rather than in a footnote.
 'use strict';
 
-const TYPE = { total: 'total', annular: 'anular', hybrid: 'híbrido', partial: 'parcial' };
+const t = (k, v) => Lang.t(k, v);
+const TYPE = k => Lang.t('type_' + k);
 const $ = s => document.querySelector(s);
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 // localStorage throws outright in some privacy modes; a colour preference is
@@ -87,11 +88,11 @@ const BASEMAPS = {
 const pad = n => String(n).padStart(2, '0');
 const utc = d => `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
 const utcDate = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
-const localTime = d => d.toLocaleTimeString(undefined,
+const localTime = d => d.toLocaleTimeString(Lang.locale(),
   { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const pct = x => (x * 100).toFixed(x > 0.999 && x < 1 ? 3 : 1) + ' %';
-const dms = (v, pos, neg) => `${Math.abs(v).toFixed(4)}° ${v >= 0 ? pos : neg}`;
+const pct = x => Lang.pct(x * 100);
+const dms = (v, pos, neg) => `${Lang.nf(Math.abs(v), 4)}° ${v >= 0 ? pos : neg}`;
 
 function hhmmss(s) {
   s = Math.round(s);
@@ -159,12 +160,14 @@ function initMap() {
 function renderLegend() {
   if (!legendBox) return;
   const ramp = RAMPS[theme].map(c => `rgb(${c[0]},${c[1]},${c[2]})`).join(',');
-  legendBox.innerHTML = `<i style="background:${cssv('--central')}"></i>línea central<br>
-    <i style="background:${cssv('--limit')};opacity:.55"></i>límites de la umbra<br>
-    <i class="dashed" style="border-top-color:${cssv('--penumbra')}"></i>límite de visibilidad<br>
-    <span>obscuración máxima</span>
-    <span class="ramp" style="background:linear-gradient(90deg,${ramp})"></span>5 → 100 %
-    ${theme === 'a11y' ? '<br>cada escalón del 10 % va contorneado' : ''}`;
+  legendBox.innerHTML =
+    `<i style="background:${cssv('--central')}"></i>${t('leg_central')}<br>
+     <i style="background:${cssv('--limit')};opacity:.55"></i>${t('leg_umbra')}<br>
+     <i class="dashed" style="border-top-color:${cssv('--penumbra')}"></i>${t('leg_visibility')}<br>
+     <span>${t('leg_obscuration')}</span>
+     <span class="ramp" style="background:linear-gradient(90deg,${ramp})"></span>${
+       Lang.pctRaw(5, 0)} → ${Lang.pctRaw(100, 0)}
+     ${theme === 'a11y' ? '<br>' + t('leg_outline_note') : ''}`;
 }
 
 // Switching theme repaints what the map draws, because the map colours are
@@ -212,9 +215,9 @@ function setBasemap(kind) {
   // instead of failing, which is the one a tileerror handler never sees.
   let ok = 0, err = 0;
   streetLayer.on('tileload', () => { ok++; });
-  streetLayer.on('tileerror', () => { if (++err >= 4 && ok === 0) fallback('no responde'); });
-  setTimeout(() => { if (ok === 0 && basemap === kind) fallback('no responde'); }, 9000);
-  if (navigator.onLine === false) fallback('sin conexión');
+  streetLayer.on('tileerror', () => { if (++err >= 4 && ok === 0) fallback(t('why_noanswer')); });
+  setTimeout(() => { if (ok === 0 && basemap === kind) fallback(t('why_noanswer')); }, 9000);
+  if (navigator.onLine === false) fallback(t('why_offline'));
 }
 
 // The outline is fetched only here, so a visit that never needs it never pays
@@ -245,10 +248,8 @@ function fallback(why) {
   setBasemap('plain');
   const n = document.createElement('div');
   n.className = 'offline-note';
-  n.innerHTML = `Mapa de fondo no disponible (${why}). Se dibujan las costas
-    de Natural Earth, que van en la propia página. Las circunstancias del
-    eclipse se calculan igual: no dependen del fondo.
-    <button id="retry">Reintentar</button>`;
+  n.innerHTML = t('offline_note', { why }) +
+    ` <button id="retry">${t('offline_retry')}</button>`;
   document.getElementById('map').appendChild(n);
   document.getElementById('retry').onclick = () => {
     n.remove(); fellBack = false;
@@ -407,14 +408,14 @@ function drawEclipse(e) {
       weight: 2 * thick, interactive: false }).addTo(map));
   }
   $('#summary').innerHTML = `
-    <span class="tag ${e.type}">${TYPE[e.type]}</span><br>
-    Máximo <b>${e.greatest_UT.slice(11, 19)} UTC</b> · gamma <b>${e.gamma}</b>
-    ${e.magnitude ? `· magnitud <b>${e.magnitude}</b>` : ''}
-    ${e.central_lat !== null ? `<br>Eclipse máximo en <b>${dms(e.central_lat, 'N', 'S')}
-      ${dms(e.central_lon, 'E', 'O')}</b>`
-      : `<br>Eclipse <b>no central</b>: el eje de la sombra pasa fuera de la Tierra
-         y ${e.type === 'partial' ? 'la umbra no llega a rozarla'
-             : 'la umbra solo roza el limbo, así que esta página no dibuja su franja aunque exista'}.`}`;
+    <span class="tag ${e.type}">${TYPE(e.type)}</span><br>
+    ${t('sum_line', { utc: e.greatest_UT.slice(11, 19), gamma: Lang.nf(e.gamma, 4) })}
+    ${e.magnitude ? t('sum_magnitude', { mag: Lang.nf(e.magnitude, 4) }) : ''}
+    ${e.central_lat !== null
+      ? '<br>' + t('sum_greatest_at', { lat: dms(e.central_lat, 'N', 'S'),
+                                        lon: dms(e.central_lon, 'E', 'W') })
+      : '<br>' + t('sum_noncentral', { tail: t(e.type === 'partial'
+          ? 'sum_noncentral_partial' : 'sum_noncentral_umbra') })}`;
 }
 
 // --- panels -------------------------------------------------------------
@@ -426,37 +427,20 @@ function drawEclipse(e) {
 function intensity(r) {
   const left = (1 - r.visible_obscuration) * 100;
   return `<div class="assume">
-    <b>Intensidad.</b> Queda <b>${left < 0.01 ? '&lt; 0,01' : left.toFixed(2).replace('.', ',')} %</b>
-    del área del disco. La irradiancia directa cae aproximadamente en esa
-    proporción, algo menos porque el oscurecimiento del limbo hace que el borde
-    aporte menos que el centro.<br><br>
-    <b>Lo que no cae es el brillo.</b> La radiancia de la fotosfera es invariante
-    bajo ocultación: la Luna quita área, no brillo superficial. Por eso el límite
-    térmico retiniano de ICNIRP se expresa como radiancia, y por eso una fase
-    parcial del 99 % sigue proyectando sobre la retina la misma luminancia que el
-    Sol entero.<br><br>
-    <b>La irradiancia sí se puede calcular</b>, pero no viene precalculada:
-    depende del estado atmosférico del punto y del día, que este proyecto no
-    tiene medido más que sobre el Ebro. Lo que hace el botón de abajo es
-    resolver el modelo espectral <b>en tu ordenador</b>, con la atmósfera que
-    tú declares, para que el número lleve pegada la hipótesis de la que sale.
-    El caso resuelto del manuscrito está en
-    <a href="../docs/FINDINGS.md">docs/FINDINGS.md</a>.</div>`;
+    <b>${t('int_h')}</b> ${t('int_left', {
+      left: left < 0.01 ? '&lt; ' + Lang.pctRaw(0.01, 2) : Lang.pctRaw(left, 2) })}<br><br>
+    ${t('int_radiance')}<br><br>
+    ${t('int_compute')}</div>`;
 }
 
-const SAFETY = `<div class="danger"><strong>El filtro ISO 12312-2 es obligatorio
-durante toda la fase parcial.</strong> Solo se retira entre C2 y C3, y solo dentro
-de la franja umbral. Esta página calcula geometría; no autoriza a mirar al Sol.
-Lee <a href="../SAFETY.md">SAFETY.md</a>.</div>`;
+const SAFETY = () => `<div class="danger">${t('safety_strip')}</div>`;
 
 function contactRows(r) {
-  const rows = [['C1', 'primer contacto'], ['C2', 'empieza la fase central'],
-                ['MAX', 'máximo'], ['C3', 'termina la fase central'], ['C4', 'último contacto']];
-  return rows.filter(([k]) => r[k]).map(([k, d]) => `<tr>
-      <td><b>${k}</b><br><span style="color:var(--dim);font-size:.72rem">${d}</span></td>
+  return ['C1', 'C2', 'MAX', 'C3', 'C4'].filter(k => r[k]).map(k => `<tr>
+      <td><b>${k}</b><br><span style="color:var(--dim);font-size:.72rem">${t('c_' + k)}</span></td>
       <td class="num">${utc(r[k].utc)}<br><span style="color:var(--dim);font-size:.72rem">${localTime(r[k].utc)}</span></td>
-      <td class="num">${r[k].alt.toFixed(1)}°${r[k].alt < 0 ? ' ⚠' : ''}<br>
-        <span style="color:var(--dim);font-size:.72rem">${r[k].az.toFixed(0)}°</span></td>
+      <td class="num">${Lang.nf(r[k].alt, 1)}°${r[k].alt < 0 ? ' ⚠' : ''}<br>
+        <span style="color:var(--dim);font-size:.72rem">${Lang.nf(r[k].az, 0)}°</span></td>
     </tr>`).join('');
 }
 
@@ -492,102 +476,83 @@ function horizonRows(r) {
       Math.abs(((q.az - r[k].az + 540) % 360) - 180)
         < Math.abs(((best.az - r[k].az + 540) % 360) - 180) ? q : best, horizon.prof[0]);
     const obs = obstacleAlt() >= p.alt && obstacleAlt() > 0;
-    return `<tr><td><b>${k}</b><br><span style="color:var(--dim);font-size:.72rem">az ${r[k].az.toFixed(0)}°</span></td>
-      <td class="num">${sun.toFixed(1)}°</td>
-      <td class="num">${sky.toFixed(1)}°</td>
-      <td>${sun < 0 ? 'bajo el horizonte'
-        : sun < sky ? `<b>tapado</b>${obs ? ' (obstáculo)' : p.building ? ' (edificio)' : p.distM
-            ? ` (a ${p.distM < 1000 ? Math.round(p.distM) + ' m' : (p.distM / 1000).toFixed(1) + ' km'})`
-            : ''}`
-        : 'a la vista'}</td></tr>`;
+    const dist = p.distM < 1000 ? Lang.nf(p.distM, 0) + ' m' : Lang.nf(p.distM / 1000, 1) + ' km';
+    return `<tr><td><b>${k}</b><br><span style="color:var(--dim);font-size:.72rem">az ${Lang.nf(r[k].az, 0)}°</span></td>
+      <td class="num">${Lang.nf(sun, 1)}°</td>
+      <td class="num">${Lang.nf(sky, 1)}°</td>
+      <td>${sun < 0 ? t('hz_below')
+        : sun < sky ? `<b>${t('hz_hidden')}</b>${obs ? t('hz_by_obstacle')
+            : p.building ? t('hz_by_building')
+            : p.distM ? t('hz_at_dist', { d: dist }) : ''}`
+        : t('hz_in_view')}</td></tr>`;
   }).join('');
   return `<table>
-      <tr><th>contacto</th><th class="num">Sol</th><th class="num">horizonte</th><th></th></tr>
+      <tr><th>${t('tbl_contact')}</th><th class="num">${t('hz_sun')}</th>
+          <th class="num">${t('hz_horizon')}</th><th></th></tr>
       ${rows}
     </table>`;
 }
 
 function horizonBlock(r) {
   if (!horizon) return `
-    <button id="relieve" class="ghost wide">Comprobar el horizonte real aquí</button>
-    <p class="hint">Todo lo de arriba supone terreno a nivel del mar y horizonte
-    astronómico. Esto descarga el modelo de elevación de la zona y calcula el
-    perfil del relieve hacia el Sol, en este navegador. Es la única parte de la
-    página que pide algo a un tercero: unas cuantas imágenes de un servidor de
-    elevación, que lo sitúan a uno en una tesela de decenas de kilómetros.</p>`;
+    <button id="relieve" class="ghost wide">${t('hz_button')}</button>
+    <p class="hint">${t('hz_intro')}</p>`;
   const b = horizon.buildings;
   return `
     <div id="hztab">${horizonRows(r)}</div>
-    <div class="assume"><b>Relieve.</b> Elevación del punto
-      <b>${Math.round(horizon.elevM)} m</b>. Perfil hasta ${horizon.radiusKm} km,
-      una muestra cada ${Math.round(horizon.mPerPx)} m, ${horizon.tiles} teselas de
-      ${horizon.credit}. Curvatura terrestre y refracción media (k = 0,13): cerca
-      del suelo y al ocaso la refracción real se mueve lo bastante como para
-      correr un horizonte lejano unos minutos de arco. Un obstáculo más allá de
-      ${horizon.radiusKm} km no entra, y tampoco entra la vegetación.
-      ${b ? `<b>Edificios hasta 400 m:</b> de ${b.total}, ${b.withHeight} declaran altura en
-        OpenStreetMap${b.guessed ? ` (${b.guessed} deducidas del número de plantas, a 3 m cada una)` : ''}.
-        Los demás no la declaran y no entran, y más allá de 400 m no se consulta
-        ninguno: una torre lejana al final de una avenida no está en esta cuenta.` : ''}</div>
+    <div class="assume"><b>${t('hz_assume_h')}</b> ${t('hz_assume', {
+        elev: Lang.nf(horizon.elevM, 0), radius: Lang.nf(horizon.radiusKm, 0),
+        step: Lang.nf(horizon.mPerPx, 0), tiles: horizon.tiles, credit: horizon.credit })}
+      ${b ? ' ' + t('hz_buildings_note', { total: b.total, n: b.withHeight,
+              guess: b.guessed ? t('hz_buildings_guess', { n: b.guessed }) : '' }) : ''}</div>
     <div class="row">
-      ${b ? '' : '<button id="edificios" class="ghost">Añadir edificios de OpenStreetMap</button>'}
+      ${b ? '' : `<button id="edificios" class="ghost">${t('hz_buildings_btn')}</button>`}
     </div>
-    <label style="margin-top:.7rem">Obstáculo propio</label>
+    <label style="margin-top:.7rem">${t('hz_obstacle_label')}</label>
     <div class="coords">
-      <input id="obs-h" type="number" min="0" step="1" placeholder="altura m" value="${OBSTACLE.h || ''}">
-      <input id="obs-d" type="number" min="0" step="1" placeholder="distancia m" value="${OBSTACLE.d || ''}">
+      <input id="obs-h" type="number" min="0" step="1" placeholder="${t('hz_obstacle_h')}" value="${OBSTACLE.h || ''}">
+      <input id="obs-d" type="number" min="0" step="1" placeholder="${t('hz_obstacle_d')}" value="${OBSTACLE.d || ''}">
     </div>
-    <p class="hint">Un edificio o una arboleda que el modelo no ve. Se aplica en
-    todas las direcciones${obstacleAlt() ? `: ${obstacleAlt().toFixed(1)}° de altura` : ''}.</p>`;
+    <p class="hint">${t('hz_obstacle_hint', {
+      alt: obstacleAlt() ? t('hz_obstacle_alt', { a: Lang.nf(obstacleAlt(), 1) }) : '' })}</p>`;
 }
 
 function renderPoint(e, lat, lon) {
   const r = Bess.local(e.elements, lat, lon, horizon ? horizon.elevM : 0);
   const box = $('#result');
   if (!r || r.visible_obscuration <= 0) {
-    box.innerHTML = `<h2>Sin eclipse visible</h2>
-      <p class="sub">${dms(lat, 'N', 'S')} · ${dms(lon, 'E', 'O')}</p>
-      <p class="hint">${r ? 'El eclipse ocurre con el Sol bajo el horizonte en este punto.'
-                          : 'Este punto queda fuera de la penumbra.'}</p>`;
+    box.innerHTML = `<h2>${t('pt_none_h')}</h2>
+      <p class="sub">${dms(lat, 'N', 'S')} · ${dms(lon, 'E', 'W')}</p>
+      <p class="hint">${t(r ? 'pt_below' : 'pt_outside')}</p>`;
     return;
   }
   const isCentral = r.duration_s > 0;
   const kind = isCentral ? r.central : 'partial';
   const belowMax = r.MAX.alt < 0;
   box.innerHTML = `
-    <h2>${e.id} · <span class="tag ${kind}">${TYPE[kind]}</span></h2>
-    <p class="sub">${dms(lat, 'N', 'S')} · ${dms(lon, 'E', 'O')}</p>
+    <h2>${e.id} · <span class="tag ${kind}">${TYPE(kind)}</span></h2>
+    <p class="sub">${dms(lat, 'N', 'S')} · ${dms(lon, 'E', 'W')}</p>
     <div class="big ${isCentral ? 'total' : 'partial'}">${pct(r.visible_obscuration)}</div>
-    <p class="sub">del disco solar cubierto (área), magnitud ${r.magnitude.toFixed(4)}</p>
-    ${isCentral ? `<p><b>${hhmmss(r.duration_s)}</b> de fase ${TYPE[r.central]}</p>` : ''}
-    ${belowMax ? `<p class="hint">⚠ El máximo geométrico ocurre con el Sol bajo el
-      horizonte. La cifra de arriba es la máxima obscuración con el Sol visible.</p>` : ''}
+    <p class="sub">${t('pt_covered', { mag: Lang.nf(r.magnitude, 4) })}</p>
+    ${isCentral ? `<p><b>${hhmmss(r.duration_s)}</b> ${t('pt_phase', { kind: TYPE(r.central) })}</p>` : ''}
+    ${belowMax ? `<p class="hint">${t('pt_below_max')}</p>` : ''}
     ${horizon && r.MAX.alt > 0 && r.MAX.alt < skylineAt(r.MAX.az)
-      ? `<p class="hint">⚠ En el máximo el Sol está a ${r.MAX.alt.toFixed(1)}° y el
-         horizonte de aquí se levanta hasta ${skylineAt(r.MAX.az).toFixed(1)}°: desde
-         este punto exacto no se ve. La cifra de arriba es geométrica y supone
-         horizonte despejado.</p>` : ''}
+      ? `<p class="hint">${t('pt_terrain_hidden', { sun: Lang.nf(r.MAX.alt, 1),
+                                                    sky: Lang.nf(skylineAt(r.MAX.az), 1) })}</p>` : ''}
     <table>
-      <tr><th>contacto</th><th class="num">UTC / ${TZ}</th><th class="num">alt / az</th></tr>
+      <tr><th>${t('tbl_contact')}</th><th class="num">UTC / ${TZ}</th>
+          <th class="num">${t('tbl_altaz')}</th></tr>
       ${contactRows(r)}
     </table>
-    <div class="assume"><b>Hipótesis.</b> ${horizon
-      ? `Elevación del terreno <b>${Math.round(horizon.elevM)} m</b>, tomada del
-         modelo de elevación.`
-      : `Elevación del terreno 0 m y horizonte astronómico: el relieve real no
-         entra hasta que se pide abajo, así que un Sol bajo puede quedar oculto
-         tras una montaña que este cálculo no ve.`}
-      Altura solar geométrica, sin refracción. Elementos besselianos ajustados
-      desde JPL DE440s, radio solar IAU 2015 nominal (695 700 km). Las horas
-      locales son las del navegador (${TZ}), no las del punto marcado.</div>
+    <div class="assume"><b>${t('assume_h')}</b>
+      ${horizon ? t('assume_elev', { m: Lang.nf(horizon.elevM, 0) }) : t('assume_sea')}
+      ${t('assume_rest', { tz: TZ })}</div>
     ${horizonBlock(r)}
     ${intensity(r)}
-    <button id="calc">Calcular irradiancia y exposición ocular aquí</button>
-    <p class="hint">Se resuelve SPECTRL2 sobre 122 longitudes de onda, el
-    oscurecimiento del limbo y los límites de ICNIRP 2013 en tu propio equipo.
-    Unas dos décimas de segundo. Nada se envía a ningún sitio.</p>
+    <button id="calc">${t('rad_button')}</button>
+    <p class="hint">${t('rad_hint')}</p>
     <div id="radio-out"></div>
-    ${SAFETY}`;
+    ${SAFETY()}`;
   atmForm = null;
   const btn = document.getElementById('calc');
   if (btn) btn.onclick = () => runRadio(btn, lat, lon);
@@ -598,25 +563,25 @@ function wireHorizon(e, lat, lon) {
   const rel = document.getElementById('relieve');
   if (rel) rel.onclick = async () => {
     rel.disabled = true;
-    rel.textContent = 'Descargando el modelo del terreno…';
+    rel.textContent = t('hz_loading');
     try {
       const r0 = Bess.local(e.elements, lat, lon, 0);
       const [a0, a1] = azRange(r0 || {});
       horizon = await Terrain.horizon(lat, lon, { azFrom: a0, azTo: a1, stepDeg: 1 });
     } catch (err) {
       rel.disabled = false;
-      rel.textContent = 'No se pudo descargar el relieve. Reintentar';
+      rel.textContent = t('hz_failed');
       return;
     }
     renderPoint(e, lat, lon);
   };
   const ed = document.getElementById('edificios');
   if (ed) ed.onclick = async () => {
-    ed.disabled = true; ed.textContent = 'Consultando OpenStreetMap…';
+    ed.disabled = true; ed.textContent = t('hz_loading');
     try {
       horizon = Terrain.withBuildings(horizon, await Terrain.buildings(lat, lon, 400));
     } catch (err) {
-      ed.disabled = false; ed.textContent = 'OpenStreetMap no respondió. Reintentar';
+      ed.disabled = false; ed.textContent = t('hz_buildings_failed');
       return;
     }
     renderPoint(e, lat, lon);
@@ -649,23 +614,24 @@ function renderPlace(lat, lon) {
     rows.push({ e, r });
   }
   const box = $('#result');
-  box.innerHTML = `<h2>${rows.length} eclipse${rows.length === 1 ? '' : 's'} visible${rows.length === 1 ? '' : 's'}</h2>
-    <p class="sub">${dms(lat, 'N', 'S')} · ${dms(lon, 'E', 'O')} · 2026 – 2050</p>
+  box.innerHTML = `<h2>${rows.length === 1 ? t('pl_count_one')
+                                              : t('pl_count_many', { n: rows.length })}</h2>
+    <p class="sub">${dms(lat, 'N', 'S')} · ${dms(lon, 'E', 'W')} · 2026 – 2050</p>
     ${rows.length ? `<table>
-      <tr><th>fecha</th><th class="num">cubierto</th><th class="num">duración</th><th class="num">alt</th></tr>
+      <tr><th>${t('pl_date')}</th><th class="num">${t('pl_covered')}</th>
+          <th class="num">${t('pl_duration')}</th><th class="num">${t('pl_alt')}</th></tr>
       ${rows.map(({ e, r }, i) => {
         const central = r.duration_s > 0;
+        const kind = central ? r.central : 'partial';
         return `<tr class="clickable" data-i="${i}">
-          <td>${e.id}<br><span class="tag ${central ? r.central : 'partial'}">${TYPE[central ? r.central : 'partial']}</span></td>
+          <td>${e.id}<br><span class="tag ${kind}">${TYPE(kind)}</span></td>
           <td class="num">${pct(r.visible_obscuration)}</td>
           <td class="num">${central ? hhmmss(r.duration_s) : '—'}</td>
-          <td class="num">${(r.visible_max || r.MAX).alt.toFixed(0)}°</td></tr>`;
+          <td class="num">${Lang.nf((r.visible_max || r.MAX).alt, 0)}°</td></tr>`;
       }).join('')}</table>`
-      : '<p class="hint">Ningún eclipse solar alcanza este punto entre 2026 y 2050.</p>'}
-    <div class="assume"><b>Visible</b> significa aquí que alguna parte del eclipse
-      ocurre con el Sol sobre el horizonte astronómico y a nivel del mar. No se
-      tiene en cuenta el relieve ni la meteorología.</div>
-    ${rows.length ? SAFETY : ''}`;
+      : `<p class="hint">${t('pl_none')}</p>`}
+    <div class="assume">${t('pl_assume')}</div>
+    ${rows.length ? SAFETY() : ''}`;
   box.querySelectorAll('tr.clickable').forEach(tr => tr.onclick = () => {
     const e = rows[+tr.dataset.i].e;
     setMode('eclipse');
@@ -707,6 +673,33 @@ function setMode(m) {
   else $('#result').innerHTML = '';
 }
 
+// Language. The page is hydrated before anything else runs, so the first paint
+// is already in the right language rather than in English for a frame.
+const langSel = $('#lang');
+Lang.set(Lang.pick());
+langSel.innerHTML = Object.entries(Lang.names)
+  .map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
+langSel.value = Lang.lang;
+Lang.apply();
+document.title = Lang.t('app_title') + ' · ' + Lang.t('label_eclipse');
+
+function relabel() {
+  Lang.apply();
+  document.title = Lang.t('app_title') + ' · ' + Lang.t('label_eclipse');
+  const sel = $('#pick');
+  if (CAT && sel) {
+    const keep = sel.value;
+    sel.innerHTML = CAT.eclipses.map(e =>
+      `<option value="${e.id}">${e.id} — ${TYPE(e.type)}</option>`).join('');
+    sel.value = keep;
+  }
+  renderLegend();
+  if (mode === 'eclipse' && current) drawEclipse(current);
+  if (lastPoint) setPoint(lastPoint[0], lastPoint[1]);
+}
+
+langSel.onchange = () => { Lang.set(langSel.value); relabel(); };
+
 const themeSel = $('#theme');
 themeSel.value = store.get('tema') || 'auto';
 themeSel.onchange = () => applyTheme(themeSel.value);
@@ -727,7 +720,7 @@ fetch('data/eclipses.json').then(r => r.json()).then(cat => {
   initMap();
   const sel = $('#pick');
   sel.innerHTML = cat.eclipses.map(e =>
-    `<option value="${e.id}">${e.id} — ${TYPE[e.type]}</option>`).join('');
+    `<option value="${e.id}">${e.id} — ${TYPE(e.type)}</option>`).join('');
   sel.onchange = () => {
     current = cat.eclipses.find(e => e.id === sel.value);
     drawEclipse(current);
@@ -745,9 +738,8 @@ $('#go').onclick = () => {
   if (!Number.isFinite(la) || !Number.isFinite(lo) || Math.abs(la) > 90) {
     // Failing in silence left the previous point's answer on screen under the
     // new coordinates, which is worse than an error: it looks like a result.
-    $('#result').innerHTML = `<h2>Coordenadas no válidas</h2>
-      <p class="hint">La latitud va de −90 a 90 y la longitud tiene que ser un
-      número. Las longitudes fuera de ±180 se envuelven solas.</p>`;
+    $('#result').innerHTML = `<h2>${t('err_coords_h')}</h2>
+      <p class="hint">${t('err_coords_p')}</p>`;
     if (marker) { map.removeLayer(marker); marker = null; }
     lastPoint = null;
     return;
@@ -757,7 +749,7 @@ $('#go').onclick = () => {
 };
 $('#geo').onclick = () => navigator.geolocation && navigator.geolocation.getCurrentPosition(
   p => { setPoint(p.coords.latitude, p.coords.longitude); map.setView([p.coords.latitude, p.coords.longitude], 5); },
-  () => $('#result').innerHTML = '<p class="hint">El navegador no dio la ubicación.</p>');
+  () => $('#result').innerHTML = `<p class="hint">${t('err_geo')}</p>`);
 
 // --- radiometry on demand -------------------------------------------------
 //
@@ -769,9 +761,13 @@ $('#geo').onclick = () => navigator.geolocation && navigator.geolocation.getCurr
 
 let atmForm = null;
 
-const fmt = (v, d = 1) => v.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
-const sci = v => v >= 0.01 ? fmt(v * 100, 2) + ' %'
-  : (v * 100).toExponential(1).replace('.', ',').replace('e', '·10^') + ' %';
+const fmt = (v, d = 1) => Lang.nf(v, d);
+// Below a hundredth of a per cent the fixed notation is all zeros, so the
+// exponent is written out. The mantissa still goes through the locale, which
+// is what puts the decimal comma where the language wants it.
+const sci = v => v >= 0.01 ? Lang.pctRaw(v * 100, 2)
+  : Lang.pctRaw(0, 0).replace(/^0/, (v * 100).toExponential(1)
+      .replace(/^([\d.]+)e/, (m, m1) => Lang.nf(parseFloat(m1), 1) + '·10^'));
 
 // ICNIRP's long-exposure branch is stated for t < 30 000 s and says nothing
 // beyond it. "Sin límite" would therefore be wrong twice over: it overreaches
@@ -779,7 +775,7 @@ const sci = v => v >= 0.01 ? fmt(v * 100, 2) + ' %'
 const ICNIRP_T_MAX = 30000;
 function secs(s) {
   if (!isFinite(s) || s >= ICNIRP_T_MAX)
-    return 'la norma no acota más allá de ' + fmt(ICNIRP_T_MAX / 3600, 1) + ' h';
+    return t('rad_no_bound', { h: fmt(ICNIRP_T_MAX / 3600, 1) });
   if (s < 60) return fmt(s, 1) + ' s';
   if (s < 3600) return fmt(s / 60, 1) + ' min';
   return fmt(s / 3600, 1) + ' h';
@@ -800,20 +796,19 @@ function atmPanel(A) {
       <input data-atm="${k}" type="number" step="${step}" min="${ATM_RANGE[k][0]}"
        max="${ATM_RANGE[k][1]}" value="${A[k]}"></label>`;
   return `<div class="atm">
-    <h3>Atmósfera supuesta</h3>
+    <h3>${t('atm_h')}</h3>
     <select id="atm-preset">
-      <option value="g173">ASTM G173-03 — caso de referencia</option>
-      <option value="ebro">Ebro, 12 ago 2026 — medida (CAMS + ECMWF + WOUDC)</option>
-      <option value="custom">La mía</option>
+      <option value="g173">${t('atm_g173')}</option>
+      <option value="ebro">${t('atm_ebro')}</option>
+      <option value="custom">${t('atm_custom')}</option>
     </select>
     <div class="grid" style="margin-top:.45rem">
-      ${f('aod500', 'Aerosol AOD', '0.001', '500 nm')}
-      ${f('precipitable_water_cm', 'Agua precipitable', '0.01', 'cm')}
-      ${f('ozone_atm_cm', 'Ozono', '0.001', 'atm-cm')}
-      ${f('p_surface_Pa', 'Presión', '100', 'Pa')}
+      ${f('aod500', t('atm_aod'), '0.001', '500 nm')}
+      ${f('precipitable_water_cm', t('atm_water'), '0.01', 'cm')}
+      ${f('ozone_atm_cm', t('atm_ozone'), '0.001', 'atm-cm')}
+      ${f('p_surface_Pa', t('atm_pressure'), '100', 'Pa')}
     </div>
-    <p class="hint">Esto <b>no es una medida de tu punto</b>: es lo que tú
-    declaras. El resultado vale bajo esa hipótesis y no fuera de ella.</p>
+    <p class="hint">${t('atm_hint')}</p>
   </div>`;
 }
 
@@ -877,7 +872,7 @@ function drawCurve(cv, R) {
   line('dni0', cssv('--chart-base'), 2);
   line('dni', cssv('--chart-line'), 3);
   g.fillStyle = cssv('--chart-axis'); g.textAlign = 'left';
-  g.fillText('W/m² (haz directo) — gris: sin Luna', 50, 16);
+  g.fillText(t('rad_chart_label'), 50, 16);
 }
 
 function renderRadio(R) {
@@ -887,75 +882,50 @@ function renderRadio(R) {
   if (!box) return;
   const maxA = R.max_obsc;
   const amMax = R.max_obsc.airmass;
+  const other = Math.max(R.filter_blue, R.filter_thermal);
   box.innerHTML = `
     <canvas class="chart" id="curve"></canvas>
-    <h3 class="sec">Irradiancia del haz directo</h3>
-    <div class="kv"><span>Sin la Luna, al máximo</span><b>${fmt(maxA.dni0, 1)} W/m²</b></div>
-    <div class="kv"><span>Con la Luna, al máximo</span><b>${fmt(maxA.dni, maxA.dni < 10 ? 3 : 1)} W/m²</b></div>
-    <div class="kv"><span>Déficit de flujo (con oscurecimiento del limbo)</span><b>${sci(maxA.obsc_flux)}</b></div>
-    <div class="kv"><span>Déficit geométrico de área</span><b>${sci(maxA.obsc_area)}</b></div>
-    <div class="kv"><span>Iluminancia del haz al máximo</span><b>${fmt(maxA.lux, 0)} lx</b></div>
-    <div class="kv"><span>Masa de aire al máximo</span><b>${fmt(amMax, 1)}</b></div>
-    ${R.loc.duration_s > 0 ? `<p class="hint">Durante la totalidad el haz directo
-    es exactamente cero, y por eso lo son también los vatios y los lux de arriba.
-    Lo que se ve entonces es la corona, que este modelo <b>no incluye</b>: es del
-    orden de un millón de veces más débil que la fotosfera y pide otra física.</p>` : ''}
+    <h3 class="sec">${t('rad_h_beam')}</h3>
+    <div class="kv"><span>${t('rad_no_moon')}</span><b>${fmt(maxA.dni0, 1)} W/m²</b></div>
+    <div class="kv"><span>${t('rad_with_moon')}</span><b>${fmt(maxA.dni, maxA.dni < 10 ? 3 : 1)} W/m²</b></div>
+    <div class="kv"><span>${t('rad_flux_deficit')}</span><b>${sci(maxA.obsc_flux)}</b></div>
+    <div class="kv"><span>${t('rad_area_deficit')}</span><b>${sci(maxA.obsc_area)}</b></div>
+    <div class="kv"><span>${t('rad_lux')}</span><b>${fmt(maxA.lux, 0)} lx</b></div>
+    <div class="kv"><span>${t('rad_airmass')}</span><b>${fmt(amMax, 1)}</b></div>
+    ${R.loc.duration_s > 0 ? `<p class="hint">${t('rad_totality_note')}</p>` : ''}
 
-    <h3 class="sec">Límites de exposición ocular ICNIRP 2013</h3>
-    <div class="kv ${R.thermal_ratio > 1 ? 'hot' : ''}"><span>Límite térmico retiniano, peor momento</span>
+    <h3 class="sec">${t('rad_h_icnirp')}</h3>
+    <div class="kv ${R.thermal_ratio > 1 ? 'hot' : ''}"><span>${t('rad_thermal')}</span>
       <b>${fmt(R.thermal_ratio, 2)} ×</b></div>
-    <div class="kv"><span>Fijación que admite el límite fotoquímico, pupila 3 mm</span>
-      <b>${secs(R.stare_3mm)}</b></div>
-    <div class="kv"><span>Lo mismo con pupila dilatada a 7 mm</span><b>${secs(R.stare_7mm)}</b></div>
-    <div class="kv"><span>Transmitancia que tendría que tener un filtro
-      <br><span style="color:var(--dim);font-size:.72rem">manda el límite ${
-        R.filter_thermal < R.filter_blue ? 'térmico' : 'fotoquímico'}; el otro pide ${
-        (Math.max(R.filter_blue, R.filter_thermal) >= 1 ? '—'
-          : fmt(Math.max(R.filter_blue, R.filter_thermal), 4))}</span></span>
+    <div class="kv"><span>${t('rad_stare3')}</span><b>${secs(R.stare_3mm)}</b></div>
+    <div class="kv"><span>${t('rad_stare7')}</span><b>${secs(R.stare_7mm)}</b></div>
+    <div class="kv"><span>${t('rad_filter')}
+      <br><span style="color:var(--dim);font-size:.72rem">${t('rad_filter_which', {
+        which: t(R.filter_thermal < R.filter_blue ? 'rad_thermal_word' : 'rad_photo_word'),
+        other: other >= 1 ? '—' : fmt(other, 4) })}</span></span>
       <b>${R.filter_needed >= 1 ? '—'
           : R.filter_needed < 0.01 ? R.filter_needed.toExponential(2)
           : fmt(R.filter_needed, 4)}</b></div>
-    ${R.filter_needed >= 1 ? `<p class="hint">Bajo estas hipótesis el modelo no
-    encuentra ningún factor de atenuación <em>exigido por las dos ecuaciones de
-    ICNIRP</em>, cosa que ocurre con el Sol muy bajo o con una atmósfera muy
-    cargada. No es una autorización: la norma acota lo que acota, el filtro
-    ISO 12312-2 sigue siendo obligatorio y el modelo está extrapolando
-    justamente ahí.</p>` : ''}
+    ${R.filter_needed >= 1 ? `<p class="hint">${t('rad_nofilter')}</p>` : ''}
 
     <div class="assume">
-      <b>Qué es esto y qué no.</b> Son las ecuaciones de ICNIRP 2013 evaluadas
-      bajo las hipótesis que tú has declarado, no una recomendación de cuánto
-      mirar. Un límite marca dónde empieza el riesgo conocido, no hasta dónde es
-      prudente llegar. Supone un ojo sano, sin cirugía refractiva ni medicación
-      fotosensibilizante, y un diámetro pupilar que no puedes medir en el campo.
-      La razón térmica compara la radiancia de la fotosfera con el límite de la
-      tabla 4; la radiancia <b>no baja</b> con la ocultación, lo que baja es la
-      subtensa del creciente, que es lo que mueve el límite.
+      <b>${t('rad_what_h')}</b> ${t('rad_what')}
       <br><br>
-      ${R.clamped && R.clamped.length ? `<b style="color:var(--hot)">Valores
-      corregidos.</b> ${R.clamped.length} de los que escribiste caían fuera de lo
-      físicamente posible y se han llevado al borde del rango antes de calcular.
-      <br><br>` : ''}
-      <b>Incertidumbre.</b> La masa de aire al máximo es ${fmt(amMax, 1)}.
-      ${amMax > 6 ? `A partir de unas seis masas de aire los modelos empíricos de
-      cielo claro están extrapolando muy lejos de donde se ajustaron: este trabajo
-      encontró que a masa de aire 10,7 tres modelos publicados difieren en un
-      factor tres. Toma la cifra como el orden de magnitud que es.`
-      : `Dentro del rango donde el modelo está ajustado.`}
-      ${R.bracket ? `<br>Sensibilidad al aerosol: con AOD entre
-      ${fmt(R.bracket.lo.aod, 3)} y ${fmt(R.bracket.hi.aod, 3)} (la mitad y el doble
-      del declarado), la irradiancia del haz sin la Luna en su momento más
-      intenso va de ${fmt(R.bracket.hi.dni, 1)} a ${fmt(R.bracket.lo.dni, 1)} W/m²
-      y la razón térmica de ${fmt(R.bracket.hi.ratio, 2)} a
-      ${fmt(R.bracket.lo.ratio, 2)}. Es sensibilidad a un parámetro, no un
-      presupuesto de incertidumbre.` : ''}
+      ${R.clamped && R.clamped.length
+        ? t('rad_clamped', { n: R.clamped.length }) + '<br><br>' : ''}
+      <b>${t('rad_unc_h')}</b> ${t('rad_unc_am', { am: fmt(amMax, 1) })}
+      ${t(amMax > 6 ? 'rad_unc_far' : 'rad_unc_near')}
+      ${R.bracket ? '<br>' + t('rad_bracket', {
+        lo: fmt(R.bracket.lo.aod, 3), hi: fmt(R.bracket.hi.aod, 3),
+        dhi: fmt(R.bracket.hi.dni, 1), dlo: fmt(R.bracket.lo.dni, 1),
+        rhi: fmt(R.bracket.hi.ratio, 2), rlo: fmt(R.bracket.lo.ratio, 2) }) : ''}
     </div>`;
   drawCurve(document.getElementById('curve'), R);
 }
 
 async function runRadio(btn, lat, lon) {
   btn.disabled = true;
-  btn.textContent = 'Calculando en tu ordenador…';
+  btn.textContent = t('rad_button_busy');
   await Radio.load();
   if (!atmForm) {
     btn.insertAdjacentHTML('beforebegin', atmPanel(Radio.tables.atmospheres.g173));
@@ -988,9 +958,9 @@ async function runRadio(btn, lat, lon) {
     renderRadio(R);
   } else {
     const box = document.getElementById('radio-out');
-    if (box) box.innerHTML = '<p class="hint">Aquí no hay eclipse sobre el horizonte.</p>';
+    if (box) box.innerHTML = `<p class="hint">${t('rad_no_eclipse')}</p>`;
   }
   if (!document.body.contains(btn)) return;
   btn.disabled = false;
-  btn.textContent = 'Recalcular con esta atmósfera';
+  btn.textContent = t('atm_recompute');
 }

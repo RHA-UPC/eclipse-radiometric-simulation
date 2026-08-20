@@ -22,6 +22,7 @@
   'use strict';
 
   const $ = s => document.querySelector(s);
+  const t = (k, v) => Lang.t(k, v);
   const state = { file: null, url: null, track: null, out: null, busy: false };
 
   const say = (msg, pct) => {
@@ -98,12 +99,12 @@
           pg.arc(last.cx * gr.scale, last.cy * gr.scale, last.r * gr.scale, 0, 2 * Math.PI);
           pg.stroke();
         }
-        say(`Midiendo: ${samples.length} fotogramas seguidos, ${lost} sin fijar`,
+        say(t('st_measuring', { n: samples.length, lost }),
             video.duration ? meta.mediaTime / video.duration : undefined);
         video.requestVideoFrameCallback(step);
       };
       video.onended = finish;
-      video.onerror = () => reject(new Error('el navegador no pudo leer el vídeo'));
+      video.onerror = () => reject(new Error(t('st_err_read')));
       video.currentTime = 0;
       video.muted = true;
       video.playbackRate = 1;
@@ -145,7 +146,7 @@
     g.imageSmoothingEnabled = true;
     g.imageSmoothingQuality = 'high';
     const mime = mimeType();
-    if (!mime) throw new Error('este navegador no sabe grabar vídeo (MediaRecorder)');
+    if (!mime) throw new Error(t('st_err_rec'));
     const stream = cv.captureStream(0);
     const [tr] = stream.getVideoTracks();
     const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12e6 });
@@ -164,12 +165,12 @@
         g.fillRect(0, 0, win.w, win.h);
         if (c) g.drawImage(video, win.tx - c.cx, win.ty - c.cy);
         if (tr.requestFrame) tr.requestFrame();
-        say('Grabando el vídeo estabilizado…',
+        say(t('st_recording'),
             video.duration ? meta.mediaTime / video.duration : undefined);
         video.requestVideoFrameCallback(step);
       };
       video.onended = finish;
-      video.onerror = () => reject(new Error('el navegador no pudo leer el vídeo'));
+      video.onerror = () => reject(new Error(t('st_err_read')));
       video.currentTime = 0;
       video.playbackRate = 1;
       video.requestVideoFrameCallback(step);
@@ -192,8 +193,8 @@
     v.src = state.url;
     $('#drop').hidden = true;
     $('#work').hidden = false;
-    $('#name').textContent = `${file.name} — ${(file.size / 1048576).toFixed(1)} MB`;
-    say('Listo. Nada de esto sale de este navegador.');
+    $('#name').textContent = `${file.name} — ${Lang.nf(file.size / 1048576, 1)} MB`;
+    say(t('st_ready'));
   }
 
   async function run() {
@@ -204,10 +205,9 @@
     const v = $('#src');
     try {
       await v.play().then(() => v.pause()).catch(() => {});
-      if (!v.requestVideoFrameCallback)
-        throw new Error('este navegador no tiene requestVideoFrameCallback');
+      if (!v.requestVideoFrameCallback) throw new Error(t('st_err_rvfc'));
       const track = await measure(v, $('#preview'));
-      if (track.length < 2) throw new Error('no se pudo fijar el Sol en suficientes fotogramas');
+      if (track.length < 2) throw new Error(t('st_err_track'));
       const clean = Stab.clean(track.map(s => ({ cx: s.cx, cy: s.cy })));
       for (let i = 0; i < track.length; i++) { track[i].cx = clean.cx[i]; track[i].cy = clean.cy[i]; }
       const full = $('#full').checked;
@@ -219,13 +219,13 @@
       const url = URL.createObjectURL(blob);
       $('#out').src = url;
       $('#dl').href = url;
-      $('#dl').download = state.file.name.replace(/\.[^.]+$/, '') + '-estabilizado.webm';
+      $('#dl').download = state.file.name.replace(/\.[^.]+$/, '') + '-stabilised.webm';
       $('#out-box').hidden = false;
       const med = track.map(s => s.r).sort((a, b) => a - b)[track.length >> 1];
-      say(`Hecho. ${track.length} fotogramas seguidos, radio solar ${med.toFixed(0)} px, ` +
-          `ventana ${win.w}×${win.h}, ${(blob.size / 1048576).toFixed(1)} MB.`);
+      say(t('st_done', { n: track.length, r: Lang.nf(med, 0), w: win.w, h: win.h,
+                         mb: Lang.nf(blob.size / 1048576, 1) }));
     } catch (err) {
-      say('No se pudo: ' + err.message);
+      say(t('st_fail', { why: err.message }));
     } finally {
       state.busy = false;
       $('#go').disabled = false;
@@ -234,6 +234,19 @@
   }
 
   addEventListener('DOMContentLoaded', () => {
+    const langSel = $('#lang');
+    Lang.set(Lang.pick());
+    langSel.innerHTML = Object.entries(Lang.names)
+      .map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
+    langSel.value = Lang.lang;
+    Lang.apply();
+    document.title = Lang.t('st_title');
+    langSel.onchange = () => {
+      Lang.set(langSel.value); Lang.apply();
+      document.title = Lang.t('st_title');
+      if (!state.busy) say(state.file ? t('st_ready') : '—');
+    };
+
     const drop = $('#drop');
     $('#file').onchange = e => pick(e.target.files[0]);
     drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
@@ -246,8 +259,6 @@
     $('#again').onclick = () => {
       $('#drop').hidden = false; $('#work').hidden = true; $('#out-box').hidden = true;
     };
-    if (!window.MediaRecorder || !mimeType())
-      say('Este navegador no sabe grabar vídeo desde un lienzo, así que el resultado ' +
-          'no se podrá guardar. Todo lo demás funciona.');
+    if (!window.MediaRecorder || !mimeType()) say(t('st_no_recorder'));
   });
 })();

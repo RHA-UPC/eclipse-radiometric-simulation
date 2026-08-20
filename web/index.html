@@ -4,18 +4,19 @@
   Copyright (C) 2026 Ricardo Heredia Alessandrello
   SPDX-License-Identifier: AGPL-3.0-only
 -->
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Eclipses solares · calculadora</title>
-<meta name="description" content="Circunstancias locales de los eclipses solares de 2026 a 2050, calculadas desde efemérides JPL DE440s.">
+<title>Solar eclipses · calculator</title>
+<meta name="description" data-i18n="app_tagline" data-i18n-attr="content"
+      content="Local circumstances of every solar eclipse from 2026 to 2050, computed from JPL DE440s ephemerides.">
 <link rel="stylesheet" href="vendor/leaflet-1.9.4.css">
 <link rel="stylesheet" href="css/style.css">
 <script>
-  // El tema se aplica antes de pintar, si no hay un destello del tema claro
-  // en la cara de quien pidio el oscuro. Sin eleccion guardada se sigue al
-  // sistema operativo, que es lo que espera quien lo tiene configurado.
+  // The theme is applied before the first paint, or whoever asked for the dark
+  // one gets a flash of the light one in the face. With no stored choice the
+  // operating system decides, which is what someone who configured it expects.
   try {
     const c = localStorage.getItem('tema') || 'auto';
     document.documentElement.dataset.theme = c === 'auto'
@@ -27,62 +28,57 @@
 
 <div id="gate" class="gate">
   <div class="gate-box">
-    <h1>Antes de usar esto</h1>
-    <p><strong>Mirar al Sol sin un filtro certificado ISO 12312-2 puede provocar
-    daño retiniano permanente e indoloro.</strong> No duele, porque la retina no
-    tiene receptores de dolor.</p>
-    <p>El filtro solo se retira <strong>entre el segundo y el tercer contacto</strong>,
-    es decir durante la totalidad, y únicamente si estás dentro de la franja
-    umbral. Fuera de ella no hay ningún momento seguro.</p>
-    <p>Esta página <strong>calcula geometría</strong>. No dice que mirar sea
-    seguro, en ninguna circunstancia y con ningún redondeo. Lee
-    <a href="../SAFETY.md">SAFETY.md</a> antes de usar cualquier número de aquí
-    para decidir qué hacer con tus ojos o con tu cámara.</p>
-    <button id="gate-ok">Lo he leído</button>
+    <h1 data-i18n="gate_h">Before using this</h1>
+    <p data-i18n="gate_p1"></p>
+    <p data-i18n="gate_p2"></p>
+    <p data-i18n="gate_p3"></p>
+    <button id="gate-ok" data-i18n="gate_ok">Read and understood</button>
   </div>
 </div>
 
 <header>
-  <h1>Eclipses solares <span class="range">2026 – 2050</span></h1>
+  <h1><span data-i18n="app_title">Solar eclipses</span> <span class="range">2026 – 2050</span></h1>
   <nav class="modes">
-    <button class="mode active" data-mode="eclipse">Por eclipse</button>
-    <button class="mode" data-mode="lugar">Por lugar</button>
-    <a class="mode" href="stabilise.html">Estabilizador</a>
+    <button class="mode active" data-mode="eclipse" data-i18n="mode_eclipse">By eclipse</button>
+    <button class="mode" data-mode="lugar" data-i18n="mode_place">By place</button>
+    <a class="mode" href="stabilise.html" data-i18n="nav_stabiliser">Stabiliser</a>
   </nav>
-  <select id="basemap" aria-label="Mapa de fondo">
-    <option value="streets">Fondo: calles</option>
-    <option value="relief">Fondo: relieve</option>
-    <option value="plain">Fondo: solo costas</option>
+  <select id="lang" data-i18n="aria_lang" data-i18n-attr="aria-label" aria-label="Language"></select>
+  <select id="basemap" data-i18n="aria_base" data-i18n-attr="aria-label" aria-label="Base map">
+    <option value="streets" data-i18n="base_streets">Map: streets</option>
+    <option value="relief" data-i18n="base_relief">Map: relief</option>
+    <option value="plain" data-i18n="base_plain">Map: coastlines only</option>
   </select>
-  <select id="theme" aria-label="Tema de color">
-    <option value="auto">Tema: automático</option>
-    <option value="light">Tema: claro</option>
-    <option value="dark">Tema: oscuro</option>
-    <option value="a11y">Tema: accesible</option>
+  <select id="theme" data-i18n="aria_theme" data-i18n-attr="aria-label" aria-label="Colour theme">
+    <option value="auto" data-i18n="theme_auto">Theme: automatic</option>
+    <option value="light" data-i18n="theme_light">Theme: light</option>
+    <option value="dark" data-i18n="theme_dark">Theme: dark</option>
+    <option value="a11y" data-i18n="theme_a11y">Theme: accessible</option>
   </select>
 </header>
 
 <div id="layout">
   <aside id="panel">
     <section id="ctl-eclipse">
-      <label for="pick">Eclipse</label>
+      <label for="pick" data-i18n="label_eclipse">Eclipse</label>
       <select id="pick"></select>
       <div id="summary" class="summary"></div>
-      <p class="hint">Marca un punto en el mapa para ver las circunstancias ahí.</p>
+      <p class="hint" data-i18n="hint_mark"></p>
     </section>
 
     <section id="ctl-lugar" hidden>
-      <label>Coordenadas</label>
+      <label data-i18n="label_coords">Coordinates</label>
       <div class="coords">
-        <input id="in-lat" type="number" step="0.0001" placeholder="latitud">
-        <input id="in-lon" type="number" step="0.0001" placeholder="longitud">
+        <input id="in-lat" type="number" step="0.0001"
+               data-i18n="ph_lat" data-i18n-attr="placeholder" placeholder="latitude">
+        <input id="in-lon" type="number" step="0.0001"
+               data-i18n="ph_lon" data-i18n-attr="placeholder" placeholder="longitude">
       </div>
       <div class="row">
-        <button id="go">Calcular</button>
-        <button id="geo" class="ghost">Mi ubicación</button>
+        <button id="go" data-i18n="btn_compute">Compute</button>
+        <button id="geo" class="ghost" data-i18n="btn_locate">My location</button>
       </div>
-      <p class="hint">O marca el punto directamente en el mapa. La ubicación no
-      sale del navegador: aquí no hay servidor.</p>
+      <p class="hint" data-i18n="hint_place"></p>
     </section>
 
     <div id="result"></div>
@@ -90,16 +86,10 @@
   <main id="map"></main>
 </div>
 
-<footer>
-  Efemérides JPL DE440s · elementos besselianos y espectro por
-  <code>src/eclipsecat.py</code> y <code>src/webdata.py</code> ·
-  mapa <a href="vendor/LICENSE-leaflet.txt">Leaflet</a> (BSD-2) ·
-  costas de respaldo Natural Earth 1:10 m simplificadas (dominio público) ·
-  tabla SPECTRL2 vía <a href="vendor/LICENSE-pvlib.txt">pvlib</a> (BSD-3) ·
-  <a href="../LICENSES.md">AGPL-3.0 / CC BY-SA 4.0</a>
-</footer>
+<footer data-i18n="footer_main"></footer>
 
 <script src="vendor/leaflet-1.9.4.js"></script>
+<script src="js/lang.js"></script>
 <script src="js/besselian.js"></script>
 <script src="js/radiometry.js"></script>
 <script src="js/terrain.js"></script>
